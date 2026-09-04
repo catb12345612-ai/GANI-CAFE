@@ -3,85 +3,90 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Table Order</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // REPLACE THIS WITH YOUR FIREBASE CONFIG KEYS
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "algani-cafe.firebaseapp.com",
-      projectId: "algani-cafe",
-      databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
-      storageBucket: "algani-cafe.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAc5NFz9pNP4DNmNr30KQfCZeABJ5KH3dg",
+    authDomain: "algani-cafe.firebaseapp.com",
+    databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
+    projectId: "algani-cafe",
+    storageBucket: "algani-cafe.firebasestorage.app",
+    messagingSenderId: "44056411552",
+    appId: "1:44056411552:web:b67f0cf82791a81fb0f8c5",
+    measurementId: "G-Q2ELLZ03SE"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const db = getDatabase(app);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const tableNo = urlParams.get('table') || "0";
-    document.title = `Table ${tableNo} Menu`;
+  // Get Table Number from URL parameter (?table=1)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tableNo = urlParams.get('table') || "0";
+  document.title = `Table ${tableNo} Menu`;
 
-    let cart = [];
-    let currentOrderId = null;
+  let cart = [];
+  let currentOrderId = null;
 
-    window.addToCart = (name, price) => {
+  window.addToCart = (name, price) => {
       cart.push({ name, price });
       updateCartUI();
-    };
+  };
 
-    function updateCartUI() {
+  function updateCartUI() {
       let total = cart.reduce((sum, item) => sum + item.price, 0);
       document.getElementById('cart-count').innerText = cart.length;
       document.getElementById('cart-total').innerText = total;
-    }
+  }
 
-    window.placeOrder = () => {
+  window.placeOrder = () => {
       if (cart.length === 0) return alert("Select items first!");
       let total = cart.reduce((sum, item) => sum + item.price, 0);
       
       const newOrderRef = push(ref(db, 'orders'), {
-        table: tableNo,
-        items: cart,
-        total: total,
-        status: "Pending",
-        timestamp: Date.now()
+          table: tableNo,
+          items: cart,
+          total: total,
+          status: "Pending",
+          timestamp: Date.now()
       });
-
+      
       currentOrderId = newOrderRef.key;
       alert("Order Sent to Kitchen!");
       listenToOrderStatus();
-    };
+  };
 
-    function listenToOrderStatus() {
+  function listenToOrderStatus() {
       onValue(ref(db, `orders/${currentOrderId}`), (snapshot) => {
-        const data = snapshot.val();
-        if (!data) return;
-        document.getElementById('order-status').innerText = `Status: ${data.status}`;
-        
-        if (data.status === "Served" || data.status === "Billed") {
-          document.getElementById('pay-section').style.display = 'block';
-          const upiVpa = "YOUR_UPI_ID@upi"; // Put your GPay/PhonePe UPI ID here
-          const upiUrl = `upi://pay?pa=${upiVpa}&pn=AlganiCafe&am=${data.total}&cu=INR`;
-          document.getElementById('pay-btn').href = upiUrl;
-        }
+          const data = snapshot.val();
+          if (!data) return;
+          document.getElementById('order-status').innerText = `Status: ${data.status}`;
+
+          // When meal is finished, show payment button
+          if (data.status === "Served" || data.status === "Billed") {
+              document.getElementById('pay-section').style.display = 'block';
+              // UPI Intent URL for 0% fee direct bank payment
+              const upiVpa = "7569524356-2@axl"; // Replace with your GPay/PhonePe UPI ID
+              const upiUrl = `upi://pay?pa=${upiVpa}&pn=Restaurant&am=${data.total}&cu=INR`;
+              document.getElementById('pay-btn').href = upiUrl;
+          }
       });
-    }
-  </script>
+  }
+</script>
 </head>
 <body style="font-family:sans-serif; padding:15px; max-width:400px; margin:auto;">
-  <h2>Algani Cafe Menu</h2>
+  <h2>Table Menu</h2>
   <div id="menu">
     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-      <span>Coffee - ₹100</span>
-      <button onclick="addToCart('Coffee', 100)">+ Add</button>
+      <span>Paneer Tikka - ₹220</span>
+      <button onclick="addToCart('Paneer Tikka', 220)">+ Add</button>
     </div>
     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-      <span>Sandwich - ₹150</span>
-      <button onclick="addToCart('Sandwich', 150)">+ Add</button>
+      <span>Chicken Biryani - ₹280</span>
+      <button onclick="addToCart('Chicken Biryani', 280)">+ Add</button>
     </div>
   </div>
 
@@ -93,6 +98,7 @@
 
   <div id="pay-section" style="display:none; margin-top:20px; border:2px solid green; padding:10px; text-align:center;">
     <h3>Your Meal is Complete!</h3>
+    <p>Click below to pay via GPay / PhonePe / Paytm:</p>
     <a id="pay-btn" href="#" style="display:block; padding:12px; background:#007bff; color:white; text-decoration:none; font-weight:bold;">Pay Bill Now</a>
   </div>
 </body>
