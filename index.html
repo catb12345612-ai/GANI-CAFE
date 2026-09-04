@@ -6,7 +6,7 @@
  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAc5NFz9pNP4DNmNr30KQfCZeABJ5KH3dg",
@@ -74,7 +74,14 @@
               document.getElementById('pay-btn').href = upiUrl;
           }
       });
-  }
+  } window.payByCash = () => {
+    if (!currentOrderId) return;
+    update(ref(db, `orders/${currentOrderId}`), { 
+        paymentMethod: "Cash", 
+        status: "Cash Payment Requested" 
+    });
+    document.getElementById('cash-status').innerText = "Cash requested! Please pay at the counter.";
+};
 </script>
 </head>
 <body style="font-family:sans-serif; padding:15px; max-width:400px; margin:auto;">
@@ -98,8 +105,11 @@
 
   <div id="pay-section" style="display:none; margin-top:20px; border:2px solid green; padding:10px; text-align:center;">
     <h3>Your Meal is Complete!</h3>
-    <p>Click below to pay via GPay / PhonePe / Paytm:</p>
-    <a id="pay-btn" href="#" style="display:block; padding:12px; background:#007bff; color:white; text-decoration:none; font-weight:bold;">Pay Bill Now</a>
+    <p>Choose your payment method:</p>
+    <a id="pay-btn" href="#" style="display:block; padding:12px; background:#007bff; color:white; text-decoration:none; font-weight:bold; margin-bottom:10px;">Pay Online (GPay/PhonePe)</a>
+    <p id="upi-id-display" style="font-size: 14px; margin-bottom: 10px; color: #333;"></p>
+    <button onclick="payByCash()" style="width:100%; padding:12px; background:#28a745; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer;">Pay with Cash at Counter</button>
+    <p id="cash-status" style="margin-top:10px; color:green; font-weight:bold;"></p>
   </div>
 </body>
 </html>
