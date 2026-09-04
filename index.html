@@ -4,41 +4,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Table Order</title>
 </head>
-<body style="font-family:sans-serif; padding:15px; background:#f4f4f4;">
-    <h2>Table Menu</h2>
+<body style="font-family:sans-serif; padding:15px; background:#f4f4f4; margin:0;">
+    <h2 style="text-align:center; color:#333;">Table Menu</h2>
 
-    <div id="menu" style="background:white; padding:15px; border-radius:5px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+    <div id="menu" style="background:white; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); max-width:500px; margin:0 auto;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <span><strong>Paneer Tikka</strong> - ₹220</span>
-            <div>
-                <button onclick="removeFromCart('Paneer Tikka')" style="padding:6px 12px; background:#dc3545; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px;">-</button>
+            <div style="display:flex; align-items:center;">
+                <button onclick="removeFromCart('Paneer Tikka')" style="padding:6px 12px; background:#dc3545; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px; border-radius:4px;">-</button>
                 <span id="qty-Paneer-Tikka" style="margin:0 12px; font-weight:bold; font-size:16px;">0</span>
-                <button onclick="addToCart('Paneer Tikka', 220)" style="padding:6px 12px; background:#28a745; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px;">+</button>
+                <button onclick="addToCart('Paneer Tikka', 220)" style="padding:6px 12px; background:#28a745; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px; border-radius:4px;">+</button>
             </div>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <span><strong>Chicken Biryani</strong> - ₹280</span>
-            <div>
-                <button onclick="removeFromCart('Chicken Biryani')" style="padding:6px 12px; background:#dc3545; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px;">-</button>
+            <div style="display:flex; align-items:center;">
+                <button onclick="removeFromCart('Chicken Biryani')" style="padding:6px 12px; background:#dc3545; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px; border-radius:4px;">-</button>
                 <span id="qty-Chicken-Biryani" style="margin:0 12px; font-weight:bold; font-size:16px;">0</span>
-                <button onclick="addToCart('Chicken Biryani', 280)" style="padding:6px 12px; background:#28a745; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px;">+</button>
+                <button onclick="addToCart('Chicken Biryani', 280)" style="padding:6px 12px; background:#28a745; color:white; border:none; cursor:pointer; font-weight:bold; font-size:16px; border-radius:4px;">+</button>
             </div>
         </div>
     </div>
 
-    <hr style="margin:20px 0;">
+    <div style="max-width:500px; margin:20px auto; background:white; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); text-align:center;">
+        <h3>Items in Cart: <span id="cart-count">0</span> | Total: ₹<span id="cart-total">0</span></h3>
+        <button onclick="placeOrder()" style="width:100%; padding:14px; background:green; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer; border-radius:5px;">Send Order to Kitchen</button>
+    </div>
 
-    <h3>Items in Cart: <span id="cart-count">0</span> | Total: ₹<span id="cart-total">0</span></h3>
-    <button onclick="placeOrder()" style="width:100%; padding:14px; background:green; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer; border-radius:5px;">Send Order to Kitchen</button>
+    <div style="max-width:500px; margin:0 auto; text-align:center;">
+        <h3 id="order-status" style="color:blue; margin-top:20px;"></h3>
+    </div>
 
-    <h3 id="order-status" style="color:blue; margin-top:20px;"></h3>
-
-    <div id="pay-section" style="display:none; margin-top:20px; border:2px solid green; padding:15px; background:white; border-radius:5px; text-align:center;">
+    <div id="pay-section" style="display:none; max-width:500px; margin:20px auto; border:2px solid green; padding:15px; background:white; border-radius:8px; text-align:center; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
         <h3>Your Meal is Complete!</h3>
         <p>Choose your payment method:</p>
-        <button onclick="payOnline()" style="width:100%; padding:12px; background:#007bff; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer; margin-bottom:10px; border-radius:5px;">Pay Online (GPay/PhonePe)</button>
-        <p id="upi-id-display" style="font-size: 14px; margin-bottom: 10px; color: #333;"></p>
+        <a id="pay-btn" href="#" style="display:block; width:100%; box-sizing:border-box; padding:12px; background:#007bff; color:white; text-decoration:none; text-align:center; font-size:16px; font-weight:bold; cursor:pointer; margin-bottom:15px; border-radius:5px;">Pay Online (GPay/PhonePe App)</a>
+        
+        <p style="margin: 10px 0; font-weight: bold; color: #333;">Or Scan QR Code to Pay:</p>
+        <img src="qr.jpg" alt="UPI QR Code" style="max-width:220px; width:100%; height:auto; margin:0 auto 15px auto; display:block; border-radius:8px; border:1px solid #ccc;">
+
         <button onclick="payByCash()" style="width:100%; padding:12px; background:#28a745; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer; border-radius:5px;">Pay with Cash at Counter</button>
         <p id="cash-status" style="margin-top:10px; color:green; font-weight:bold;"></p>
     </div>
@@ -126,16 +131,11 @@
                     document.getElementById('pay-section').style.display = 'block';
                     currentTotal = data.total;
                     const upiVpa = "7569524356-2@axl";
-                    document.getElementById('upi-id-display').innerText = `Or pay manually to UPI ID: ${upiVpa}`;
+                    const upiUrl = `upi://pay?pa=${upiVpa}&pn=GaniCafe&am=${currentTotal}&cu=INR`;
+                    document.getElementById('pay-btn').href = upiUrl;
                 }
             });
         }
-
-        window.payOnline = () => {
-            const upiVpa = "7569524356-2@axl";
-            const upiUrl = `upi://pay?pa=${upiVpa}&pn=GaniCafe&am=${currentTotal}&cu=INR`;
-            window.location.href = upiUrl;
-        };
 
         window.payByCash = () => {
             update(ref(db, `orders/${currentOrderId}`), { paymentMethod: "Cash at Counter" });
