@@ -59,20 +59,28 @@
       listenToOrderStatus();
   };
 
+ let currentTotal = 0;
+
   function listenToOrderStatus() {
       onValue(ref(db, `orders/${currentOrderId}`), (snapshot) => {
           const data = snapshot.val();
           if (!data) return;
           document.getElementById('order-status').innerText = `Status: ${data.status}`;
 
-          // When meal is finished, show payment button
           if (data.status === "Served" || data.status === "Billed") {
               document.getElementById('pay-section').style.display = 'block';
-              // UPI Intent URL for 0% fee direct bank payment
-              const upiVpa = "7569524356-2@axl"; // Replace with your GPay/PhonePe UPI ID
-              const upiUrl = `upi://pay?pa=${upiVpa}&pn=Restaurant&am=${data.total}&cu=INR`;
-              document.getElementById('pay-btn').href = upiUrl;
+              currentTotal = data.total;
+              const upiVpa = "7569524356-2@axl";
+              document.getElementById('upi-id-display').innerText = `Or pay manually to UPI ID: ${upiVpa}`;
           }
+      });
+  }
+
+  window.payOnline = () => {
+      const upiVpa = "7569524356-2@axl";
+      const upiUrl = `upi://pay?pa=${upiVpa}&pn=GaniCafe&am=${currentTotal}&cu=INR`;
+      window.location.href = upiUrl;
+  };
       });
   } window.payByCash = () => {
     if (!currentOrderId) return;
@@ -103,13 +111,11 @@
 
   <h3 id="order-status" style="color:blue; margin-top:20px;"></h3>
 
-  <div id="pay-section" style="display:none; margin-top:20px; border:2px solid green; padding:10px; text-align:center;">
-    <h3>Your Meal is Complete!</h3>
-    <p>Choose your payment method:</p>
-    <a id="pay-btn" href="#" style="display:block; padding:12px; background:#007bff; color:white; text-decoration:none; font-weight:bold; margin-bottom:10px;">Pay Online (GPay/PhonePe)</a>
-    <p id="upi-id-display" style="font-size: 14px; margin-bottom: 10px; color: #333;"></p>
-    <button onclick="payByCash()" style="width:100%; padding:12px; background:#28a745; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer;">Pay with Cash at Counter</button>
-    <p id="cash-status" style="margin-top:10px; color:green; font-weight:bold;"></p>
-  </div>
-</body>
-</html>
+ <div id="pay-section" style="display:none; margin-top:20px; border:2px solid green; padding:10px; text-align:center;">
+  <h3>Your Meal is Complete!</h3>
+  <p>Choose your payment method:</p>
+  <button onclick="payOnline()" style="width:100%; padding:12px; background:#007bff; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer; margin-bottom:10px;">Pay Online (GPay/PhonePe)</button>
+  <p id="upi-id-display" style="font-size: 14px; margin-bottom: 10px; color: #333;"></p>
+  <button onclick="payByCash()" style="width:100%; padding:12px; background:#28a745; color:white; border:none; font-size:16px; font-weight:bold; cursor:pointer;">Pay with Cash at Counter</button>
+  <p id="cash-status" style="margin-top:10px; color:green; font-weight:bold;"></p>
+</div>
