@@ -13,11 +13,11 @@
         import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyAc5NFz9pNP4DNmNr30KQfCZeABJ5KH3dg",
+            apiKey: "AIzaSyAc5NP4DNmNr30KQfCZeAB35KH3dg",
             authDomain: "algani-cafe.firebaseapp.com",
             databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
             projectId: "algani-cafe",
-            storageBucket: "algani-cafe.firebasestorage.app",
+            storageBucket: "algani-cafe.appspot.com",
             messagingSenderId: "44056411552",
             appId: "1:44056411552:web:b67f0cf82791a81fb0f8c5",
             measurementId: "G-Q2ELLZ03SE"
@@ -26,12 +26,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const ordersRef = ref(db, 'orders');
-        onValue(ordersRef, (snapshot) => {
-            const data = snapshot.val();
-            const container = document.getElementById('orders-container');
-            container.innerHTML = '';
+        const container = document.getElementById('orders-container');
 
+        onValue(ref(db, 'orders'), (snapshot) => {
+            const data = snapshot.val();
+            container.innerHTML = '';
             if (!data) {
                 container.innerHTML = '<p>No active orders.</p>';
                 return;
@@ -39,20 +38,24 @@
 
             Object.keys(data).forEach(orderId => {
                 const order = data[orderId];
-                if (order.status === "Billed") return; // Skip completed orders
+                if (order.status === "Billed") return;
 
                 let itemsHtml = order.items.map(i => `<li>${i.name} - ₹${i.price}</li>`).join('');
+                let paymentInfo = order.paymentMethod ? `<p><strong>Payment Method:</strong> <span style="color:green; font-weight:bold;">${order.paymentMethod}</span></p>` : '';
                 
                 let orderDiv = document.createElement('div');
                 orderDiv.style.cssText = "background:white; padding:15px; margin-bottom:15px; border-radius:5px; box-shadow:0 2px 5px rgba(0,0,0,0.1);";
                 orderDiv.innerHTML = `
                     <h3>Table ${order.table}</h3>
-                    <p><strong>Status:</strong> ${order.status}</p>
+                    <p><strong>Status:</strong> <span style="color:blue;">${order.status}</span></p>
+                    ${paymentInfo}
                     <ul>${itemsHtml}</ul>
                     <p><strong>Total: ₹${order.total}</strong></p>
-                    <button onclick="updateStatus('${orderId}', 'Preparing')" style="padding:8px 12px; background:orange; color:white; border:none; cursor:pointer; margin-right:5px;">Mark Preparing</button>
-                    <button onclick="updateStatus('${orderId}', 'Served')" style="padding:8px 12px; background:green; color:white; border:none; cursor:pointer; margin-right:5px;">Mark Served</button>
-                    <button onclick="updateStatus('${orderId}', 'Billed')" style="padding:8px 12px; background:gray; color:white; border:none; cursor:pointer;">Close Bill</button>
+                    <div style="margin-top:10px;">
+                        <button onclick="updateStatus('${orderId}', 'Preparing')" style="padding:8px 12px; background:orange; color:white; border:none; cursor:pointer; margin-right:5px;">Mark Preparing</button>
+                        <button onclick="updateStatus('${orderId}', 'Served')" style="padding:8px 12px; background:green; color:white; border:none; cursor:pointer; margin-right:5px;">Mark Served</button>
+                        <button onclick="updateStatus('${orderId}', 'Billed')" style="padding:8px 12px; background:#333; color:white; border:none; cursor:pointer; font-weight:bold;">Clear & Close Bill</button>
+                    </div>
                 `;
                 container.appendChild(orderDiv);
             });
