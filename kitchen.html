@@ -99,7 +99,7 @@
   <div id="section-orders" class="section-view active">
     <div class="filter-tabs" style="margin-bottom: 15px;">
       <button class="filter-btn active" onclick="setOrderFilter('all', this)">All Active Orders</button>
-      <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Aren't Paid / Unpaid 🔴</button>
+      <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Unpaid / Aren't Paid 🔴</button>
       <button class="filter-btn" onclick="setOrderFilter('inbill', this)">In Bill (Running Tab) 🟡</button>
       <button class="filter-btn" onclick="setOrderFilter('paid', this)">Paid 🟢</button>
     </div>
@@ -175,8 +175,8 @@
     <div id="menu-stock-container" class="menu-grid"></div>
   </div>
 
-  <!-- Audio Alert for New Orders -->
-  <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+  <!-- Audio Alert for New Kitchen Orders -->
+  <audio id="kitchen-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
     const firebaseConfig = {
@@ -220,8 +220,9 @@
       allOrders = snapshot.val() || {};
       let orderKeys = Object.keys(allOrders);
       
+      // Play alert sound for kitchen staff when a new order comes in
       if (previousOrderCount !== null && orderKeys.length > previousOrderCount) {
-        document.getElementById('alert-sound').play().catch(e => console.log(e));
+        document.getElementById('kitchen-alert-sound').play().catch(e => console.log(e));
       }
       previousOrderCount = orderKeys.length;
 
@@ -258,9 +259,9 @@
         if (order.status === 'Archived' || order.status === 'Cleared') return false;
         
         let payStatus = (order.paymentStatus || 'Unpaid').toLowerCase();
-        if (currentOrderFilter === 'paid') return payStatus.includes('paid') && !payStatus.includes('unpaid');
-        if (currentOrderFilter === 'inbill') return payStatus.includes('in bill') || payStatus.includes('running');
-        if (currentOrderFilter === 'unpaid') return payStatus.includes('unpaid') || payStatus.includes('aren');
+        if (currentOrderFilter === 'paid') return payStatus.includes('paid');
+        if (currentOrderFilter === 'inbill') return payStatus.includes('in bill');
+        if (currentOrderFilter === 'unpaid') return payStatus.includes('unpaid');
         return true;
       });
 
@@ -273,10 +274,10 @@
         let order = allOrders[id];
         let prepBadgeClass = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
         
-        let rawPayStatus = order.paymentStatus || 'Unpaid (Aren\'t Paid)';
+        let rawPayStatus = order.paymentStatus || 'Unpaid';
         let payBadgeClass = 'badge-unpaid';
-        if (rawPayStatus === 'Paid') payBadgeClass = 'badge-paid';
-        else if (rawPayStatus === 'In Bill') payBadgeClass = 'badge-inbill';
+        if (rawPayStatus.includes('Paid')) payBadgeClass = 'badge-paid';
+        else if (rawPayStatus.includes('In Bill')) payBadgeClass = 'badge-inbill';
 
         let itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
 
@@ -311,7 +312,7 @@
               <div class="action-group">
                 <span class="action-label">Billing Status</span>
                 <div class="action-btns">
-                  <button class="btn btn-pay-unpaid" onclick="updatePaymentStatus('${id}', 'Unpaid')">Aren't Paid 🔴</button>
+                  <button class="btn btn-pay-unpaid" onclick="updatePaymentStatus('${id}', 'Unpaid')">Unpaid 🔴</button>
                   <button class="btn btn-pay-inbill" onclick="updatePaymentStatus('${id}', 'In Bill')">In Bill 🟡</button>
                   <button class="btn btn-pay-paid" onclick="updatePaymentStatus('${id}', 'Paid')">Paid 🟢</button>
                 </div>
@@ -332,7 +333,7 @@
     }
 
     function clearOrder(orderId) {
-      if (confirm("Are you sure you want to give final clearance and clear this order from the active queue? (Sales data remains permanently stored in the Tally Ledger)")) {
+      if (confirm("Are you sure you want to give final clearance and clear this order from the active queue?")) {
         db.ref(`orders/${orderId}`).update({ status: 'Cleared' });
       }
     }
