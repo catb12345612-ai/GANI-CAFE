@@ -1,1 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gani Cafe - Premium Kitchen Terminal</title>
+  
+  <!-- Firebase App & Firestore SDKs -->
+  <script src="// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD2JGeXQMLRPMtN5df7h_BUEY0jXZKc2nw",
+  authDomain: "gani-cafe.firebaseapp.com",
+  projectId: "gani-cafe",
+  storageBucket: "gani-cafe.firebasestorage.app",
+  messagingSenderId: "76475039319",
+  appId: "1:76475039319:web:00e15744cc2e3ee68b6d12",
+  measurementId: "G-3LHB3MXGST"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);"></script>
+  <script src="// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD2JGeXQMLRPMtN5df7h_BUEY0jXZKc2nw",
+  authDomain: "gani-cafe.firebaseapp.com",
+  projectId: "gani-cafe",
+  storageBucket: "gani-cafe.firebasestorage.app",
+  messagingSenderId: "76475039319",
+  appId: "1:76475039319:web:00e15744cc2e3ee68b6d12",
+  measurementId: "G-3LHB3MXGST"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --border: #334155;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0; padding: 0;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Start Overlay for Audio Context Unlock */
+    #start-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.95); z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+    }
+    #start-overlay button {
+      background: var(--primary); color: #fff; border: none;
+      padding: 15px 40px; font-size: 20px; font-weight: bold;
+      border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    }
+
+    header {
+      background: var(--card-bg);
+      padding: 15px 25px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .brand-section { display: flex; align-items: center; gap: 15px; }
+    .brand-section h1 { margin: 0; font-size: 22px; color: #fff; }
+    .live-indicator {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(16, 185, 129, 0.2); color: var(--success);
+      padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    }
+    .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.5; } }
+
+    .header-stats { display: flex; gap: 20px; font-size: 16px; font-weight: 600; }
+    .clock { font-family: monospace; font-size: 20px; color: var(--primary); }
+
+    main {
+      padding: 20px;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    /* Order Ticket Styling */
+    .order-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .order-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px; margin-bottom: 12px;
+    }
+    .table-no { font-size: 24px; font-weight: 800; margin: 0; color: #fff; }
+    .order-time { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    
+    .status-badge {
+      padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase;
+    }
+    .status-preparing { background: rgba(245, 158, 11, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+    .status-ready { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+
+    .items-list {
+      flex-grow: 1; margin: 0; padding: 0; list-style: none;
+      font-size: 16px; line-height: 1.6;
+    }
+    .items-list li {
+      padding: 8px 0; border-bottom: 1px dashed var(--border);
+      display: flex; gap: 10px;
+    }
+    .items-list li:last-child { border-bottom: none; }
+    .qty { font-weight: bold; color: var(--primary); font-size: 18px; }
+
+    .order-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);
+    }
+    .payment-info { font-size: 13px; color: var(--text-muted); }
+    .payment-info strong { color: #fff; }
+
+    .action-btn {
+      padding: 10px 20px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: bold; cursor: pointer; color: white;
+      transition: opacity 0.2s;
+    }
+    .action-btn:hover { opacity: 0.9; }
+    .btn-ready { background: var(--success); }
+    .btn-complete { background: var(--border); color: var(--text-main); }
+
+    /* Empty State */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 50px;
+      color: var(--text-muted);
+    }
+    .empty-state h2 { font-size: 24px; color: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- Screen lock to allow audio playback -->
+  <div id="start-overlay">
+    <h2 style="color: white; margin-bottom: 20px;">Gani Cafe Kitchen System</h2>
+    <button onclick="startTerminal()">Start Terminal</button>
+  </div>
+
+  <header>
+    <div class="brand-section">
+      <h1>👨‍🍳 Kitchen Terminal</h1>
+      <div class="live-indicator"><div class="dot"></div> Live Sync</div>
+    </div>
+    <div class="header-stats">
+      <div id="active-count">0 Active Orders</div>
+      <div class="clock" id="digital-clock">00:00:00</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="orders-grid" id="orders-container">
+      <!-- Orders will be injected here via JS -->
+    </div>
+  </main>
+
+  <script>
+    // Exact same Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
+      authDomain: "algani-cafe.firebaseapp.com",
+      databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
+      projectId: "algani-cafe",
+      storageBucket: "algani-cafe.firebasestorage.app",
+      messagingSenderId: "44056411552",
+      appId: "1:44056411552:web:a245596401ca636fb0f8c5",
+      measurementId: "G-9GDVR0V5VE"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+    
+    let knownOrderIds = new Set();
+    let audioContextAllowed = false;
+
+    // Premium Digital Clock
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('digital-clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+    }, 1000);
+
+    function startTerminal() {
+      document.getElementById('start-overlay').style.display = 'none';
+      audioContextAllowed = true;
+      initKitchenSystem();
+    }
+
+    // High-pitched AI generated attention chime
+    function playAlertChime() {
+      if (!audioContextAllowed) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+        osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
+        
+        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+        
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.8);
+      } catch(e) { console.warn("Audio locked", e); }
+    }
+
+    function formatTime(timestamp) {
+      if (!timestamp) return "Just now";
+      const date = timestamp.toDate();
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function updateOrderStatus(docId, newStatus) {
+      db.collection('orders').doc(docId).update({
+        status: newStatus
+      }).catch(err => alert("Error updating status: " + err));
+    }
+
+    function initKitchenSystem() {
+      // Listen to all orders that are NOT completed
+      db.collection('orders')
+        .where('status', 'in', ['Preparing', 'Ready'])
+        .orderBy('createdAt', 'asc')
+        .onSnapshot((snapshot) => {
+          const container = document.getElementById('orders-container');
+          
+          if (snapshot.empty) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <h2>No Active Orders</h2>
+                <p>Waiting for new orders to arrive...</p>
+              </div>`;
+            document.getElementById('active-count').innerText = "0 Active Orders";
+            return;
+          }
+
+          let isNewOrderArrived = false;
+          container.innerHTML = "";
+          let activeCount = 0;
+
+          snapshot.forEach((doc) => {
+            const data = doc.data();
+            const id = doc.id;
+            activeCount++;
+
+            // Trigger sound if this is a brand new ID we haven't seen yet
+            if (!knownOrderIds.has(id)) {
+              knownOrderIds.add(id);
+              isNewOrderArrived = true;
+            }
+
+            // Build Item List HTML
+            let itemsHTML = "";
+            (data.items || []).forEach(itemStr => {
+              // Extract qty and name (e.g., "2x Masala Chai")
+              const splitIndex = itemStr.indexOf('x ');
+              if(splitIndex !== -1) {
+                const qty = itemStr.substring(0, splitIndex);
+                const name = itemStr.substring(splitIndex + 2);
+                itemsHTML += `<li><span class="qty">${qty}x</span> <span class="name">${name}</span></li>`;
+              } else {
+                itemsHTML += `<li>${itemStr}</li>`;
+              }
+            });
+
+            const isPreparing = data.status === "Preparing";
+            const badgeClass = isPreparing ? "status-preparing" : "status-ready";
+            const btnHTML = isPreparing 
+              ? `<button class="action-btn btn-ready" onclick="updateOrderStatus('${id}', 'Ready')">Mark as Ready 🔔</button>`
+              : `<button class="action-btn btn-complete" onclick="updateOrderStatus('${id}', 'Completed')">Clear Order ✖</button>`;
+
+            container.innerHTML += `
+              <div class="order-card" id="${id}">
+                <div class="order-header">
+                  <div>
+                    <h2 class="table-no">Table ${data.table}</h2>
+                    <div class="order-time">Ordered at: ${formatTime(data.createdAt)}</div>
+                  </div>
+                  <div class="status-badge ${badgeClass}">${data.status}</div>
+                </div>
+                
+                <ul class="items-list">
+                  ${itemsHTML}
+                </ul>
+
+                <div class="order-footer">
+                  <div class="payment-info">Total: <strong>₹${data.total}</strong><br>Mode: <strong>${data.paymentMode}</strong></div>
+                  ${btnHTML}
+                </div>
+              </div>
+            `;
+          });
+
+          document.getElementById('active-count').innerText = `${activeCount} Active Order${activeCount > 1 ? 's' : ''}`;
+          
+          if (isNewOrderArrived) {
+            playAlertChime();
+          }
+
+        }, (error) => {
+          console.error("Firestore Listen Error:", error);
+          alert("Connection lost. Please check internet or Firebase keys.");
+        });
+    }
+  </script>
+</body>
+</html>
