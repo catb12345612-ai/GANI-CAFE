@@ -6,7 +6,7 @@
   <title>Gani Cafe - Executive Kitchen Command Center</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <style>
     :root {
       --gold: #f59e0b; 
@@ -64,7 +64,8 @@
     .header-info h1 { font-size: 19px; margin: 0; font-weight: 800; letter-spacing: 0.5px; }
     .header-info p { font-size: 12px; margin: 3px 0 0 0; color: var(--text-muted); font-weight: 500; }
 
-    /* Live Clock Styling */
+    .header-widgets { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
     .live-clock-badge {
       background: rgba(30, 41, 59, 0.9);
       border: 1px solid var(--card-border);
@@ -103,7 +104,6 @@
     .section-view.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Summary Cards */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
     .stat-card { 
       background: var(--card-bg); 
@@ -116,7 +116,6 @@
     .stat-card h4 { margin: 0 0 10px 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
     .stat-card .val { font-size: 28px; font-weight: 800; color: var(--gold); margin: 0; letter-spacing: -0.5px; }
 
-    /* Tables */
     .data-table-container { 
       background: var(--card-bg); 
       border: 1px solid var(--card-border); 
@@ -132,8 +131,8 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: rgba(255, 255, 255, 0.015); }
 
-    /* Filter subtabs */
-    .filter-tabs { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+    .filter-bar-group { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 22px; }
+    .filter-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
     .filter-btn { 
       background: rgba(255,255,255,0.03); 
       border: 1px solid var(--card-border); 
@@ -148,7 +147,19 @@
     .filter-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
     .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: 700; }
 
-    /* Orders Grid */
+    .search-input {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      outline: none;
+      width: 260px;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--gold); }
+
     .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
     .order-card { 
       background: var(--card-bg); 
@@ -175,7 +186,6 @@
     .badge-preparing { background: rgba(245, 158, 11, 0.15); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.3); }
     .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
 
-    /* Billing Status Badges */
     .badge-paid { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
     .badge-inbill { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
     .badge-unpaid { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
@@ -189,13 +199,13 @@
     .btn:active { transform: translateY(0); }
     .btn-prep { background: var(--gold); color: #000; }
     .btn-done { background: var(--green); color: #000; }
-    .btn-clear { background: var(--blue); color: #000; width: 100%; margin-top: 14px; padding: 11px; font-size: 12px; font-weight: 800; border-radius: 8px; }
+    .btn-clear { background: var(--blue); color: #000; width: 100%; margin-top: 10px; padding: 11px; font-size: 12px; font-weight: 800; border-radius: 8px; }
+    .btn-bill { background: rgba(14, 165, 233, 0.15); color: var(--blue); border: 1px solid rgba(14, 165, 233, 0.3); width: 100%; margin-top: 10px; padding: 10px; font-size: 12px; font-weight: 800; border-radius: 8px; }
     
     .btn-pay-paid { background: var(--green); color: #000; }
     .btn-pay-inbill { background: var(--orange); color: #000; }
     .btn-pay-unpaid { background: var(--red); color: #fff; }
 
-    /* Menu stock grid */
     .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
     .menu-item-card { 
       background: var(--card-bg); 
@@ -206,6 +216,34 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     }
     .menu-item-card img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; border: 2px solid var(--card-border); }
+
+    /* Digital Bill Modal Overlay */
+    #bill-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(8px);
+      display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
+    }
+    .bill-receipt-card {
+      background: #ffffff; color: #1e293b; width: 100%; max-width: 420px;
+      border-radius: 16px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      position: relative; font-family: 'Courier New', Courier, monospace;
+    }
+    .receipt-header { text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 16px; margin-bottom: 16px; }
+    .receipt-header h2 { margin: 0; font-size: 22px; color: #0f172a; font-family: sans-serif; font-weight: 900; }
+    .receipt-header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-family: sans-serif; }
+    .receipt-meta { font-size: 12px; margin-bottom: 16px; font-family: sans-serif; display: flex; justify-content: space-between; }
+    .receipt-items-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+    .receipt-items-table th { background: #f1f5f9; color: #334155; padding: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; }
+    .receipt-items-table td { padding: 8px; border-bottom: 1px dashed #e2e8f0; }
+    .receipt-total { border-top: 2px solid #0f172a; padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; font-family: sans-serif; }
+    .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748b; font-family: sans-serif; border-top: 1px dashed #cbd5e1; padding-top: 12px; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #bill-modal, #bill-modal * { visibility: visible; }
+      #bill-modal { position: absolute; left: 0; top: 0; background: #fff; backdrop-filter: none; padding: 0; }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -219,10 +257,29 @@
       </div>
     </div>
     
-    <!-- Live Digital Clock Widget -->
-    <div class="live-clock-badge">
-      <span class="live-clock-time" id="live-time">--:--:-- --</span>
-      <span class="live-clock-date" id="live-date">---, --- --, ----</span>
+    <div class="header-widgets">
+      <!-- Network Connectivity Indicator -->
+      <div id="connection-indicator" style="display: flex; align-items: center; gap: 6px; font-size: 11px; background: rgba(30, 41, 59, 0.9); padding: 9px 14px; border-radius: 10px; border: 1px solid var(--card-border);">
+        <span id="conn-dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 8px var(--green);"></span>
+        <span id="conn-text" style="color: var(--text-muted); font-weight: 600;">Online</span>
+      </div>
+
+      <div class="live-clock-badge">
+        <span class="live-clock-time" id="live-time">--:--:-- --</span>
+        <span class="live-clock-date" id="live-date">---, --- --, ----</span>
+      </div>
+    </div>
+
+    <div id="staff-auth-section" style="background: rgba(30, 41, 59, 0.9); padding: 10px 16px; border-radius: 10px; border: 1px solid var(--card-border); display: flex; align-items: center; gap: 10px;">
+      <div id="login-form" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <input type="email" id="staff-email" placeholder="Staff Email" style="padding: 6px 10px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 12px; width: 140px;">
+        <input type="password" id="staff-password" placeholder="Password" style="padding: 6px 10px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 12px; width: 120px;">
+        <button class="btn btn-prep" style="padding: 6px 12px; font-size: 11px;" onclick="loginStaff()">Log In 🔓</button>
+      </div>
+      <div id="logged-in-view" style="display: none; align-items: center; gap: 10px;">
+        <span style="color: var(--green); font-weight: bold; font-size: 12px;">Staff Verified ✅</span>
+        <button class="btn" style="background: #ef4444; color: #fff; padding: 6px 12px; font-size: 11px;" onclick="logoutStaff()">Log Out 🚪</button>
+      </div>
     </div>
 
     <div class="nav-tabs">
@@ -236,11 +293,14 @@
 
   <!-- 1. LIVE ORDERS SECTION -->
   <div id="section-orders" class="section-view active">
-    <div class="filter-tabs">
-      <button class="filter-btn active" onclick="setOrderFilter('all', this)">All Active Orders</button>
-      <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Unpaid 🔴</button>
-      <button class="filter-btn" onclick="setOrderFilter('inbill', this)">In Bill 🟡</button>
-      <button class="filter-btn" onclick="setOrderFilter('paid', this)">Paid 🟢</button>
+    <div class="filter-bar-group">
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="setOrderFilter('all', this)">All Active Orders</button>
+        <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Unpaid 🔴</button>
+        <button class="filter-btn" onclick="setOrderFilter('inbill', this)">In Bill 🟡</button>
+        <button class="filter-btn" onclick="setOrderFilter('paid', this)">Paid 🟢</button>
+      </div>
+      <input type="text" id="order-search-input" class="search-input" placeholder="🔍 Search table or items..." oninput="renderLiveOrders()">
     </div>
     <div id="live-orders-container" class="orders-grid">
       <p style="color: var(--text-muted);">Loading active orders...</p>
@@ -249,10 +309,13 @@
 
   <!-- 2. TABLE SYSTEM SECTION -->
   <div id="section-tables" class="section-view">
-    <div class="filter-tabs">
-      <button class="filter-btn active" onclick="setTableFilter('all', this)">All Tables (1-10)</button>
-      <button class="filter-btn" onclick="setTableFilter('occupied', this)">Occupied 🔴</button>
-      <button class="filter-btn" onclick="setTableFilter('vacant', this)">Vacant 🟢</button>
+    <div class="filter-bar-group">
+      <div class="filter-tabs">
+        <button class="filter-btn active" onclick="setTableFilter('all', this)">All Tables (1-10)</button>
+        <button class="filter-btn" onclick="setTableFilter('occupied', this)">Occupied 🔴</button>
+        <button class="filter-btn" onclick="setTableFilter('vacant', this)">Vacant 🟢</button>
+      </div>
+      <input type="text" id="table-search-input" class="search-input" placeholder="🔍 Search table number or items..." oninput="renderTableSystem()">
     </div>
     <div id="tables-container" class="orders-grid">
       <p style="color: var(--text-muted);">Loading table system...</p>
@@ -261,7 +324,7 @@
 
   <!-- 3. SALES TALLY LEDGER SECTION -->
   <div id="section-tally" class="section-view">
-    <div class="filter-tabs">
+    <div class="filter-tabs" style="margin-bottom: 22px;">
       <button class="filter-btn active" onclick="setTallyFilter('day', this)">Today</button>
       <button class="filter-btn" onclick="setTallyFilter('week', this)">This Week</button>
       <button class="filter-btn" onclick="setTallyFilter('month', this)">This Month</button>
@@ -326,11 +389,46 @@
     <div id="menu-stock-container" class="menu-grid"></div>
   </div>
 
-  <!-- Audio Alert for New Kitchen Orders -->
+  <!-- Digital Bill Modal Overlay -->
+  <div id="bill-modal">
+    <div class="bill-receipt-card" id="printable-receipt">
+      <div class="receipt-header">
+        <h2>GANI CAFE</h2>
+        <p>Executive Dining & Kitchen Invoice</p>
+      </div>
+      <div class="receipt-meta">
+        <span id="bill-modal-table">Table: 1</span>
+        <span id="bill-modal-time">Date: --</span>
+      </div>
+      <table class="receipt-items-table">
+        <thead>
+          <tr>
+            <th>Item Description</th>
+            <th style="text-align:right;">Qty / Price</th>
+          </tr>
+        </thead>
+        <tbody id="bill-modal-items-tbody">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+      <div class="receipt-total">
+        <span>GRAND TOTAL:</span>
+        <span id="bill-modal-grand-total">₹0</span>
+      </div>
+      <div class="receipt-footer">
+        <p>Thank you for dining at Gani Cafe! ⭐</p>
+        <p style="font-size: 9px; margin-top: 4px;">Kitchen Digital Ticket Verified</p>
+      </div>
+      <div class="no-print" style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="btn btn-prep" style="flex:1; padding: 10px;" onclick="window.print()">🖨️ Print Receipt</button>
+        <button class="btn" style="flex:1; background: #cbd5e1; color: #0f172a; padding: 10px;" onclick="closeDigitalBill()">Close ✕</button>
+      </div>
+    </div>
+  </div>
+
   <audio id="kitchen-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
-    // Initialize Real-time Live Clock
     function updateLiveClock() {
       const now = new Date();
       document.getElementById('live-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -339,7 +437,6 @@
     setInterval(updateLiveClock, 1000);
     updateLiveClock();
 
-    // Unified Date & Time Formatter
     function formatDateTime(timestamp) {
       if (!timestamp) return 'N/A';
       let d = new Date(timestamp);
@@ -361,6 +458,23 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
+    // Monitor Firebase Connection Status
+    db.ref('.info/connected').on('value', (snap) => {
+      const dot = document.getElementById('conn-dot');
+      const txt = document.getElementById('conn-text');
+      if (snap.val() === true) {
+        dot.style.background = 'var(--green)';
+        dot.style.boxShadow = '0 0 8px var(--green)';
+        txt.innerText = 'Online';
+        txt.style.color = 'var(--text-muted)';
+      } else {
+        dot.style.background = 'var(--red)';
+        dot.style.boxShadow = '0 0 8px var(--red)';
+        txt.innerText = 'Offline';
+        txt.style.color = 'var(--red)';
+      }
+    });
 
     let allOrders = {};
     let menuData = {};
@@ -436,19 +550,28 @@
         return;
       }
 
+      let searchQuery = (document.getElementById('order-search-input')?.value || "").toLowerCase().trim();
+
       let filteredKeys = keys.filter(id => {
         let order = allOrders[id];
         if (order.status === 'Archived' || order.status === 'Cleared') return false;
         
         let payStatus = (order.paymentStatus || 'Unpaid').toLowerCase();
-        if (currentOrderFilter === 'paid') return payStatus.includes('paid');
-        if (currentOrderFilter === 'inbill') return payStatus.includes('in bill');
-        if (currentOrderFilter === 'unpaid') return payStatus.includes('unpaid');
+        if (currentOrderFilter === 'paid' && !payStatus.includes('paid')) return false;
+        if (currentOrderFilter === 'inbill' && !payStatus.includes('in bill')) return false;
+        if (currentOrderFilter === 'unpaid' && !payStatus.includes('unpaid')) return false;
+
+        if (searchQuery) {
+          let tableMatch = String(order.table).toLowerCase().includes(searchQuery);
+          let itemMatch = order.items && order.items.some(item => item.toLowerCase().includes(searchQuery));
+          if (!tableMatch && !itemMatch) return false;
+        }
+
         return true;
       });
 
       if (filteredKeys.length === 0) {
-        container.innerHTML = `<p style="color:var(--text-muted);">No orders match this status filter.</p>`;
+        container.innerHTML = `<p style="color:var(--text-muted);">No orders match your search or filter.</p>`;
         return;
       }
 
@@ -486,8 +609,10 @@
               <div style="font-weight: 800; font-size: 15px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                 <span>Total: ₹${order.total}</span>
               </div>
+
+              <button class="btn btn-bill" onclick="openDigitalBillForTable('${order.table}')">📄 View Digital Bill</button>
               
-              <div class="action-group" style="margin-top:0;">
+              <div class="action-group">
                 <span class="action-label">Kitchen Status</span>
                 <div class="action-btns">
                   <button class="btn btn-prep" onclick="updateOrderStatus('${id}', 'Preparing')">Prepare 👨‍🍳</button>
@@ -524,6 +649,8 @@
         }
       });
 
+      let searchQuery = (document.getElementById('table-search-input')?.value || "").toLowerCase().trim();
+
       for (let i = 1; i <= TOTAL_TABLES; i++) {
         let tNumStr = String(i);
         let ordersOnTable = tableMap[tNumStr] || [];
@@ -532,6 +659,19 @@
         if (currentTableFilter === 'occupied' && !isOccupied) continue;
         if (currentTableFilter === 'vacant' && isOccupied) continue;
 
+        let itemsList = [];
+        if (isOccupied) {
+          ordersOnTable.forEach(ord => {
+            if (ord.items) itemsList.push(...ord.items);
+          });
+        }
+
+        if (searchQuery) {
+          let tableMatch = tNumStr.includes(searchQuery);
+          let itemMatch = itemsList.some(item => item.toLowerCase().includes(searchQuery));
+          if (!tableMatch && !itemMatch) continue;
+        }
+
         let badgeClass = isOccupied ? 'badge-pending' : 'badge-completed';
         let statusText = isOccupied ? 'Occupied 🔴' : 'Vacant 🟢';
         
@@ -539,14 +679,11 @@
         let totalTableBill = 0;
 
         if (isOccupied) {
-          let itemsList = [];
-          // Get earliest and latest time stamps for this table session
           let timestamps = ordersOnTable.map(o => o.timestamp).filter(Boolean);
           let sessionTime = timestamps.length > 0 ? formatDateTime(Math.min(...timestamps)) : 'N/A';
 
           ordersOnTable.forEach(ord => {
             totalTableBill += (ord.total || 0);
-            if (ord.items) itemsList.push(...ord.items);
           });
 
           contentHtml = `
@@ -557,7 +694,8 @@
             <ul style="margin: 0 0 14px 0; padding-left: 20px; font-size: 13px; line-height: 1.5;">
               ${itemsList.map(item => `<li>${item}</li>`).join('')}
             </ul>
-            <p style="font-weight: 800; font-size: 15px; margin-bottom: 14px;">Total Table Bill: ₹${totalTableBill}</p>
+            <p style="font-weight: 800; font-size: 15px; margin-bottom: 10px;">Total Table Bill: ₹${totalTableBill}</p>
+            <button class="btn btn-bill" onclick="openDigitalBillForTable('${tNumStr}')">📄 View Digital Bill & Invoice</button>
             <button class="btn btn-clear" onclick="clearTableOrders('${tNumStr}')">Clear Table & Archive 🧹</button>
           `;
         } else {
@@ -577,6 +715,48 @@
             </div>
           </div>`;
       }
+    }
+
+    function openDigitalBillForTable(tableNum) {
+      let matchingOrders = [];
+      Object.keys(allOrders).forEach(id => {
+        let order = allOrders[id];
+        if (String(order.table) === String(tableNum) && order.status !== 'Archived' && order.status !== 'Cleared') {
+          matchingOrders.push(order);
+        }
+      });
+
+      if (matchingOrders.length === 0) {
+        alert(`No active orders found for Table ${tableNum}.`);
+        return;
+      }
+
+      document.getElementById('bill-modal-table').innerText = `Table: ${tableNum}`;
+      document.getElementById('bill-modal-time').innerText = `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+
+      let tbody = document.getElementById('bill-modal-items-tbody');
+      tbody.innerHTML = "";
+      let grandTotal = 0;
+
+      matchingOrders.forEach(ord => {
+        grandTotal += (ord.total || 0);
+        if (ord.items) {
+          ord.items.forEach(itemStr => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${itemStr}</td>
+                <td style="text-align:right;">Included</td>
+              </tr>`;
+          });
+        }
+      });
+
+      document.getElementById('bill-modal-grand-total').innerText = `₹${grandTotal}`;
+      document.getElementById('bill-modal').style.display = 'flex';
+    }
+
+    function closeDigitalBill() {
+      document.getElementById('bill-modal').style.display = 'none';
     }
 
     function clearTableOrders(tableNum) {
@@ -743,6 +923,34 @@
     function toggleStock(id, currentStatus) {
       db.ref(`menu/${id}`).update({ inStock: !currentStatus });
     }
+
+    function loginStaff() {
+      let email = document.getElementById('staff-email').value;
+      let password = document.getElementById('staff-password').value;
+      if (!email || !password) {
+        alert('Please enter both email and password.');
+        return;
+      }
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => { alert('Logged in successfully!'); })
+        .catch((error) => { alert('Login failed: ' + error.message); });
+    }
+
+    function logoutStaff() {
+      firebase.auth().signOut().then(() => { alert('Logged out successfully.'); });
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+      let loginForm = document.getElementById('login-form');
+      let loggedInView = document.getElementById('logged-in-view');
+      if (user) {
+        if (loginForm) loginForm.style.display = 'none';
+        if (loggedInView) loggedInView.style.display = 'flex';
+      } else {
+        if (loginForm) loginForm.style.display = 'flex';
+        if (loggedInView) loggedInView.style.display = 'none';
+      }
+    });
   </script>
 </body>
 </html>
