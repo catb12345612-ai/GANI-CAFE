@@ -77,13 +77,13 @@
     .live-clock-date { font-size: 11px; color: var(--text-muted); font-weight: 500; }
 
     .nav-tabs { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; margin-top: 5px; }
-    @media(min-width: 900px) { .nav-tabs { width: auto; margin-top: 0; } }
+    @media(min-width: 1050px) { .nav-tabs { width: auto; margin-top: 0; } }
     
     .nav-btn { 
       background: rgba(30, 41, 59, 0.5); 
       border: 1px solid var(--card-border); 
       color: var(--text-muted); 
-      padding: 10px 18px; 
+      padding: 10px 16px; 
       border-radius: 12px; 
       font-weight: 700; 
       font-size: 13px;
@@ -226,6 +226,7 @@
 
     <div class="nav-tabs">
       <button class="nav-btn active" onclick="switchTab('orders', this)">Live Orders 🔥</button>
+      <button class="nav-btn" onclick="switchTab('tables', this)">🪑 Table System</button>
       <button class="nav-btn" onclick="switchTab('tally', this)">📊 Sales Tally</button>
       <button class="nav-btn" onclick="switchTab('feedback', this)">⭐ Feedback</button>
       <button class="nav-btn" onclick="switchTab('menu', this)">⚙️ Stock Manager</button>
@@ -245,7 +246,19 @@
     </div>
   </div>
 
-  <!-- 2. SALES TALLY LEDGER SECTION -->
+  <!-- 2. TABLE SYSTEM SECTION -->
+  <div id="section-tables" class="section-view">
+    <div class="filter-tabs">
+      <button class="filter-btn active" onclick="setTableFilter('all', this)">All Tables (1-10)</button>
+      <button class="filter-btn" onclick="setTableFilter('occupied', this)">Occupied 🔴</button>
+      <button class="filter-btn" onclick="setTableFilter('vacant', this)">Vacant 🟢</button>
+    </div>
+    <div id="tables-container" class="orders-grid">
+      <p style="color: var(--text-muted);">Loading table system...</p>
+    </div>
+  </div>
+
+  <!-- 3. SALES TALLY LEDGER SECTION -->
   <div id="section-tally" class="section-view">
     <div class="filter-tabs">
       <button class="filter-btn active" onclick="setTallyFilter('day', this)">Today</button>
@@ -288,7 +301,7 @@
     </div>
   </div>
 
-  <!-- 3. CUSTOMER FEEDBACK SECTION -->
+  <!-- 4. CUSTOMER FEEDBACK SECTION -->
   <div id="section-feedback" class="section-view">
     <div class="data-table-container">
       <table>
@@ -297,7 +310,7 @@
             <th>Table</th>
             <th>Rating</th>
             <th>Comment</th>
-            <th>Time</th>
+            <th>Date & Time</th>
           </tr>
         </thead>
         <tbody id="feedback-tbody">
@@ -307,7 +320,7 @@
     </div>
   </div>
 
-  <!-- 4. STOCK MANAGER SECTION -->
+  <!-- 5. STOCK MANAGER SECTION -->
   <div id="section-menu" class="section-view">
     <div id="menu-stock-container" class="menu-grid"></div>
   </div>
@@ -324,6 +337,15 @@
     }
     setInterval(updateLiveClock, 1000);
     updateLiveClock();
+
+    // Unified Date & Time Formatter
+    function formatDateTime(timestamp) {
+      if (!timestamp) return 'N/A';
+      let d = new Date(timestamp);
+      let dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `${dateStr}, ${timeStr}`;
+    }
 
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
@@ -344,14 +366,18 @@
     let allFeedback = {};
     let currentTallyFilter = 'day';
     let currentOrderFilter = 'all';
+    let currentTableFilter = 'all';
     let previousOrderCount = null;
+    const TOTAL_TABLES = 10;
 
     function switchTab(tabId, btn) {
       document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('section-' + tabId).classList.add('active');
       btn.classList.add('active');
+      
       if (tabId === 'tally') calculateTally();
+      if (tabId === 'tables') renderTableSystem();
     }
 
     db.ref('menu').on('value', (snapshot) => {
@@ -372,6 +398,9 @@
       previousOrderCount = orderKeys.length;
 
       renderLiveOrders();
+      if (document.getElementById('section-tables').classList.contains('active')) {
+        renderTableSystem();
+      }
       if (document.getElementById('section-tally').classList.contains('active')) {
         calculateTally();
       }
@@ -387,6 +416,13 @@
       document.querySelectorAll('#section-orders .filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       renderLiveOrders();
+    }
+
+    function setTableFilter(filter, btn) {
+      currentTableFilter = filter;
+      document.querySelectorAll('#section-tables .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTableSystem();
     }
 
     function renderLiveOrders() {
@@ -425,7 +461,7 @@
         else if (rawPayStatus.includes('In Bill')) payBadgeClass = 'badge-inbill';
 
         let itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
-        let orderTimeStr = order.timestamp ? new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        let formattedTime = formatDateTime(order.timestamp);
 
         container.innerHTML += `
           <div class="order-card">
@@ -433,7 +469,7 @@
               <div class="order-header">
                 <div>
                   <span style="font-weight: 800; font-size: 16px; color: var(--gold);">Table ${order.table}</span>
-                  <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px;">Ordered at: ${orderTimeStr}</span>
+                  <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">📅 ${formattedTime}</span>
                 </div>
                 <div>
                   <span class="badge ${prepBadgeClass}">${order.status}</span>
@@ -471,6 +507,86 @@
             </div>
           </div>`;
       });
+    }
+
+    function renderTableSystem() {
+      const container = document.getElementById('tables-container');
+      container.innerHTML = "";
+
+      let tableMap = {};
+      Object.keys(allOrders).forEach(orderId => {
+        let order = allOrders[orderId];
+        if (order.status !== 'Archived' && order.status !== 'Cleared') {
+          let tNum = String(order.table);
+          if (!tableMap[tNum]) tableMap[tNum] = [];
+          tableMap[tNum].push({ id: orderId, ...order });
+        }
+      });
+
+      for (let i = 1; i <= TOTAL_TABLES; i++) {
+        let tNumStr = String(i);
+        let ordersOnTable = tableMap[tNumStr] || [];
+        let isOccupied = ordersOnTable.length > 0;
+
+        if (currentTableFilter === 'occupied' && !isOccupied) continue;
+        if (currentTableFilter === 'vacant' && isOccupied) continue;
+
+        let badgeClass = isOccupied ? 'badge-pending' : 'badge-completed';
+        let statusText = isOccupied ? 'Occupied 🔴' : 'Vacant 🟢';
+        
+        let contentHtml = '';
+        let totalTableBill = 0;
+
+        if (isOccupied) {
+          let itemsList = [];
+          // Get earliest and latest time stamps for this table session
+          let timestamps = ordersOnTable.map(o => o.timestamp).filter(Boolean);
+          let sessionTime = timestamps.length > 0 ? formatDateTime(Math.min(...timestamps)) : 'N/A';
+
+          ordersOnTable.forEach(ord => {
+            totalTableBill += (ord.total || 0);
+            if (ord.items) itemsList.push(...ord.items);
+          });
+
+          contentHtml = `
+            <div style="font-size: 11px; color: var(--gold); margin-bottom: 10px; font-weight: 600;">
+              🕒 Occupied Since: ${sessionTime}
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin: 4px 0;">Active Orders: ${ordersOnTable.length}</p>
+            <ul style="margin: 0 0 14px 0; padding-left: 20px; font-size: 13px; line-height: 1.5;">
+              ${itemsList.map(item => `<li>${item}</li>`).join('')}
+            </ul>
+            <p style="font-weight: 800; font-size: 15px; margin-bottom: 14px;">Total Table Bill: ₹${totalTableBill}</p>
+            <button class="btn btn-clear" onclick="clearTableOrders('${tNumStr}')">Clear Table & Archive 🧹</button>
+          `;
+        } else {
+          contentHtml = `
+            <p style="color: var(--text-muted); font-size: 13px; margin: 25px 0 10px 0;">Table is currently free and ready for guests.</p>
+          `;
+        }
+
+        container.innerHTML += `
+          <div class="order-card">
+            <div>
+              <div class="order-header">
+                <span style="font-weight: 800; font-size: 18px; color: var(--gold);">Table ${i}</span>
+                <span class="badge ${badgeClass}">${statusText}</span>
+              </div>
+              ${contentHtml}
+            </div>
+          </div>`;
+      }
+    }
+
+    function clearTableOrders(tableNum) {
+      if (confirm(`Are you sure you want to clear all active orders for Table ${tableNum}?`)) {
+        Object.keys(allOrders).forEach(orderId => {
+          let order = allOrders[orderId];
+          if (String(order.table) === String(tableNum) && order.status !== 'Archived' && order.status !== 'Cleared') {
+            db.ref(`orders/${orderId}`).update({ status: 'Cleared' });
+          }
+        });
+      }
     }
 
     function updateOrderStatus(orderId, status) {
@@ -593,13 +709,13 @@
       keys.reverse().forEach(id => {
         let fb = allFeedback[id];
         let stars = '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating);
-        let timeStr = new Date(fb.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        let formattedTime = formatDateTime(fb.timestamp);
         tbody.innerHTML += `
           <tr>
             <td><strong>Table ${fb.table}</strong></td>
             <td style="color: var(--gold);">${stars}</td>
             <td>${fb.comment}</td>
-            <td style="color: var(--text-muted); font-size:12px;">${timeStr}</td>
+            <td style="color: var(--text-muted); font-size:12px;">${formattedTime}</td>
           </tr>`;
       });
     }
