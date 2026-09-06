@@ -7,13 +7,14 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
-    :root { --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b; }
+    :root { --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b; --blue: #0ea5e9; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
     header { background: var(--card-bg); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 15px; }
     .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
     .card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-    .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+    .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+    .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
     .cart-section, .status-section, .feedback-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
     .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
     .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
@@ -25,6 +26,34 @@
     .qr-box { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; text-align: center; }
     .qr-box img { width: 130px; height: 130px; }
     .table-notice { background: rgba(217, 119, 6, 0.15); border: 1px solid var(--gold); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+
+    /* Digital Bill Modal Overlay */
+    #customer-bill-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(8px);
+      display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
+    }
+    .bill-receipt-card {
+      background: #ffffff; color: #1e293b; width: 100%; max-width: 420px;
+      border-radius: 16px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      position: relative; font-family: 'Courier New', Courier, monospace;
+    }
+    .receipt-header { text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 16px; margin-bottom: 16px; }
+    .receipt-header h2 { margin: 0; font-size: 22px; color: #0f172a; font-family: sans-serif; font-weight: 900; }
+    .receipt-header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-family: sans-serif; }
+    .receipt-meta { font-size: 12px; margin-bottom: 16px; font-family: sans-serif; display: flex; justify-content: space-between; }
+    .receipt-items-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+    .receipt-items-table th { background: #f1f5f9; color: #334155; padding: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; text-align: left; }
+    .receipt-items-table td { padding: 8px; border-bottom: 1px dashed #e2e8f0; }
+    .receipt-total { border-top: 2px solid #0f172a; padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; font-family: sans-serif; }
+    .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748b; font-family: sans-serif; border-top: 1px dashed #cbd5e1; padding-top: 12px; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #customer-bill-modal, #customer-bill-modal * { visibility: visible; }
+      #customer-bill-modal { position: absolute; left: 0; top: 0; background: #fff; backdrop-filter: none; padding: 0; }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -70,9 +99,12 @@
   <div class="status-section">
     <h3>Live Order Status & Billing Tracker (Table <span id="display-table">1</span>)</h3>
     <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your orders remain saved here in real-time and will not disappear or refresh until the kitchen serves and clears them.</p>
+    
     <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
       <p style="color: var(--text-muted);">No active orders for this table.</p>
     </div>
+
+    <button class="btn" style="background: var(--blue); color: #fff; width: 100%; margin-top: 20px; padding: 12px; font-size: 13px;" onclick="openCustomerBillModal()">📄 View & Download Complete Table Bill / Invoice</button>
   </div>
 
   <div class="feedback-section">
@@ -89,6 +121,43 @@
       </select>
       <textarea id="feedback-comment" placeholder="Write your comments or suggestions..." rows="3" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; resize: vertical;"></textarea>
       <button class="btn" onclick="submitFeedback()">Submit Feedback 📝</button>
+    </div>
+  </div>
+
+  <!-- Digital Bill Modal Overlay -->
+  <div id="customer-bill-modal">
+    <div class="bill-receipt-card">
+      <div class="receipt-header">
+        <h2>GANI CAFE</h2>
+        <p>Customer Dining Invoice</p>
+      </div>
+      <div class="receipt-meta">
+        <span id="customer-bill-modal-table">Table: 1</span>
+        <span id="customer-bill-modal-time">Date: --</span>
+      </div>
+      <table class="receipt-items-table">
+        <thead>
+          <tr>
+            <th>Item Description</th>
+            <th style="text-align:right;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="customer-bill-modal-items-tbody">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+      <div class="receipt-total">
+        <span>GRAND TOTAL:</span>
+        <span id="customer-bill-modal-grand-total">₹0</span>
+      </div>
+      <div class="receipt-footer">
+        <p>Thank you for dining at Gani Cafe! ⭐</p>
+        <p style="font-size: 9px; margin-top: 4px;">Take a screenshot or print for your records</p>
+      </div>
+      <div class="no-print" style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="btn" style="flex:1; background: #0284c7; color: #fff; padding: 10px; font-size: 12px;" onclick="window.print()">🖨️ Print / Save PDF</button>
+        <button class="btn" style="flex:1; background: #cbd5e1; color: #0f172a; padding: 10px; font-size: 12px;" onclick="closeCustomerBillModal()">Close ✕</button>
+      </div>
     </div>
   </div>
 
@@ -112,7 +181,6 @@
     let allOrdersData = {};
     let previousTableStatuses = {};
 
-    // Play chime sound on click/action
     function playSound() {
       let audio = document.getElementById('customer-alert-sound');
       if (audio) {
@@ -121,7 +189,6 @@
       }
     }
 
-    // Unified Date & Time Formatter
     function formatDateTime(timestamp) {
       if (!timestamp) return 'N/A';
       let d = new Date(timestamp);
@@ -130,7 +197,6 @@
       return `${dateStr}, ${timeStr}`;
     }
 
-    // Render Menu with Direct Plus/Minus Buttons
     function renderMenu() {
       let container = document.getElementById('menu-container');
       container.innerHTML = '';
@@ -274,6 +340,48 @@
       cart = {};
       renderMenu();
       updateCartUI();
+    }
+
+    function openCustomerBillModal() {
+      let currentTable = document.getElementById('table-num').value;
+      let keys = Object.keys(allOrdersData);
+      let tableOrders = keys.filter(id => {
+        let order = allOrdersData[id];
+        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
+      });
+
+      if (tableOrders.length === 0) {
+        alert(`No active orders found for Table ${currentTable} to generate a bill.`);
+        return;
+      }
+
+      document.getElementById('customer-bill-modal-table').innerText = `Table: ${currentTable}`;
+      document.getElementById('customer-bill-modal-time').innerText = `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+
+      let tbody = document.getElementById('customer-bill-modal-items-tbody');
+      tbody.innerHTML = "";
+      let grandTotal = 0;
+
+      tableOrders.forEach(orderId => {
+        let order = allOrdersData[orderId];
+        grandTotal += (order.total || 0);
+        if (order.items) {
+          order.items.forEach(itemStr => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${itemStr}</td>
+                <td style="text-align:right;">₹${order.total}</td>
+              </tr>`;
+          });
+        }
+      });
+
+      document.getElementById('customer-bill-modal-grand-total').innerText = `₹${grandTotal}`;
+      document.getElementById('customer-bill-modal').style.display = 'flex';
+    }
+
+    function closeCustomerBillModal() {
+      document.getElementById('customer-bill-modal').style.display = 'none';
     }
 
     function submitFeedback() {
