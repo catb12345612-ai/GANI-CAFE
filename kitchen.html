@@ -3,222 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Executive Kitchen Command Center</title>
+  <title>Gani Cafe - Menu & Live Order Status</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <style>
-    :root {
-      --gold: #f59e0b; 
-      --gold-glow: rgba(245, 158, 11, 0.25);
-      --bg: #090d16; 
-      --card-bg: rgba(15, 23, 42, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text: #f8fafc; 
-      --text-muted: #94a3b8; 
-      --green: #10b981; 
-      --red: #ef4444; 
-      --orange: #f97316;
-      --blue: #0ea5e9;
-    }
-    
-    * { box-sizing: border-box; }
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-      background: var(--bg); 
-      background-image: radial-gradient(circle at 10% 10%, #1e293b 0%, #090d16 90%); 
-      color: var(--text); 
-      margin: 0; 
-      padding: 24px; 
-      min-height: 100vh;
-    }
-    
-    header { 
-      background: rgba(15, 23, 42, 0.85); 
-      backdrop-filter: blur(16px); 
-      padding: 18px 28px; 
-      border-radius: 16px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      border: 1px solid var(--card-border); 
-      margin-bottom: 28px; 
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
-      flex-wrap: wrap; 
-      gap: 20px; 
-    }
-    
-    .brand { display: flex; align-items: center; gap: 14px; }
-    .logo { 
-      font-size: 26px; 
-      background: linear-gradient(135deg, #f59e0b, #d97706); 
-      border-radius: 12px; 
-      width: 48px; 
-      height: 48px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      box-shadow: 0 0 20px var(--gold-glow); 
-    }
-    
-    .header-info h1 { font-size: 19px; margin: 0; font-weight: 800; letter-spacing: 0.5px; }
-    .header-info p { font-size: 12px; margin: 3px 0 0 0; color: var(--text-muted); font-weight: 500; }
-
-    .header-widgets { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-
-    .live-clock-badge {
-      background: rgba(30, 41, 59, 0.9);
-      border: 1px solid var(--card-border);
-      padding: 8px 16px;
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-    }
-    .live-clock-time { font-size: 15px; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
-    .live-clock-date { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-
-    .nav-tabs { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; margin-top: 5px; }
-    @media(min-width: 1050px) { .nav-tabs { width: auto; margin-top: 0; } }
-    
-    .nav-btn { 
-      background: rgba(30, 41, 59, 0.5); 
-      border: 1px solid var(--card-border); 
-      color: var(--text-muted); 
-      padding: 10px 16px; 
-      border-radius: 12px; 
-      font-weight: 700; 
-      font-size: 13px;
-      cursor: pointer; 
-      transition: all 0.25s ease; 
-    }
-    .nav-btn:hover { color: var(--text); background: rgba(30, 41, 59, 0.9); }
-    .nav-btn.active { 
-      background: var(--gold); 
-      color: #000; 
-      border-color: var(--gold); 
-      box-shadow: 0 0 15px var(--gold-glow); 
-    }
-
-    .section-view { display: none; animation: fadeIn 0.3s ease-in-out; }
-    .section-view.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
-    .stat-card { 
-      background: var(--card-bg); 
-      border: 1px solid var(--card-border); 
-      padding: 22px; 
-      border-radius: 16px; 
-      backdrop-filter: blur(8px); 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
-    .stat-card h4 { margin: 0 0 10px 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
-    .stat-card .val { font-size: 28px; font-weight: 800; color: var(--gold); margin: 0; letter-spacing: -0.5px; }
-
-    .data-table-container { 
-      background: var(--card-bg); 
-      border: 1px solid var(--card-border); 
-      border-radius: 16px; 
-      overflow-x: auto; 
-      backdrop-filter: blur(8px); 
-      margin-bottom: 28px; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; white-space: nowrap; }
-    th { background: rgba(15, 23, 42, 0.9); color: var(--gold); padding: 16px 20px; font-weight: 700; border-bottom: 1px solid var(--card-border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
-    td { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(255, 255, 255, 0.015); }
-
-    .filter-bar-group { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 22px; }
-    .filter-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
-    .filter-btn { 
-      background: rgba(255,255,255,0.03); 
-      border: 1px solid var(--card-border); 
-      color: var(--text-muted); 
-      padding: 8px 18px; 
-      border-radius: 10px; 
-      font-size: 13px; 
-      font-weight: 600; 
-      cursor: pointer; 
-      transition: all 0.2s; 
-    }
-    .filter-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-    .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: 700; }
-
-    .search-input {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: var(--text);
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-size: 13px;
-      outline: none;
-      width: 260px;
-      transition: border-color 0.2s;
-    }
-    .search-input:focus { border-color: var(--gold); }
-
-    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
-    .order-card { 
-      background: var(--card-bg); 
-      border: 1px solid var(--card-border); 
-      border-radius: 16px; 
-      padding: 22px; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: space-between; 
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      position: relative;
-      overflow: hidden;
-    }
-    .order-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 4px; height: 100%;
-      background: var(--gold);
-    }
-    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; }
-    
-    .badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px; }
-    .badge-pending { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge-preparing { background: rgba(245, 158, 11, 0.15); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-
-    .badge-paid { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-inbill { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
-    .badge-unpaid { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
-
-    .action-group { margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 12px; }
-    .action-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: block; font-weight: 700; letter-spacing: 0.8px; }
-    .action-btns { display: flex; gap: 6px; }
-    
-    .btn { flex: 1; padding: 9px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; border: none; text-transform: uppercase; transition: all 0.2s; letter-spacing: 0.5px; }
+    :root { --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b; --blue: #0ea5e9; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    header { background: var(--card-bg); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 15px; }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
+    .card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
+    .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
     .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); }
-    .btn-prep { background: var(--gold); color: #000; }
-    .btn-done { background: var(--green); color: #000; }
-    .btn-clear { background: var(--blue); color: #000; width: 100%; margin-top: 10px; padding: 11px; font-size: 12px; font-weight: 800; border-radius: 8px; }
-    .btn-bill { background: rgba(14, 165, 233, 0.15); color: var(--blue); border: 1px solid rgba(14, 165, 233, 0.3); width: 100%; margin-top: 10px; padding: 10px; font-size: 12px; font-weight: 800; border-radius: 8px; }
-    
-    .btn-pay-paid { background: var(--green); color: #000; }
-    .btn-pay-inbill { background: var(--orange); color: #000; }
-    .btn-pay-unpaid { background: var(--red); color: #fff; }
-
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
-    .menu-item-card { 
-      background: var(--card-bg); 
-      border: 1px solid var(--card-border); 
-      border-radius: 16px; 
-      padding: 20px; 
-      text-align: center; 
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
-    .menu-item-card img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; border: 2px solid var(--card-border); }
+    .cart-section, .status-section, .feedback-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
+    .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-paid { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-unpaid { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-inbill { background: rgba(245, 158, 11, 0.2); color: var(--orange); border: 1px solid var(--orange); }
+    .qr-box { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; text-align: center; }
+    .qr-box img { width: 130px; height: 130px; }
+    .table-notice { background: rgba(217, 119, 6, 0.15); border: 1px solid var(--gold); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 8px; }
 
     /* Digital Bill Modal Overlay */
-    #bill-modal {
+    #customer-bill-modal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(8px);
       display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
@@ -233,209 +43,156 @@
     .receipt-header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-family: sans-serif; }
     .receipt-meta { font-size: 12px; margin-bottom: 16px; font-family: sans-serif; display: flex; justify-content: space-between; }
     .receipt-items-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
-    .receipt-items-table th { background: #f1f5f9; color: #334155; padding: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; }
+    .receipt-items-table th { background: #f1f5f9; color: #334155; padding: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; text-align: left; }
     .receipt-items-table td { padding: 8px; border-bottom: 1px dashed #e2e8f0; }
     .receipt-total { border-top: 2px solid #0f172a; padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; font-family: sans-serif; }
     .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748b; font-family: sans-serif; border-top: 1px dashed #cbd5e1; padding-top: 12px; }
 
     @media print {
       body * { visibility: hidden; }
-      #bill-modal, #bill-modal * { visibility: visible; }
-      #bill-modal { position: absolute; left: 0; top: 0; background: #fff; backdrop-filter: none; padding: 0; }
+      #customer-bill-modal, #customer-bill-modal * { visibility: visible; }
+      #customer-bill-modal { position: absolute; left: 0; top: 0; background: #fff; backdrop-filter: none; padding: 0; }
       .no-print { display: none !important; }
     }
   </style>
 </head>
 <body>
-
   <header>
-    <div class="brand">
-      <div class="logo">🍳</div>
-      <div class="header-info">
-        <h1>GANI CAFE KITCHEN</h1>
-        <p>Command Center, Tally & Clearance Ledger</p>
-      </div>
-    </div>
-    
-    <div class="header-widgets">
-      <!-- Network Connectivity Indicator -->
-      <div id="connection-indicator" style="display: flex; align-items: center; gap: 6px; font-size: 11px; background: rgba(30, 41, 59, 0.9); padding: 9px 14px; border-radius: 10px; border: 1px solid var(--card-border);">
-        <span id="conn-dot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; box-shadow: 0 0 8px var(--green);"></span>
-        <span id="conn-text" style="color: var(--text-muted); font-weight: 600;">Online</span>
-      </div>
-
-      <div class="live-clock-badge">
-        <span class="live-clock-time" id="live-time">--:--:-- --</span>
-        <span class="live-clock-date" id="live-date">---, --- --, ----</span>
-      </div>
-    </div>
-
-    <div id="staff-auth-section" style="background: rgba(30, 41, 59, 0.9); padding: 10px 16px; border-radius: 10px; border: 1px solid var(--card-border); display: flex; align-items: center; gap: 10px;">
-      <div id="login-form" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <input type="email" id="staff-email" placeholder="Staff Email" style="padding: 6px 10px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 12px; width: 140px;">
-        <input type="password" id="staff-password" placeholder="Password" style="padding: 6px 10px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 12px; width: 120px;">
-        <button class="btn btn-prep" style="padding: 6px 12px; font-size: 11px;" onclick="loginStaff()">Log In 🔓</button>
-      </div>
-      <div id="logged-in-view" style="display: none; align-items: center; gap: 10px;">
-        <span style="color: var(--green); font-weight: bold; font-size: 12px;">Staff Verified ✅</span>
-        <button class="btn" style="background: #ef4444; color: #fff; padding: 6px 12px; font-size: 11px;" onclick="logoutStaff()">Log Out 🚪</button>
-      </div>
-    </div>
-
-    <div class="nav-tabs">
-      <button class="nav-btn active" onclick="switchTab('orders', this)">Live Orders 🔥</button>
-      <button class="nav-btn" onclick="switchTab('tables', this)">🪑 Table System</button>
-      <button class="nav-btn" onclick="switchTab('tally', this)">📊 Sales Tally</button>
-      <button class="nav-btn" onclick="switchTab('feedback', this)">⭐ Feedback</button>
-      <button class="nav-btn" onclick="switchTab('menu', this)">⚙️ Stock Manager</button>
+    <h1>Gani Cafe Menu</h1>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <label for="table-num" style="font-weight: 700; font-size: 14px;">Select Table:</label>
+      <input type="number" id="table-num" value="1" min="1" max="10" onchange="filterCustomerOrders()" style="width: 60px; padding: 6px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:6px; font-weight:bold; text-align:center;">
     </div>
   </header>
 
-  <!-- 1. LIVE ORDERS SECTION -->
-  <div id="section-orders" class="section-view active">
-    <div class="filter-bar-group">
-      <div class="filter-tabs">
-        <button class="filter-btn active" onclick="setOrderFilter('all', this)">All Active Orders</button>
-        <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Unpaid 🔴</button>
-        <button class="filter-btn" onclick="setOrderFilter('inbill', this)">In Bill 🟡</button>
-        <button class="filter-btn" onclick="setOrderFilter('paid', this)">Paid 🟢</button>
-      </div>
-      <input type="text" id="order-search-input" class="search-input" placeholder="🔍 Search table or items..." oninput="renderLiveOrders()">
-    </div>
-    <div id="live-orders-container" class="orders-grid">
-      <p style="color: var(--text-muted);">Loading active orders...</p>
-    </div>
+  <div class="table-notice">
+    <span>📍</span> Please select your correct <strong>Table Number</strong> above before placing your order! Active orders will stay displayed until served and cleared.
   </div>
 
-  <!-- 2. TABLE SYSTEM SECTION -->
-  <div id="section-tables" class="section-view">
-    <div class="filter-bar-group">
-      <div class="filter-tabs">
-        <button class="filter-btn active" onclick="setTableFilter('all', this)">All Tables (1-10)</button>
-        <button class="filter-btn" onclick="setTableFilter('occupied', this)">Occupied 🔴</button>
-        <button class="filter-btn" onclick="setTableFilter('vacant', this)">Vacant 🟢</button>
+  <div id="menu-container" class="menu-grid"></div>
+
+  <div class="cart-section">
+    <h3>Your Order Cart</h3>
+    <ul id="cart-list" style="padding-left: 0; list-style: none; margin-bottom: 15px;">
+      <li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>
+    </ul>
+    <p><strong>Total: ₹<span id="cart-total">0</span></strong></p>
+    
+    <div style="margin: 15px 0;">
+      <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 700;">Select Payment Method:</label>
+      <select id="payment-mode" onchange="togglePaymentUI()" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
+        <option value="UPI">UPI / QR Code</option>
+        <option value="Cash">Cash / Pay at Counter</option>
+      </select>
+    </div>
+
+    <div id="qr-container" style="margin-bottom: 15px;">
+      <div class="qr-box">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=ganicafe@upi&pn=GaniCafe&cu=INR" alt="Payment QR">
+        <p style="color:#000; font-size:11px; margin:5px 0 0 0; font-weight:700;">Scan to Pay via UPI</p>
       </div>
-      <input type="text" id="table-search-input" class="search-input" placeholder="🔍 Search table number or items..." oninput="renderTableSystem()">
     </div>
-    <div id="tables-container" class="orders-grid">
-      <p style="color: var(--text-muted);">Loading table system...</p>
-    </div>
+
+    <button class="btn" onclick="placeOrder()">Place Order 🚀</button>
   </div>
 
-  <!-- 3. SALES TALLY LEDGER SECTION -->
-  <div id="section-tally" class="section-view">
-    <div class="filter-tabs" style="margin-bottom: 22px;">
-      <button class="filter-btn active" onclick="setTallyFilter('day', this)">Today</button>
-      <button class="filter-btn" onclick="setTallyFilter('week', this)">This Week</button>
-      <button class="filter-btn" onclick="setTallyFilter('month', this)">This Month</button>
-      <button class="filter-btn" onclick="setTallyFilter('year', this)">This Year</button>
-      <button class="filter-btn" onclick="setTallyFilter('all', this)">All-Time</button>
+  <div class="status-section">
+    <h3>Live Order Status & Billing Tracker (Table <span id="display-table">1</span>)</h3>
+    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your orders remain saved here in real-time and will not disappear or refresh until the kitchen serves and clears them.</p>
+    
+    <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
+      <p style="color: var(--text-muted);">No active orders for this table.</p>
     </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h4>Total Revenue</h4>
-        <p class="val">₹<span id="tally-revenue">0</span></p>
-      </div>
-      <div class="stat-card">
-        <h4>Total Orders</h4>
-        <p class="val" id="tally-orders-count">0</p>
-      </div>
-      <div class="stat-card">
-        <h4>Items Sold</h4>
-        <p class="val" id="tally-items-count">0</p>
-      </div>
-    </div>
-
-    <h3 style="margin-bottom: 14px; color: var(--gold); font-size: 16px;">Product-wise Sales Tally</h3>
-    <div class="data-table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Product Name</th>
-            <th>Category</th>
-            <th>Units Sold</th>
-            <th>Revenue Generated</th>
-          </tr>
-        </thead>
-        <tbody id="tally-product-tbody">
-          <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No sales data for this period.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <button class="btn" style="background: var(--blue); color: #fff; width: 100%; margin-top: 20px; padding: 12px; font-size: 13px;" onclick="openCustomerBillModal()">📄 View & Download Complete Table Bill / Invoice</button>
   </div>
 
-  <!-- 4. CUSTOMER FEEDBACK SECTION -->
-  <div id="section-feedback" class="section-view">
-    <div class="data-table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Table</th>
-            <th>Rating</th>
-            <th>Comment</th>
-            <th>Date & Time</th>
-          </tr>
-        </thead>
-        <tbody id="feedback-tbody">
-          <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No feedback received yet.</td></tr>
-        </tbody>
-      </table>
+  <div class="feedback-section">
+    <h3>💬 Share Your Feedback</h3>
+    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">We love hearing from you! Please let us know about your cafe experience.</p>
+    <div style="display: grid; gap: 12px; max-width: 450px;">
+      <input type="text" id="feedback-name" placeholder="Your Name / Nickname" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
+      <select id="feedback-rating" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
+        <option value="5">⭐⭐⭐⭐⭐ (5/5 - Excellent Experience)</option>
+        <option value="4">⭐⭐⭐⭐ (4/5 - Good)</option>
+        <option value="3">⭐⭐⭐ (3/5 - Average)</option>
+        <option value="2">⭐⭐ (2/5 - Poor)</option>
+        <option value="1">⭐ (1/5 - Very Bad)</option>
+      </select>
+      <textarea id="feedback-comment" placeholder="Write your comments or suggestions..." rows="3" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; resize: vertical;"></textarea>
+      <button class="btn" onclick="submitFeedback()">Submit Feedback 📝</button>
     </div>
-  </div>
-
-  <!-- 5. STOCK MANAGER SECTION -->
-  <div id="section-menu" class="section-view">
-    <div id="menu-stock-container" class="menu-grid"></div>
   </div>
 
   <!-- Digital Bill Modal Overlay -->
-  <div id="bill-modal">
-    <div class="bill-receipt-card" id="printable-receipt">
+  <div id="customer-bill-modal">
+    <div class="bill-receipt-card">
       <div class="receipt-header">
         <h2>GANI CAFE</h2>
-        <p>Executive Dining & Kitchen Invoice</p>
+        <p>Customer Dining Invoice</p>
       </div>
       <div class="receipt-meta">
-        <span id="bill-modal-table">Table: 1</span>
-        <span id="bill-modal-time">Date: --</span>
+        <span id="customer-bill-modal-table">Table: 1</span>
+        <span id="customer-bill-modal-time">Date: --</span>
       </div>
       <table class="receipt-items-table">
         <thead>
           <tr>
             <th>Item Description</th>
-            <th style="text-align:right;">Qty / Price</th>
+            <th style="text-align:right;">Subtotal</th>
           </tr>
         </thead>
-        <tbody id="bill-modal-items-tbody">
+        <tbody id="customer-bill-modal-items-tbody">
           <!-- Populated dynamically -->
         </tbody>
       </table>
       <div class="receipt-total">
         <span>GRAND TOTAL:</span>
-        <span id="bill-modal-grand-total">₹0</span>
+        <span id="customer-bill-modal-grand-total">₹0</span>
       </div>
       <div class="receipt-footer">
         <p>Thank you for dining at Gani Cafe! ⭐</p>
-        <p style="font-size: 9px; margin-top: 4px;">Kitchen Digital Ticket Verified</p>
+        <p style="font-size: 9px; margin-top: 4px;">Take a screenshot or print for your records</p>
       </div>
       <div class="no-print" style="margin-top: 20px; display: flex; gap: 10px;">
-        <button class="btn btn-prep" style="flex:1; padding: 10px;" onclick="window.print()">🖨️ Print Receipt</button>
-        <button class="btn" style="flex:1; background: #cbd5e1; color: #0f172a; padding: 10px;" onclick="closeDigitalBill()">Close ✕</button>
+        <button class="btn" style="flex:1; background: #0284c7; color: #fff; padding: 10px; font-size: 12px;" onclick="window.print()">🖨️ Print / Save PDF</button>
+        <button class="btn" style="flex:1; background: #cbd5e1; color: #0f172a; padding: 10px; font-size: 12px;" onclick="closeCustomerBillModal()">Close ✕</button>
       </div>
     </div>
   </div>
 
-  <audio id="kitchen-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+  <audio id="customer-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
-    function updateLiveClock() {
-      const now = new Date();
-      document.getElementById('live-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      document.getElementById('live-date').innerText = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
+      authDomain: "gani-cafe-52066.firebaseapp.com",
+      databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gani-cafe-52066",
+      storageBucket: "gani-cafe-52066.firebasestorage.app",
+      messagingSenderId: "292009300507",
+      appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
+      measurementId: "G-F7TXYZBYKY"
+    };
+    
+    // Check if Firebase is already initialized to prevent errors
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
     }
-    setInterval(updateLiveClock, 1000);
-    updateLiveClock();
+    const db = firebase.database();
+
+    let cart = {};
+    let menuItems = {};
+    let allOrdersData = {};
+    let previousTableStatuses = {};
+
+    function playSound() {
+      let audio = document.getElementById('customer-alert-sound');
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log(e));
+      }
+    }
 
     function formatDateTime(timestamp) {
       if (!timestamp) return 'N/A';
@@ -445,512 +202,260 @@
       return `${dateStr}, ${timeStr}`;
     }
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
-      authDomain: "gani-cafe-52066.firebaseapp.com",
-      databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "gani-cafe-52066",
-      storageBucket: "gani-cafe-52066.appspot.com",
-      messagingSenderId: "292009300507",
-      appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
-      measurementId: "G-F7TXYZBYKY"
-    };
+    function renderMenu() {
+      let container = document.getElementById('menu-container');
+      container.innerHTML = '';
+      Object.keys(menuItems).forEach(id => {
+        let item = menuItems[id];
+        if (item.inStock !== false) {
+          let qty = cart[id] || 0;
+          let actionHtml = qty === 0 
+            ? `<button class="btn" onclick="addToCart('${id}')">Add to Cart</button>`
+            : `<div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+                 <button class="btn" style="padding: 4px 10px;" onclick="decreaseQuantity('${id}')">-</button>
+                 <span style="font-weight: bold; font-size: 16px;">${qty}</span>
+                 <button class="btn" style="padding: 4px 10px;" onclick="increaseQuantity('${id}')">+</button>
+               </div>`;
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+          container.innerHTML += `
+            <div class="card">
+              <img src="${item.img}" alt="${item.name}">
+              <h4>${item.name}</h4>
+              <p>₹${item.price}</p>
+              ${actionHtml}
+            </div>`;
+        }
+      });
+    }
 
-    // Monitor Firebase Connection Status
-    db.ref('.info/connected').on('value', (snap) => {
-      const dot = document.getElementById('conn-dot');
-      const txt = document.getElementById('conn-text');
-      if (snap.val() === true) {
-        dot.style.background = 'var(--green)';
-        dot.style.boxShadow = '0 0 8px var(--green)';
-        txt.innerText = 'Online';
-        txt.style.color = 'var(--text-muted)';
+    db.ref('menu').on('value', snap => {
+      menuItems = snap.val() || {};
+      renderMenu();
+    });
+
+    db.ref('orders').on('value', snap => {
+      allOrdersData = snap.val() || {};
+      let currentTable = document.getElementById('table-num').value;
+      
+      Object.keys(allOrdersData).forEach(id => {
+        let order = allOrdersData[id];
+        if (String(order.table) === String(currentTable)) {
+          if (previousTableStatuses[id] && previousTableStatuses[id] !== order.status) {
+            if (order.status === 'Completed' || order.status === 'Preparing') {
+              playSound();
+            }
+          }
+          previousTableStatuses[id] = order.status;
+        }
+      });
+
+      filterCustomerOrders();
+    });
+
+    function togglePaymentUI() {
+      let mode = document.getElementById('payment-mode').value;
+      let qrContainer = document.getElementById('qr-container');
+      qrContainer.style.display = (mode === 'UPI') ? 'block' : 'none';
+    }
+
+    function addToCart(id) {
+      cart[id] = (cart[id] || 0) + 1;
+      playSound();
+      renderMenu();
+      updateCartUI();
+    }
+
+    function increaseQuantity(id) {
+      cart[id] = (cart[id] || 0) + 1;
+      playSound();
+      renderMenu();
+      updateCartUI();
+    }
+
+    function decreaseQuantity(id) {
+      if (cart[id] > 1) {
+        cart[id]--;
       } else {
-        dot.style.background = 'var(--red)';
-        dot.style.boxShadow = '0 0 8px var(--red)';
-        txt.innerText = 'Offline';
-        txt.style.color = 'var(--red)';
+        delete cart[id];
       }
-    });
+      playSound();
+      renderMenu();
+      updateCartUI();
+    }
 
-    let allOrders = {};
-    let menuData = {};
-    let allFeedback = {};
-    let currentTallyFilter = 'day';
-    let currentOrderFilter = 'all';
-    let currentTableFilter = 'all';
-    let previousOrderCount = null;
-    const TOTAL_TABLES = 10;
+    function updateCartUI() {
+      let list = document.getElementById('cart-list');
+      let totalEl = document.getElementById('cart-total');
+      list.innerHTML = '';
+      let total = 0;
+      let hasItems = false;
 
-    function switchTab(tabId, btn) {
-      document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('section-' + tabId).classList.add('active');
-      btn.classList.add('active');
+      Object.keys(cart).forEach(id => {
+        let qty = cart[id];
+        let item = menuItems[id];
+        if (item && qty > 0) {
+          hasItems = true;
+          total += item.price * qty;
+          list.innerHTML += `
+            <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(15, 23, 42, 0.4); padding: 8px 12px; border-radius: 8px;">
+              <span style="font-weight: 600; font-size: 14px;">${item.name}</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="decreaseQuantity('${id}')">-</button>
+                <span style="font-weight: bold; min-width: 20px; text-align: center;">${qty}</span>
+                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="increaseQuantity('${id}')">+</button>
+                <span style="font-weight: bold; min-width: 60px; text-align: right;">₹${item.price * qty}</span>
+              </div>
+            </li>`;
+        }
+      });
+
+      if (!hasItems) {
+        list.innerHTML = `<li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>`;
+      }
+      totalEl.innerText = total;
+    }
+
+    function placeOrder() {
+      let table = document.getElementById('table-num').value;
+      let paymentMode = document.getElementById('payment-mode').value;
+      let items = [];
+      let total = 0;
+      Object.keys(cart).forEach(id => {
+        let qty = cart[id];
+        let item = menuItems[id];
+        if (item && qty > 0) {
+          items.push(`${qty}x ${item.name}`);
+          total += item.price * qty;
+        }
+      });
+      if (items.length === 0) { alert('Your cart is empty!'); return; }
+      if (!table) { alert('Please select a table number!'); return; }
       
-      if (tabId === 'tally') calculateTally();
-      if (tabId === 'tables') renderTableSystem();
+      db.ref('orders').push({
+        table: table,
+        items: items,
+        total: total,
+        status: 'Pending',
+        paymentStatus: 'Unpaid',
+        paymentMode: paymentMode,
+        timestamp: Date.now()
+      });
+      playSound();
+      alert('Order placed successfully for Table ' + table + '!');
+      cart = {};
+      renderMenu();
+      updateCartUI();
     }
 
-    db.ref('menu').on('value', (snapshot) => {
-      menuData = snapshot.val() || {};
-      renderStockManager();
-      if (document.getElementById('section-tally').classList.contains('active')) {
-        calculateTally();
-      }
-    });
+    function openCustomerBillModal() {
+      let currentTable = document.getElementById('table-num').value;
+      let keys = Object.keys(allOrdersData);
+      let tableOrders = keys.filter(id => {
+        let order = allOrdersData[id];
+        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
+      });
 
-    db.ref('orders').on('value', (snapshot) => {
-      allOrders = snapshot.val() || {};
-      let orderKeys = Object.keys(allOrders);
-      
-      if (previousOrderCount !== null && orderKeys.length > previousOrderCount) {
-        document.getElementById('kitchen-alert-sound').play().catch(e => console.log(e));
-      }
-      previousOrderCount = orderKeys.length;
-
-      renderLiveOrders();
-      if (document.getElementById('section-tables').classList.contains('active')) {
-        renderTableSystem();
-      }
-      if (document.getElementById('section-tally').classList.contains('active')) {
-        calculateTally();
-      }
-    });
-
-    db.ref('feedback').on('value', (snapshot) => {
-      allFeedback = snapshot.val() || {};
-      renderFeedback();
-    });
-
-    function setOrderFilter(filter, btn) {
-      currentOrderFilter = filter;
-      document.querySelectorAll('#section-orders .filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderLiveOrders();
-    }
-
-    function setTableFilter(filter, btn) {
-      currentTableFilter = filter;
-      document.querySelectorAll('#section-tables .filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderTableSystem();
-    }
-
-    function renderLiveOrders() {
-      const container = document.getElementById('live-orders-container');
-      container.innerHTML = "";
-      let keys = Object.keys(allOrders);
-
-      if (keys.length === 0) {
-        container.innerHTML = `<p style="color:var(--text-muted);">No active orders right now.</p>`;
+      if (tableOrders.length === 0) {
+        alert(`No active orders found for Table ${currentTable} to generate a bill.`);
         return;
       }
 
-      let searchQuery = (document.getElementById('order-search-input')?.value || "").toLowerCase().trim();
+      document.getElementById('customer-bill-modal-table').innerText = `Table: ${currentTable}`;
+      document.getElementById('customer-bill-modal-time').innerText = `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
 
-      let filteredKeys = keys.filter(id => {
-        let order = allOrders[id];
-        if (order.status === 'Archived' || order.status === 'Cleared') return false;
-        
-        let payStatus = (order.paymentStatus || 'Unpaid').toLowerCase();
-        if (currentOrderFilter === 'paid' && !payStatus.includes('paid')) return false;
-        if (currentOrderFilter === 'inbill' && !payStatus.includes('in bill')) return false;
-        if (currentOrderFilter === 'unpaid' && !payStatus.includes('unpaid')) return false;
-
-        if (searchQuery) {
-          let tableMatch = String(order.table).toLowerCase().includes(searchQuery);
-          let itemMatch = order.items && order.items.some(item => item.toLowerCase().includes(searchQuery));
-          if (!tableMatch && !itemMatch) return false;
-        }
-
-        return true;
-      });
-
-      if (filteredKeys.length === 0) {
-        container.innerHTML = `<p style="color:var(--text-muted);">No orders match your search or filter.</p>`;
-        return;
-      }
-
-      filteredKeys.reverse().forEach(id => {
-        let order = allOrders[id];
-        let prepBadgeClass = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
-        
-        let rawPayStatus = order.paymentStatus || 'Unpaid';
-        let payBadgeClass = 'badge-unpaid';
-        if (rawPayStatus.includes('Paid')) payBadgeClass = 'badge-paid';
-        else if (rawPayStatus.includes('In Bill')) payBadgeClass = 'badge-inbill';
-
-        let itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
-        let formattedTime = formatDateTime(order.timestamp);
-
-        container.innerHTML += `
-          <div class="order-card">
-            <div>
-              <div class="order-header">
-                <div>
-                  <span style="font-weight: 800; font-size: 16px; color: var(--gold);">Table ${order.table}</span>
-                  <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 3px;">📅 ${formattedTime}</span>
-                </div>
-                <div>
-                  <span class="badge ${prepBadgeClass}">${order.status}</span>
-                </div>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 12px;">
-                <span style="color:var(--text-muted);">Mode: <strong>${order.paymentMode || 'UPI'}</strong></span>
-                <span class="badge ${payBadgeClass}">${rawPayStatus}</span>
-              </div>
-              <ul style="margin: 0 0 14px 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">${itemsHtml}</ul>
-            </div>
-            <div>
-              <div style="font-weight: 800; font-size: 15px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
-                <span>Total: ₹${order.total}</span>
-              </div>
-
-              <button class="btn btn-bill" onclick="openDigitalBillForTable('${order.table}')">📄 View Digital Bill</button>
-              
-              <div class="action-group">
-                <span class="action-label">Kitchen Status</span>
-                <div class="action-btns">
-                  <button class="btn btn-prep" onclick="updateOrderStatus('${id}', 'Preparing')">Prepare 👨‍🍳</button>
-                  <button class="btn btn-done" onclick="updateOrderStatus('${id}', 'Completed')">Complete ✅</button>
-                </div>
-              </div>
-
-              <div class="action-group">
-                <span class="action-label">Billing Status</span>
-                <div class="action-btns">
-                  <button class="btn btn-pay-unpaid" onclick="updatePaymentStatus('${id}', 'Unpaid')">Unpaid 🔴</button>
-                  <button class="btn btn-pay-inbill" onclick="updatePaymentStatus('${id}', 'In Bill')">In Bill 🟡</button>
-                  <button class="btn btn-pay-paid" onclick="updatePaymentStatus('${id}', 'Paid')">Paid 🟢</button>
-                </div>
-              </div>
-
-              <button class="btn btn-clear" onclick="clearOrder('${id}')">Give Clearance & Archive 🧹</button>
-            </div>
-          </div>`;
-      });
-    }
-
-    function renderTableSystem() {
-      const container = document.getElementById('tables-container');
-      container.innerHTML = "";
-
-      let tableMap = {};
-      Object.keys(allOrders).forEach(orderId => {
-        let order = allOrders[orderId];
-        if (order.status !== 'Archived' && order.status !== 'Cleared') {
-          let tNum = String(order.table);
-          if (!tableMap[tNum]) tableMap[tNum] = [];
-          tableMap[tNum].push({ id: orderId, ...order });
-        }
-      });
-
-      let searchQuery = (document.getElementById('table-search-input')?.value || "").toLowerCase().trim();
-
-      for (let i = 1; i <= TOTAL_TABLES; i++) {
-        let tNumStr = String(i);
-        let ordersOnTable = tableMap[tNumStr] || [];
-        let isOccupied = ordersOnTable.length > 0;
-
-        if (currentTableFilter === 'occupied' && !isOccupied) continue;
-        if (currentTableFilter === 'vacant' && isOccupied) continue;
-
-        let itemsList = [];
-        if (isOccupied) {
-          ordersOnTable.forEach(ord => {
-            if (ord.items) itemsList.push(...ord.items);
-          });
-        }
-
-        if (searchQuery) {
-          let tableMatch = tNumStr.includes(searchQuery);
-          let itemMatch = itemsList.some(item => item.toLowerCase().includes(searchQuery));
-          if (!tableMatch && !itemMatch) continue;
-        }
-
-        let badgeClass = isOccupied ? 'badge-pending' : 'badge-completed';
-        let statusText = isOccupied ? 'Occupied 🔴' : 'Vacant 🟢';
-        
-        let contentHtml = '';
-        let totalTableBill = 0;
-
-        if (isOccupied) {
-          let timestamps = ordersOnTable.map(o => o.timestamp).filter(Boolean);
-          let sessionTime = timestamps.length > 0 ? formatDateTime(Math.min(...timestamps)) : 'N/A';
-
-          ordersOnTable.forEach(ord => {
-            totalTableBill += (ord.total || 0);
-          });
-
-          contentHtml = `
-            <div style="font-size: 11px; color: var(--gold); margin-bottom: 10px; font-weight: 600;">
-              🕒 Occupied Since: ${sessionTime}
-            </div>
-            <p style="font-size:12px; color:var(--text-muted); margin: 4px 0;">Active Orders: ${ordersOnTable.length}</p>
-            <ul style="margin: 0 0 14px 0; padding-left: 20px; font-size: 13px; line-height: 1.5;">
-              ${itemsList.map(item => `<li>${item}</li>`).join('')}
-            </ul>
-            <p style="font-weight: 800; font-size: 15px; margin-bottom: 10px;">Total Table Bill: ₹${totalTableBill}</p>
-            <button class="btn btn-bill" onclick="openDigitalBillForTable('${tNumStr}')">📄 View Digital Bill & Invoice</button>
-            <button class="btn btn-clear" onclick="clearTableOrders('${tNumStr}')">Clear Table & Archive 🧹</button>
-          `;
-        } else {
-          contentHtml = `
-            <p style="color: var(--text-muted); font-size: 13px; margin: 25px 0 10px 0;">Table is currently free and ready for guests.</p>
-          `;
-        }
-
-        container.innerHTML += `
-          <div class="order-card">
-            <div>
-              <div class="order-header">
-                <span style="font-weight: 800; font-size: 18px; color: var(--gold);">Table ${i}</span>
-                <span class="badge ${badgeClass}">${statusText}</span>
-              </div>
-              ${contentHtml}
-            </div>
-          </div>`;
-      }
-    }
-
-    function openDigitalBillForTable(tableNum) {
-      let matchingOrders = [];
-      Object.keys(allOrders).forEach(id => {
-        let order = allOrders[id];
-        if (String(order.table) === String(tableNum) && order.status !== 'Archived' && order.status !== 'Cleared') {
-          matchingOrders.push(order);
-        }
-      });
-
-      if (matchingOrders.length === 0) {
-        alert(`No active orders found for Table ${tableNum}.`);
-        return;
-      }
-
-      document.getElementById('bill-modal-table').innerText = `Table: ${tableNum}`;
-      document.getElementById('bill-modal-time').innerText = `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-
-      let tbody = document.getElementById('bill-modal-items-tbody');
+      let tbody = document.getElementById('customer-bill-modal-items-tbody');
       tbody.innerHTML = "";
       let grandTotal = 0;
 
-      matchingOrders.forEach(ord => {
-        grandTotal += (ord.total || 0);
-        if (ord.items) {
-          ord.items.forEach(itemStr => {
+      tableOrders.forEach(orderId => {
+        let order = allOrdersData[orderId];
+        grandTotal += (order.total || 0);
+        if (order.items) {
+          order.items.forEach(itemStr => {
             tbody.innerHTML += `
               <tr>
                 <td>${itemStr}</td>
-                <td style="text-align:right;">Included</td>
+                <td style="text-align:right;">₹${order.total}</td>
               </tr>`;
           });
         }
       });
 
-      document.getElementById('bill-modal-grand-total').innerText = `₹${grandTotal}`;
-      document.getElementById('bill-modal').style.display = 'flex';
+      document.getElementById('customer-bill-modal-grand-total').innerText = `₹${grandTotal}`;
+      document.getElementById('customer-bill-modal').style.display = 'flex';
     }
 
-    function closeDigitalBill() {
-      document.getElementById('bill-modal').style.display = 'none';
+    function closeCustomerBillModal() {
+      document.getElementById('customer-bill-modal').style.display = 'none';
     }
 
-    function clearTableOrders(tableNum) {
-      if (confirm(`Are you sure you want to clear all active orders for Table ${tableNum}?`)) {
-        Object.keys(allOrders).forEach(orderId => {
-          let order = allOrders[orderId];
-          if (String(order.table) === String(tableNum) && order.status !== 'Archived' && order.status !== 'Cleared') {
-            db.ref(`orders/${orderId}`).update({ status: 'Cleared' });
-          }
-        });
-      }
-    }
+    function submitFeedback() {
+      let table = document.getElementById('table-num').value;
+      let name = document.getElementById('feedback-name').value.trim();
+      let rating = document.getElementById('feedback-rating').value;
+      let comment = document.getElementById('feedback-comment').value.trim();
 
-    function updateOrderStatus(orderId, status) {
-      db.ref(`orders/${orderId}`).update({ status: status });
-    }
+      if (!name) { alert('Please enter your name!'); return; }
+      if (!comment) { alert('Please write a feedback comment!'); return; }
 
-    function updatePaymentStatus(orderId, statusText) {
-      db.ref(`orders/${orderId}`).update({ paymentStatus: statusText });
-    }
-
-    function clearOrder(orderId) {
-      if (confirm("Are you sure you want to give final clearance and clear this order from the active queue?")) {
-        db.ref(`orders/${orderId}`).update({ status: 'Cleared' });
-      }
-    }
-
-    function setTallyFilter(filter, btn) {
-      currentTallyFilter = filter;
-      document.querySelectorAll('#section-tally .filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      calculateTally();
-    }
-
-    function calculateTally() {
-      let now = new Date();
-      let totalRev = 0;
-      let totalOrdersCount = 0;
-      let totalUnitsSold = 0;
-      let productSales = {};
-
-      Object.keys(menuData).forEach(id => {
-        let item = menuData[id];
-        productSales[item.name] = { cat: item.cat || 'General', qty: 0, rev: 0, price: item.price };
+      db.ref('feedback').push({
+        table: table,
+        name: name,
+        rating: rating,
+        comment: comment,
+        timestamp: Date.now()
       });
 
-      Object.keys(allOrders).forEach(id => {
-        let order = allOrders[id];
-        if (!order.timestamp) return;
-
-        let orderDate = new Date(order.timestamp);
-        let includeOrder = false;
-
-        if (currentTallyFilter === 'day') {
-          includeOrder = orderDate.toDateString() === now.toDateString();
-        } else if (currentTallyFilter === 'week') {
-          let diffTime = Math.abs(now - orderDate);
-          let diffDays = diffTime / (1000 * 60 * 60 * 24);
-          includeOrder = diffDays <= 7;
-        } else if (currentTallyFilter === 'month') {
-          includeOrder = orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
-        } else if (currentTallyFilter === 'year') {
-          includeOrder = orderDate.getFullYear() === now.getFullYear();
-        } else if (currentTallyFilter === 'all') {
-          includeOrder = true;
-        }
-
-        if (includeOrder) {
-          totalRev += (order.total || 0);
-          totalOrdersCount++;
-
-          if (order.items && Array.isArray(order.items)) {
-            order.items.forEach(itemStr => {
-              let match = itemStr.match(/^(\d+)x\s+(.+)$/);
-              if (match) {
-                let qty = parseInt(match[1]);
-                let name = match[2].trim();
-                totalUnitsSold += qty;
-
-                if (!productSales[name]) {
-                  productSales[name] = { cat: 'Cafe Item', qty: 0, rev: 0, price: 0 };
-                }
-                productSales[name].qty += qty;
-                let unitPrice = productSales[name].price || (order.total / (totalUnitsSold || 1)); 
-                productSales[name].rev += qty * unitPrice;
-              }
-            });
-          }
-        }
-      });
-
-      document.getElementById('tally-revenue').innerText = totalRev.toLocaleString();
-      document.getElementById('tally-orders-count').innerText = totalOrdersCount;
-      document.getElementById('tally-items-count').innerText = totalUnitsSold;
-
-      let tbody = document.getElementById('tally-product-tbody');
-      tbody.innerHTML = "";
-
-      let sortedProducts = Object.keys(productSales).sort((a, b) => productSales[b].qty - productSales[a].qty);
-      let hasSales = false;
-
-      sortedProducts.forEach(prodName => {
-        let p = productSales[prodName];
-        if (p.qty > 0) {
-          hasSales = true;
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>${prodName}</strong></td>
-              <td><span style="font-size:11px; color:var(--gold); text-transform:uppercase;">${p.cat}</span></td>
-              <td>${p.qty}</td>
-              <td>₹${p.rev.toLocaleString()}</td>
-            </tr>`;
-        }
-      });
-
-      if (!hasSales) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No sales recorded for this timeframe.</td></tr>`;
-      }
+      playSound();
+      alert('Thank you for your valuable feedback!');
+      document.getElementById('feedback-name').value = '';
+      document.getElementById('feedback-comment').value = '';
     }
 
-    function renderFeedback() {
-      let tbody = document.getElementById('feedback-tbody');
-      tbody.innerHTML = "";
-      let keys = Object.keys(allFeedback);
+    function filterCustomerOrders() {
+      let currentTable = document.getElementById('table-num').value;
+      document.getElementById('display-table').innerText = currentTable;
+      let container = document.getElementById('customer-orders-container');
+      container.innerHTML = '';
 
-      if (keys.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No feedback received yet.</td></tr>`;
+      let keys = Object.keys(allOrdersData);
+      let tableOrders = keys.filter(id => {
+        let order = allOrdersData[id];
+        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
+      });
+
+      if (tableOrders.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted);">No active orders for this table. Place an order above!</p>`;
         return;
       }
 
-      keys.reverse().forEach(id => {
-        let fb = allFeedback[id];
-        let stars = '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating);
-        let formattedTime = formatDateTime(fb.timestamp);
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>Table ${fb.table}</strong></td>
-            <td style="color: var(--gold);">${stars}</td>
-            <td>${fb.comment}</td>
-            <td style="color: var(--text-muted); font-size:12px;">${formattedTime}</td>
-          </tr>`;
-      });
-    }
-
-    function renderStockManager() {
-      const container = document.getElementById('menu-stock-container');
-      container.innerHTML = "";
-      Object.keys(menuData).forEach(id => {
-        let item = menuData[id];
-        let inStock = item.inStock !== false;
-        let btnText = inStock ? '🟢 In Stock' : '🔴 Out of Stock';
-        let btnColor = inStock ? 'background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3);';
+      tableOrders.reverse().forEach(id => {
+        let order = allOrdersData[id];
+        let prepBadge = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
+        let payBadge = order.paymentStatus.includes('Paid') ? 'badge-paid' : (order.paymentStatus.includes('In Bill') ? 'badge-inbill' : 'badge-unpaid');
+        let itemsHtml = order.items.map(i => `<li>${i}</li>`).join('');
+        let formattedTime = formatDateTime(order.timestamp);
 
         container.innerHTML += `
-          <div class="menu-item-card">
-            <img src="${item.img}" alt="${item.name}">
-            <h4 style="margin:6px 0; font-size:14px;">${item.name}</h4>
-            <p style="color:var(--gold); font-weight:700; margin:0 0 12px 0;">₹${item.price}</p>
-            <button class="btn" style="${btnColor} width:100%; padding: 9px;" onclick="toggleStock('${id}', ${inStock})">${btnText}</button>
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div>
+                <strong>Order ID: #${id.slice(-5)}</strong>
+                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px;">📅 ${formattedTime}</span>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <span class="badge ${prepBadge}">Kitchen: ${order.status}</span>
+                <span class="badge ${payBadge}">Payment: ${order.paymentStatus}</span>
+              </div>
+            </div>
+            <p style="margin:5px 0; font-size:13px; color:var(--text-muted);">Payment Mode: <strong>${order.paymentMode}</strong></p>
+            <ul style="margin: 5px 0 10px 0; padding-left: 20px; font-size: 13px;">${itemsHtml}</ul>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:14px;">
+              <span>Total: ₹${order.total}</span>
+            </div>
           </div>`;
       });
     }
-
-    function toggleStock(id, currentStatus) {
-      db.ref(`menu/${id}`).update({ inStock: !currentStatus });
-    }
-
-    function loginStaff() {
-      let email = document.getElementById('staff-email').value;
-      let password = document.getElementById('staff-password').value;
-      if (!email || !password) {
-        alert('Please enter both email and password.');
-        return;
-      }
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(() => { alert('Logged in successfully!'); })
-        .catch((error) => { alert('Login failed: ' + error.message); });
-    }
-
-    function logoutStaff() {
-      firebase.auth().signOut().then(() => { alert('Logged out successfully.'); });
-    }
-
-    firebase.auth().onAuthStateChanged((user) => {
-      let loginForm = document.getElementById('login-form');
-      let loggedInView = document.getElementById('logged-in-view');
-      if (user) {
-        if (loginForm) loginForm.style.display = 'none';
-        if (loggedInView) loggedInView.style.display = 'flex';
-      } else {
-        if (loginForm) loginForm.style.display = 'flex';
-        if (loggedInView) loggedInView.style.display = 'none';
-      }
-    });
   </script>
 </body>
 </html>
