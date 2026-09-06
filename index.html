@@ -24,13 +24,22 @@
     .badge-inbill { background: rgba(245, 158, 11, 0.2); color: var(--orange); border: 1px solid var(--orange); }
     .qr-box { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; text-align: center; }
     .qr-box img { width: 130px; height: 130px; }
+    .table-notice { background: rgba(217, 119, 6, 0.15); border: 1px solid var(--gold); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 8px; }
   </style>
 </head>
 <body>
   <header>
     <h1>Gani Cafe Menu</h1>
-    <div>Table: <input type="number" id="table-num" value="1" min="1" max="10" onchange="filterCustomerOrders()" style="width: 50px; padding: 5px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px;"></div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <label for="table-num" style="font-weight: 700; font-size: 14px;">Select Table:</label>
+      <input type="number" id="table-num" value="1" min="1" max="10" onchange="filterCustomerOrders()" style="width: 60px; padding: 6px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:6px; font-weight:bold; text-align:center;">
+    </div>
   </header>
+
+  <!-- Table Selection Prompt Notice -->
+  <div class="table-notice">
+    <span>📍</span> Please make sure you have selected your correct <strong>Table Number</strong> above before placing your order!
+  </div>
 
   <!-- Live Menu Grid -->
   <div id="menu-container" class="menu-grid"></div>
@@ -38,7 +47,9 @@
   <!-- Cart Section -->
   <div class="cart-section">
     <h3>Your Order Cart</h3>
-    <ul id="cart-list" style="padding-left: 20px; margin-bottom: 15px;"></ul>
+    <ul id="cart-list" style="padding-left: 0; list-style: none; margin-bottom: 15px;">
+      <li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>
+    </ul>
     <p><strong>Total: ₹<span id="cart-total">0</span></strong></p>
     
     <div style="margin: 15px 0;">
@@ -62,6 +73,7 @@
   <!-- Live Table Order Status Tracker -->
   <div class="status-section">
     <h3>Live Order Status & Billing Tracker (Table <span id="display-table">1</span>)</h3>
+    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your active orders will remain displayed here until they are served and cleared by the kitchen.</p>
     <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
       <p style="color: var(--text-muted);">No active orders for this table.</p>
     </div>
@@ -145,19 +157,49 @@
       updateCartUI();
     }
 
+    function increaseQuantity(id) {
+      cart[id] = (cart[id] || 0) + 1;
+      updateCartUI();
+    }
+
+    function decreaseQuantity(id) {
+      if (cart[id] > 1) {
+        cart[id]--;
+      } else {
+        delete cart[id];
+      }
+      updateCartUI();
+    }
+
     function updateCartUI() {
       let list = document.getElementById('cart-list');
       let totalEl = document.getElementById('cart-total');
       list.innerHTML = '';
       let total = 0;
+      let hasItems = false;
+
       Object.keys(cart).forEach(id => {
         let qty = cart[id];
         let item = menuItems[id];
         if (item && qty > 0) {
+          hasItems = true;
           total += item.price * qty;
-          list.innerHTML += `<li>${qty}x ${item.name} - ₹${item.price * qty}</li>`;
+          list.innerHTML += `
+            <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(15, 23, 42, 0.4); padding: 8px 12px; border-radius: 8px;">
+              <span style="font-weight: 600; font-size: 14px;">${item.name}</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="decreaseQuantity('${id}')">-</button>
+                <span style="font-weight: bold; min-width: 20px; text-align: center;">${qty}</span>
+                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="increaseQuantity('${id}')">+</button>
+                <span style="font-weight: bold; min-width: 60px; text-align: right;">₹${item.price * qty}</span>
+              </div>
+            </li>`;
         }
       });
+
+      if (!hasItems) {
+        list.innerHTML = `<li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>`;
+      }
       totalEl.innerText = total;
     }
 
@@ -174,7 +216,8 @@
           total += item.price * qty;
         }
       });
-      if (items.length === 0) { alert('Cart is empty'); return; }
+      if (items.length === 0) { alert('Your cart is empty!'); return; }
+      if (!table) { alert('Please select a table number!'); return; }
       
       db.ref('orders').push({
         table: table,
@@ -185,7 +228,7 @@
         paymentMode: paymentMode,
         timestamp: Date.now()
       });
-      alert('Order placed successfully!');
+      alert('Order placed successfully for Table ' + table + '!');
       cart = {};
       updateCartUI();
     }
@@ -203,7 +246,7 @@
       });
 
       if (tableOrders.length === 0) {
-        container.innerHTML = `<p style="color: var(--text-muted);">No active orders for this table.</p>`;
+        container.innerHTML = `<p style="color: var(--text-muted);">No active orders for this table. Place an order above!</p>`;
         return;
       }
 
