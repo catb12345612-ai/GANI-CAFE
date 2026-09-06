@@ -9,13 +9,17 @@
   <style>
     :root {
       --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7);
-      --text: #f8fafc; --text-muted: #94a3b8;
+      --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); background-image: radial-gradient(circle at top right, #1e293b, #0f172a); color: var(--text); margin: 0; padding-bottom: 120px; }
-    header { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+    header { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
     .brand { display: flex; align-items: center; gap: 12px; }
     .logo { font-size: 28px; background: linear-gradient(135deg, #d97706, #f59e0b); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(217,119,6,0.4); }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
     .table-badge { background: var(--gold); color: #000; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 13px; letter-spacing: 1px; }
+    .feedback-trigger-btn { background: rgba(217, 119, 6, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+    .feedback-trigger-btn:hover { background: var(--gold); color: #000; }
+
     .container { max-width: 600px; margin: 0 auto; padding: 15px; }
     .category-tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
     .tab-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 10px 18px; border-radius: 25px; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: all 0.3s ease; }
@@ -40,6 +44,14 @@
     .modal-box { background: #1e293b; width: 100%; max-width: 400px; border-radius: 18px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
     .pay-option { border: 2px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; margin: 8px 0; cursor: pointer; font-weight: 700; }
     .pay-option.selected { border-color: var(--gold); background: rgba(217,119,6,0.15); color: var(--gold); }
+    
+    /* Star Rating Custom Styles */
+    .star-rating { display: flex; justify-content: center; gap: 8px; margin: 15px 0; font-size: 30px; cursor: pointer; }
+    .star { color: #475569; transition: color 0.2s; }
+    .star.active { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+    .feedback-input { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; color: #fff; font-size: 14px; box-sizing: border-box; resize: none; margin-bottom: 15px; outline: none; }
+    .feedback-input:focus { border-color: var(--gold); }
+
     .dev-footer { margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-muted); padding: 20px 0; border-top: 1px dashed rgba(255,255,255,0.1); line-height: 1.8; }
     .dev-footer strong { color: var(--gold); }
   </style>
@@ -54,7 +66,10 @@
         <p style="font-size:11px; margin:0; color:var(--text-muted);">Supreme Fine Dining</p>
       </div>
     </div>
-    <div class="table-badge">TABLE <span id="tbl-num">1</span></div>
+    <div class="header-actions">
+      <button class="feedback-trigger-btn" onclick="openFeedbackModal()">⭐ Rate Us</button>
+      <div class="table-badge">TABLE <span id="tbl-num">1</span></div>
+    </div>
   </header>
 
   <div class="container">
@@ -75,6 +90,7 @@
     <button class="pay-btn" onclick="openCheckout()">Order Now 🚀</button>
   </div>
 
+  <!-- CHECKOUT MODAL -->
   <div class="modal" id="checkout-modal">
     <div class="modal-box">
       <h3 style="margin-top:0;">Select Payment Mode</h3>
@@ -89,6 +105,7 @@
     </div>
   </div>
 
+  <!-- STATUS MODAL -->
   <div class="modal" id="status-modal">
     <div class="modal-box">
       <h2 style="color:var(--gold); margin-top:0;">🎉 Order Dispatched!</h2>
@@ -96,6 +113,25 @@
         <span style="font-size:11px; color:var(--text-muted);">LIVE KITCHEN STATUS</span>
         <h2 id="live-status-text" style="color:var(--gold); margin:10px 0;">Sending...</h2>
       </div>
+      <button class="pay-btn" style="width:100%; font-size:13px; padding:10px; background:#334155; color:#fff;" onclick="closeModal('status-modal'); openFeedbackModal();">Leave Feedback ⭐</button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK MODAL -->
+  <div class="modal" id="feedback-modal">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:var(--gold);">How was your experience?</h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">Tap stars to rate</p>
+      <div class="star-rating" id="star-container">
+        <span class="star active" onclick="selectRating(1)">★</span>
+        <span class="star active" onclick="selectRating(2)">★</span>
+        <span class="star active" onclick="selectRating(3)">★</span>
+        <span class="star active" onclick="selectRating(4)">★</span>
+        <span class="star active" onclick="selectRating(5)">★</span>
+      </div>
+      <textarea id="feedback-comment" class="feedback-input" rows="3" placeholder="Tell us about the food, service, or ambiance..."></textarea>
+      <button class="pay-btn" style="width:100%;" onclick="submitFeedback()">Submit Feedback 🚀</button>
+      <p style="font-size:12px; color:var(--text-muted); margin-top:15px; cursor:pointer;" onclick="closeModal('feedback-modal')">Close</p>
     </div>
   </div>
 
@@ -120,6 +156,7 @@
 
     let menuData = {};
     let cart = {}, currentCat = 'chai', payMode = 'UPI', currentOrderId = null;
+    let selectedStarRating = 5;
 
     // Load Live Menu & Stock from Firebase
     db.ref('menu').on('value', (snapshot) => {
@@ -220,6 +257,39 @@
         if (val) {
           document.getElementById('live-status-text').innerText = val.status === 'Pending' ? '👨‍🍳 Received in Kitchen' : val.status;
         }
+      });
+    }
+
+    // Feedback System Logic
+    function openFeedbackModal() {
+      document.getElementById('feedback-modal').style.display = 'flex';
+    }
+
+    function selectRating(rating) {
+      selectedStarRating = rating;
+      const stars = document.querySelectorAll('.star');
+      stars.forEach((star, index) => {
+        if (index < rating) {
+          star.classList.add('active');
+        } else {
+          star.classList.remove('active');
+        }
+      });
+    }
+
+    function submitFeedback() {
+      let comment = document.getElementById('feedback-comment').value.trim();
+      db.ref('feedback').push({
+        table: tableNo,
+        rating: selectedStarRating,
+        comment: comment || 'No comments provided',
+        timestamp: Date.now()
+      }).then(() => {
+        alert("Thank you! Your feedback has been sent to the cafe.");
+        document.getElementById('feedback-comment').value = "";
+        closeModal('feedback-modal');
+      }).catch((err) => {
+        alert("Failed to submit feedback. Please check your connection.");
       });
     }
   </script>
