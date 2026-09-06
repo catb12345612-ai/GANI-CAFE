@@ -36,15 +36,12 @@
     </div>
   </header>
 
-  <!-- Table Selection Prompt Notice -->
   <div class="table-notice">
-    <span>📍</span> Please make sure you have selected your correct <strong>Table Number</strong> above before placing your order!
+    <span>📍</span> Please select your correct <strong>Table Number</strong> above before placing your order! Active orders will stay displayed until served and cleared.
   </div>
 
-  <!-- Live Menu Grid -->
   <div id="menu-container" class="menu-grid"></div>
 
-  <!-- Cart Section -->
   <div class="cart-section">
     <h3>Your Order Cart</h3>
     <ul id="cart-list" style="padding-left: 0; list-style: none; margin-bottom: 15px;">
@@ -70,16 +67,14 @@
     <button class="btn" onclick="placeOrder()">Place Order 🚀</button>
   </div>
 
-  <!-- Live Table Order Status Tracker -->
   <div class="status-section">
     <h3>Live Order Status & Billing Tracker (Table <span id="display-table">1</span>)</h3>
-    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your active orders will remain displayed here until they are served and cleared by the kitchen.</p>
+    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your orders remain saved here in real-time and will not disappear or refresh until the kitchen serves and clears them.</p>
     <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
       <p style="color: var(--text-muted);">No active orders for this table.</p>
     </div>
   </div>
 
-  <!-- Audio Alert for Customer Status Updates -->
   <audio id="customer-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
@@ -100,6 +95,15 @@
     let allOrdersData = {};
     let previousTableStatuses = {};
 
+    // Play chime sound on click/action
+    function playSound() {
+      let audio = document.getElementById('customer-alert-sound');
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log(e));
+      }
+    }
+
     // Unified Date & Time Formatter
     function formatDateTime(timestamp) {
       if (!timestamp) return 'N/A';
@@ -109,22 +113,36 @@
       return `${dateStr}, ${timeStr}`;
     }
 
-    db.ref('menu').on('value', snap => {
-      menuItems = snap.val() || {};
+    // Render Menu with Direct Plus/Minus Buttons
+    function renderMenu() {
       let container = document.getElementById('menu-container');
       container.innerHTML = '';
       Object.keys(menuItems).forEach(id => {
         let item = menuItems[id];
         if (item.inStock !== false) {
+          let qty = cart[id] || 0;
+          let actionHtml = qty === 0 
+            ? `<button class="btn" onclick="addToCart('${id}')">Add to Cart</button>`
+            : `<div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+                 <button class="btn" style="padding: 4px 10px;" onclick="decreaseQuantity('${id}')">-</button>
+                 <span style="font-weight: bold; font-size: 16px;">${qty}</span>
+                 <button class="btn" style="padding: 4px 10px;" onclick="increaseQuantity('${id}')">+</button>
+               </div>`;
+
           container.innerHTML += `
             <div class="card">
               <img src="${item.img}" alt="${item.name}">
               <h4>${item.name}</h4>
               <p>₹${item.price}</p>
-              <button class="btn" onclick="addToCart('${id}')">Add to Cart</button>
+              ${actionHtml}
             </div>`;
         }
       });
+    }
+
+    db.ref('menu').on('value', snap => {
+      menuItems = snap.val() || {};
+      renderMenu();
     });
 
     db.ref('orders').on('value', snap => {
@@ -136,7 +154,7 @@
         if (String(order.table) === String(currentTable)) {
           if (previousTableStatuses[id] && previousTableStatuses[id] !== order.status) {
             if (order.status === 'Completed' || order.status === 'Preparing') {
-              document.getElementById('customer-alert-sound').play().catch(e => console.log(e));
+              playSound();
             }
           }
           previousTableStatuses[id] = order.status;
@@ -154,11 +172,15 @@
 
     function addToCart(id) {
       cart[id] = (cart[id] || 0) + 1;
+      playSound();
+      renderMenu();
       updateCartUI();
     }
 
     function increaseQuantity(id) {
       cart[id] = (cart[id] || 0) + 1;
+      playSound();
+      renderMenu();
       updateCartUI();
     }
 
@@ -168,6 +190,8 @@
       } else {
         delete cart[id];
       }
+      playSound();
+      renderMenu();
       updateCartUI();
     }
 
@@ -228,8 +252,10 @@
         paymentMode: paymentMode,
         timestamp: Date.now()
       });
+      playSound();
       alert('Order placed successfully for Table ' + table + '!');
       cart = {};
+      renderMenu();
       updateCartUI();
     }
 
