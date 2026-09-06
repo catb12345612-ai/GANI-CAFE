@@ -1,1 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gani Cafe - Premium Digital Dining</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    :root {
+      --gold: #d97706;
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+      color: var(--text);
+      margin: 0; padding-bottom: 120px;
+    }
+    /* VFX: Glassmorphism Header */
+    header {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 50;
+      padding: 15px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { font-size: 28px; background: linear-gradient(135deg, #d97706, #f59e0b); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(217,119,6,0.4); }
+    .table-badge { background: var(--gold); color: #000; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 13px; letter-spacing: 1px; }
+    
+    .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+    .category-tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
+    .tab-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 10px 18px; border-radius: 25px; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: all 0.3s ease; }
+    .tab-btn.active { background: var(--gold); color: #000; border-color: var(--gold); box-shadow: 0 0 15px rgba(217,119,6,0.3); }
 
+    /* VFX: Smooth Hover & Glow Cards */
+    .menu-card { background: var(--card-bg); backdrop-filter: blur(5px); border-radius: 14px; padding: 12px; display: flex; gap: 12px; align-items: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s; }
+    .menu-card:active { transform: scale(0.98); }
+    .item-img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; }
+    .item-info { flex-grow: 1; }
+    .item-name { font-size: 15px; font-weight: 700; margin: 0 0 4px 0; }
+    .item-price { font-size: 14px; color: var(--gold); font-weight: 700; margin: 0; }
+    
+    .stepper { display: flex; align-items: center; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+    .stepper button { background: var(--gold); color: #000; border: none; width: 32px; height: 32px; font-weight: 900; font-size: 16px; cursor: pointer; transition: background 0.2s; }
+    .stepper button:active { background: #b45309; }
+    .stepper span { padding: 0 10px; font-weight: 700; font-size: 14px; min-width: 15px; text-align: center; }
+
+    .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.9); border-top: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(15px); }
+    .pay-btn { background: linear-gradient(135deg, #d97706, #f59e0b); color: #000; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 0 20px rgba(217,119,6,0.4); text-transform: uppercase; transition: transform 0.1s; }
+    .pay-btn:active { transform: scale(0.95); }
+
+    /* VFX: Modals */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100; padding: 15px; backdrop-filter: blur(5px); animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box { background: #1e293b; width: 100%; max-width: 400px; border-radius: 18px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+    
+    .pay-option { border: 2px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; margin: 8px 0; cursor: pointer; font-weight: 700; transition: 0.3s; }
+    .pay-option.selected { border-color: var(--gold); background: rgba(217,119,6,0.15); color: var(--gold); }
+    
+    /* Feedback Stars */
+    .stars { font-size: 30px; margin: 15px 0; cursor: pointer; color: #334155; }
+    .stars span.active { color: var(--gold); text-shadow: 0 0 10px rgba(217,119,6,0.5); }
+    textarea { width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
+
+    /* Developer Footer */
+    .dev-footer { margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-muted); padding: 20px 0; border-top: 1px dashed rgba(255,255,255,0.1); line-height: 1.8; }
+    .dev-footer strong { color: var(--gold); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo">☕</div>
+      <div>
+        <h1 style="font-size:18px; margin:0; letter-spacing:1px;">GANI CAFE</h1>
+        <p style="font-size:11px; margin:0; color:var(--text-muted);">Supreme Fine Dining</p>
+      </div>
+    </div>
+    <div class="table-badge">TABLE <span id="tbl-num">1</span></div>
+  </header>
+
+  <div class="container">
+    <div class="category-tabs">
+      <button class="tab-btn active" onclick="filterCat('chai', this)">☕ Premium Chai</button>
+      <button class="tab-btn" onclick="filterCat('snacks', this)">🥪 Cafe Snacks</button>
+      <button class="tab-btn" onclick="filterCat('beverages', this)">🥤 Cold Beverages</button>
+    </div>
+    <div class="menu-grid" id="menu-container"></div>
+
+    <div class="dev-footer">
+      &copy; 2026 <strong>GANI CAFE</strong>. All Rights Reserved.<br>
+      Developed with ❤️ by <strong>Syed Zeeshaan Ali</strong><br>
+      IG: <strong>@syedzeeshaanali07</strong> | 📞 <strong>+91 7989698613</strong>
+    </div>
+  </div>
+
+  <div class="cart-bar">
+    <div>
+      <span id="cart-count" style="font-size:12px; color:var(--text-muted)">0 Items</span><br>
+      <span style="font-size:22px; font-weight:800; color:var(--gold)">₹<span id="cart-total">0</span></span>
+    </div>
+    <button class="pay-btn" onclick="openCheckout()">Order Now 🚀</button>
+  </div>
+
+  <!-- Checkout Modal (UPI/QR) -->
+  <div class="modal" id="checkout-modal">
+    <div class="modal-box">
+      <h3 style="margin-top:0;">Select Payment Mode</h3>
+      <div class="pay-option selected" id="opt-upi" onclick="setPay('UPI')">📱 UPI / Online Scan</div>
+      <div class="pay-option" id="opt-cash" onclick="setPay('Cash')">💵 Cash at Counter</div>
+      
+      <div id="qr-box" style="margin:15px 0; background:#fff; padding:10px; border-radius:12px; display:inline-block;">
+        <img id="upi-qr" src="" style="width:160px; height:160px; display:block;">
+        <p style="font-size:12px; color:#000; margin:5px 0 0 0; font-weight:bold;">Scan via Any UPI App</p>
+      </div>
+      <button class="pay-btn" style="width:100%; margin-top:10px;" onclick="placeOrder()">Confirm & Dispatch 🔥</button>
+      <p style="font-size:12px; color:var(--text-muted); margin-top:15px; cursor:pointer;" onclick="closeModal('checkout-modal')">Cancel</p>
+    </div>
+  </div>
+
+  <!-- Status Modal -->
+  <div class="modal" id="status-modal">
+    <div class="modal-box">
+      <h2 style="color:var(--gold); margin-top:0;">🎉 Order Dispatched!</h2>
+      <p style="font-size:13px; color:var(--text-muted);">Thank you for choosing Gani Cafe.</p>
+      <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px dashed var(--gold);">
+        <span style="font-size:11px; color:var(--text-muted); letter-spacing:1px;">LIVE KITCHEN STATUS</span>
+        <h2 id="live-status-text" style="color:var(--gold); margin:10px 0;">Sending to Kitchen...</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div class="modal" id="feedback-modal">
+    <div class="modal-box">
+      <h2 style="color:var(--gold); margin-top:0;">How was your food?</h2>
+      <p style="font-size:12px; color:var(--text-muted);">Please rate your Gani Cafe experience.</p>
+      <div class="stars" id="star-container">
+        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+      </div>
+      <textarea id="feedback-text" rows="3" placeholder="Any suggestions for us?"></textarea>
+      <button class="pay-btn" style="width:100%;" onclick="submitFeedback()">Submit Feedback 💖</button>
+    </div>
+  </div>
+
+  <script>
+    // --- FIREBASE CONFIGURATION ---
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
+  authDomain: "gani-cafe-52066.firebaseapp.com",
+  projectId: "gani-cafe-52066",
+  storageBucket: "gani-cafe-52066.firebasestorage.app",
+  messagingSenderId: "292009300507",
+  appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
+  measurementId: "G-F7TXYZBYKY"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+    // Table Setup
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableNo = urlParams.get('table') || '1';
+    document.getElementById('tbl-num').innerText = tableNo;
+
+    // --- SFX (SOUND EFFECTS) SYSTEM ---
+    function playSound(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        
+        if(type === 'click') {
+          osc.type = 'sine'; osc.frequency.setValueAtTime(1200, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.05);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+          osc.start(); osc.stop(ctx.currentTime + 0.05);
+          if(navigator.vibrate) navigator.vibrate(30);
+        } else if (type === 'success') {
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(440, ctx.currentTime);
+          osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime); gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+          osc.start(); osc.stop(ctx.currentTime + 0.3);
+          if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
+      } catch(e) {}
+    }
+
+    // 30 Items (Chai, Snacks, Beverages)
+    const menuData = [
+      { id: 1, cat: 'chai', name: 'Irani Chai', price: 20, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=150' },
+      { id: 2, cat: 'chai', name: 'Masala Chai', price: 25, img: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=150' },
+      { id: 3, cat: 'chai', name: 'Kulhad Chai', price: 30, img: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=150' },
+      { id: 4, cat: 'chai', name: 'Kashmiri Kahwa', price: 40, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=150' },
+      { id: 11, cat: 'snacks', name: 'Osmania Biscuits (2)', price: 10, img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=150' },
+      { id: 12, cat: 'snacks', name: 'Bun Maska', price: 30, img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=150' },
+      { id: 13, cat: 'snacks', name: 'Onion Samosa (2)', price: 20, img: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=150' },
+      { id: 14, cat: 'snacks', name: 'French Fries', price: 70, img: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150' },
+      { id: 21, cat: 'beverages', name: 'Cold Coffee', price: 60, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150' },
+      { id: 22, cat: 'beverages', name: 'Royal Falooda', price: 80, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150' },
+      // Add the rest of your items here...
+    ];
+
+    let cart = {}, currentCat = 'chai', payMode = 'UPI', currentOrderId = null, userRating = 5;
+
+    function renderMenu() {
+      const container = document.getElementById('menu-container');
+      container.innerHTML = "";
+      menuData.filter(i => i.cat === currentCat).forEach(item => {
+        let qty = cart[item.id] || 0;
+        container.innerHTML += `
+          <div class="menu-card">
+            <img src="${item.img}" class="item-img">
+            <div class="item-info">
+              <h3 class="item-name">${item.name}</h3>
+              <p class="item-price">₹${item.price}</p>
+            </div>
+            <div class="stepper">
+              <button onclick="updateQty(${item.id}, -1)">-</button>
+              <span>${qty}</span>
+              <button onclick="updateQty(${item.id}, 1)">+</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    function filterCat(cat, btn) {
+      playSound('click'); currentCat = cat;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); renderMenu();
+    }
+
+    function updateQty(id, change) {
+      playSound('click');
+      cart[id] = (cart[id] || 0) + change;
+      if (cart[id] < 0) cart[id] = 0;
+      renderMenu(); updateCartSummary();
+    }
+
+    function updateCartSummary() {
+      let count = 0, total = 0;
+      menuData.forEach(item => {
+        let qty = cart[item.id] || 0;
+        count += qty; total += qty * item.price;
+      });
+      document.getElementById('cart-count').innerText = count + " Items";
+      document.getElementById('cart-total').innerText = total;
+      
+      // Dynamic UPI Code
+      const upiID = "9999999999@paytm"; // PUT YOUR ACTUAL UPI HERE
+      document.getElementById('upi-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=${upiID}&pn=GaniCafe&am=${total}&cu=INR`;
+    }
+
+    function setPay(mode) {
+      playSound('click'); payMode = mode;
+      document.getElementById('opt-upi').className = mode === 'UPI' ? 'pay-option selected' : 'pay-option';
+      document.getElementById('opt-cash').className = mode === 'Cash' ? 'pay-option selected' : 'pay-option';
+      document.getElementById('qr-box').style.display = mode === 'UPI' ? 'inline-block' : 'none';
+    }
+
+    function openCheckout() {
+      let total = parseInt(document.getElementById('cart-total').innerText);
+      if (total === 0) return alert("Select at least 1 item!");
+      playSound('click');
+      document.getElementById('checkout-modal').style.display = 'flex';
+    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function placeOrder() {
+      playSound('success');
+      let orderedItems = [], total = 0;
+      menuData.forEach(item => {
+        let qty = cart[item.id] || 0;
+        if (qty > 0) { orderedItems.push(`${qty}x ${item.name}`); total += qty * item.price; }
+      });
+
+      const orderRef = db.ref('orders').push();
+      currentOrderId = orderRef.key;
+      
+      orderRef.set({
+        orderId: currentOrderId, table: tableNo, items: orderedItems,
+        total: total, paymentMode: payMode, status: 'Pending', timestamp: Date.now()
+      });
+
+      closeModal('checkout-modal');
+      document.getElementById('status-modal').style.display = 'flex';
+
+      // Live Listener for Status & Feedback Trigger
+      db.ref(`orders/${currentOrderId}/status`).on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          const statusText = document.getElementById('live-status-text');
+          if(val === 'Pending') statusText.innerText = '👨‍🍳 Received in Kitchen';
+          if(val === 'Preparing') { statusText.innerText = '🔥 Food is Preparing...'; playSound('success'); }
+          if(val === 'Served') {
+            statusText.innerText = '🚀 Served! Enjoy Your Meal';
+            playSound('success');
+            setTimeout(() => {
+              closeModal('status-modal');
+              document.getElementById('feedback-modal').style.display = 'flex';
+              setRating(5);
+            }, 3000); // Wait 3 seconds then ask for feedback
+          }
+        }
+      });
+    }
+
+    // Feedback System Logic
+    function setRating(stars) {
+      playSound('click'); userRating = stars;
+      const spans = document.getElementById('star-container').children;
+      for(let i=0; i<5; i++) { spans[i].className = i < stars ? 'active' : ''; }
+    }
+    
+    function submitFeedback() {
+      playSound('success');
+      const text = document.getElementById('feedback-text').value;
+      db.ref('feedback').push({
+        orderId: currentOrderId, table: tableNo, rating: userRating, comment: text, timestamp: Date.now()
+      });
+      document.getElementById('feedback-modal').innerHTML = `<h2 style="color:var(--gold);">💖 Thank You!</h2><p style="color:white;">Your feedback makes Gani Cafe better.</p>`;
+      setTimeout(() => { closeModal('feedback-modal'); cart = {}; renderMenu(); updateCartSummary(); }, 2500);
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
