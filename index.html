@@ -14,7 +14,7 @@
     .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
     .card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
     .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-    .cart-section, .status-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
+    .cart-section, .status-section, .feedback-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
     .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
     .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
     .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
@@ -72,6 +72,23 @@
     <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your orders remain saved here in real-time and will not disappear or refresh until the kitchen serves and clears them.</p>
     <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
       <p style="color: var(--text-muted);">No active orders for this table.</p>
+    </div>
+  </div>
+
+  <div class="feedback-section">
+    <h3>💬 Share Your Feedback</h3>
+    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">We love hearing from you! Please let us know about your cafe experience.</p>
+    <div style="display: grid; gap: 12px; max-width: 450px;">
+      <input type="text" id="feedback-name" placeholder="Your Name / Nickname" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
+      <select id="feedback-rating" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
+        <option value="5">⭐⭐⭐⭐⭐ (5/5 - Excellent Experience)</option>
+        <option value="4">⭐⭐⭐⭐ (4/5 - Good)</option>
+        <option value="3">⭐⭐⭐ (3/5 - Average)</option>
+        <option value="2">⭐⭐ (2/5 - Poor)</option>
+        <option value="1">⭐ (1/5 - Very Bad)</option>
+      </select>
+      <textarea id="feedback-comment" placeholder="Write your comments or suggestions..." rows="3" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; resize: vertical;"></textarea>
+      <button class="btn" onclick="submitFeedback()">Submit Feedback 📝</button>
     </div>
   </div>
 
@@ -257,6 +274,29 @@
       cart = {};
       renderMenu();
       updateCartUI();
+    }
+
+    function submitFeedback() {
+      let table = document.getElementById('table-num').value;
+      let name = document.getElementById('feedback-name').value.trim();
+      let rating = document.getElementById('feedback-rating').value;
+      let comment = document.getElementById('feedback-comment').value.trim();
+
+      if (!name) { alert('Please enter your name!'); return; }
+      if (!comment) { alert('Please write a feedback comment!'); return; }
+
+      db.ref('feedback').push({
+        table: table,
+        name: name,
+        rating: rating,
+        comment: comment,
+        timestamp: Date.now()
+      });
+
+      playSound();
+      alert('Thank you for your valuable feedback!');
+      document.getElementById('feedback-name').value = '';
+      document.getElementById('feedback-comment').value = '';
     }
 
     function filterCustomerOrders() {
