@@ -29,7 +29,7 @@
 <body>
   <header>
     <h1>Gani Cafe Menu</h1>
-    <div>Table: <input type="number" id="table-num" value="1" onchange="filterCustomerOrders()" style="width: 50px; padding: 5px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px;"></div>
+    <div>Table: <input type="number" id="table-num" value="1" min="1" max="10" onchange="filterCustomerOrders()" style="width: 50px; padding: 5px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px;"></div>
   </header>
 
   <!-- Live Menu Grid -->
@@ -88,6 +88,15 @@
     let allOrdersData = {};
     let previousTableStatuses = {};
 
+    // Unified Date & Time Formatter
+    function formatDateTime(timestamp) {
+      if (!timestamp) return 'N/A';
+      let d = new Date(timestamp);
+      let dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `${dateStr}, ${timeStr}`;
+    }
+
     db.ref('menu').on('value', snap => {
       menuItems = snap.val() || {};
       let container = document.getElementById('menu-container');
@@ -110,7 +119,6 @@
       allOrdersData = snap.val() || {};
       let currentTable = document.getElementById('table-num').value;
       
-      // Check for status changes on this table's orders to trigger audio chime
       Object.keys(allOrdersData).forEach(id => {
         let order = allOrdersData[id];
         if (String(order.table) === String(currentTable)) {
@@ -204,11 +212,15 @@
         let prepBadge = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
         let payBadge = order.paymentStatus.includes('Paid') ? 'badge-paid' : (order.paymentStatus.includes('In Bill') ? 'badge-inbill' : 'badge-unpaid');
         let itemsHtml = order.items.map(i => `<li>${i}</li>`).join('');
+        let formattedTime = formatDateTime(order.timestamp);
 
         container.innerHTML += `
           <div style="background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <strong>Order ID: #${id.slice(-5)}</strong>
+              <div>
+                <strong>Order ID: #${id.slice(-5)}</strong>
+                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px;">📅 ${formattedTime}</span>
+              </div>
               <div style="display:flex; gap:6px;">
                 <span class="badge ${prepBadge}">Kitchen: ${order.status}</span>
                 <span class="badge ${payBadge}">Payment: ${order.paymentStatus}</span>
