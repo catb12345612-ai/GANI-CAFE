@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gani Cafe - QR Menu, Ordering, Payment & Feedback</title>
+  
+  <!-- Firebase App & Firestore SDKs -->
+  <script src="https://script.google.com/macros/s/AKfycbyNH26QYsZwkfJaD2ZZbVbBigJzfACXXE61owqSiS7LQ8ulCCXzzYVkF6cnTxxOV13t/exec"></script>
+  <script src="https://script.google.com/macros/s/AKfycbyNH26QYsZwkfJaD2ZZbVbBigJzfACXXE61owqSiS7LQ8ulCCXzzYVkF6cnTxxOV13t/exec"></script>
+
   <style>
     :root {
       --primary: #d97706;
@@ -302,18 +307,37 @@
       display: none;
     }
 
-    .qr-box {
-      width: 150px;
-      height: 150px;
-      margin: 0 auto;
-      background: #e2e8f0;
-      border-radius: 8px;
-      display: flex;
+    /* Live Order Tracking Banner inside UI */
+    .live-status-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      display: none;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+    }
+
+    .live-status-box h4 {
+      margin: 0 0 2px 0;
+      font-size: 14px;
+      color: var(--primary-dark);
+    }
+
+    .live-status-box p {
+      margin: 0;
       font-size: 12px;
       color: var(--text-muted);
-      border: 1px dashed var(--primary);
+    }
+
+    .badge-status {
+      background: var(--primary);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
     }
 
     /* Floating Cart Footer Bar */
@@ -366,6 +390,7 @@
       padding: 10px 0 20px 0;
       color: var(--text-muted);
       font-size: 11px;
+      line-height: 1.6;
     }
 
     .dev-footer span {
@@ -393,10 +418,21 @@
 
   <!-- Main Menu Interface -->
   <div class="container">
+    
+    <!-- Live Order Status Tracker Box -->
+    <div class="live-status-box" id="live-order-tracker">
+      <div>
+        <h4 id="tracker-title">Order Placed Successfully</h4>
+        <p id="tracker-desc">Tracking status from kitchen terminal...</p>
+      </div>
+      <div class="badge-status" id="tracker-badge">Preparing</div>
+    </div>
+
     <div class="section-title">Popular Items & Snacks</div>
     <div class="menu-grid" id="menu-items"></div>
 
     <div class="dev-footer">
+      <div>📞 Contact: <strong>+91 9876543210</strong> &bull; 📸 Instagram: <a href="https://instagram.com/syedzeeshanali07" target="_blank" style="color: var(--primary); text-decoration: none;">@syedzeeshanali07</a></div>
       Powered by High-AI Engine &bull; Copyright &copy; 2026 <span>syedzeeshaanali07</span>
     </div>
   </div>
@@ -426,12 +462,10 @@
       </div>
 
       <!-- Dynamic QR Code Area for UPI -->
-     <!-- Dynamic QR Code Area for UPI -->
       <div class="qr-container" id="qr-box-container" style="display: block;">
         <p style="font-size: 12px; color: var(--text-muted); margin: 5px 0;">Scan via GPay / PhonePe / Paytm</p>
-        <!-- Replace YOUR_UPI_ID@okaxis with your actual business or personal UPI handle -->
         <div id="dynamic-upi-qr" style="background: white; padding: 10px; border-radius: 8px; display: inline-block; border: 1px solid #cbd5e1;">
-          <img id="upi-qr-img.jpeg" src="upi-qr-img.jpeg" alt="UPI QR Code" style="width: 140px; height: 140px; display: block; margin: 0 auto;" />
+          <img id="upi-qr-img" src="upi-qr-img.jpeg" alt="UPI QR Code" style="width: 140px; height: 140px; display: block; margin: 0 auto;" />
         </div>
         <p style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">UPI ID: <strong style="color:var(--primary)">Q227869939@ybl</strong></p>
       </div>
@@ -471,6 +505,20 @@
   </div>
 
   <script>
+    // Firebase Config Keys
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase and Firestore Database
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNH26QYsZwkfJaD2ZZbVbBigJzfACXXE61owqSiS7LQ8ulCCXzzYVkF6cnTxxOV13t/exec";
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -492,6 +540,32 @@
     let cartQuantities = {};
     let currentRating = 0;
     let selectedPaymentMode = "UPI";
+    let activeOrderDocId = null;
+    let orderListenerUnsubscribe = null;
+
+    // Web Audio API Synthesized Chime (No external audio file dependency = 0 missing resource errors)
+    function playOrderChime() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5 note
+
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      } catch (e) {
+        console.log("Audio Context play blocked or unsupported:", e);
+      }
+    }
 
     function renderMenu() {
       const menuContainer = document.getElementById('menu-items');
@@ -598,13 +672,48 @@
         mode: "no-cors",
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify(feedbackPayload)
-      });
+      }).catch(err => console.log(err));
 
       alert("❤️ Thank you for your valuable feedback!");
       closeFeedbackModal();
       currentRating = 0;
       setRating(0);
       document.getElementById('feedback-text').value = "";
+    }
+
+    // Attach real-time listener to Firebase to watch order status updates & billing status live
+    function trackLiveOrderStatus(docId) {
+      if (orderListenerUnsubscribe) {
+        orderListenerUnsubscribe(); // Clean up old listener if any
+      }
+
+      const trackerBox = document.getElementById('live-order-tracker');
+      const trackerTitle = document.getElementById('tracker-title');
+      const trackerDesc = document.getElementById('tracker-desc');
+      const trackerBadge = document.getElementById('tracker-badge');
+
+      trackerBox.style.display = 'flex';
+
+      orderListenerUnsubscribe = db.collection("orders").doc(docId).onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          const currentStatus = data.status || "Preparing";
+          
+          trackerBadge.innerText = currentStatus;
+          if (currentStatus === "Preparing") {
+            trackerTitle.innerText = `Table ${tableNo} Order in Progress`;
+            trackerDesc.innerText = "Kitchen received your order and is cooking.";
+          } else if (currentStatus === "Ready") {
+            trackerTitle.innerText = `Table ${tableNo} Order is Ready!`;
+            trackerDesc.innerText = "Your items are ready to be served/picked up.";
+          } else if (currentStatus === "Completed" || currentStatus === "Paid") {
+            trackerTitle.innerText = `Table ${tableNo} Order Completed & Billed`;
+            trackerDesc.innerText = `Total Settled: ₹${data.total} (${data.paymentMode})`;
+          }
+        }
+      }, (error) => {
+        console.error("Firestore live tracking error:", error);
+      });
     }
 
     async function dispatchOrderToKitchen() {
@@ -625,18 +734,38 @@
         paymentMode: selectedPaymentMode
       };
 
+      // 1. Post data to Google Apps Script backup asynchronously
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify(orderPayload)
-      });
+      }).catch(err => console.log(err));
 
-      alert(`🎉 Order placed successfully via ${selectedPaymentMode}! Sent to kitchen terminal.`);
-      closeCheckoutModal();
-      cartQuantities = {};
-      renderMenu();
-      updateCartSummary();
+      // 2. Push real-time data document to Firebase Firestore
+      db.collection("orders").add({
+        table: tableNo,
+        items: orderedItems,
+        total: grandTotal,
+        paymentMode: selectedPaymentMode,
+        status: "Preparing", // Initial tracking status for kitchen & billing
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .then((docRef) => {
+        activeOrderDocId = docRef.id;
+        playOrderChime(); // Trigger acoustic notification chime
+        trackLiveOrderStatus(activeOrderDocId); // Start live state monitoring
+
+        alert(`🎉 Order placed successfully via ${selectedPaymentMode}! Sent to kitchen terminal.`);
+        closeCheckoutModal();
+        cartQuantities = {};
+        renderMenu();
+        updateCartSummary();
+      })
+      .catch((error) => {
+        console.error("Error writing order to Firebase: ", error);
+        alert("Order sent, but failed to sync live status. Please verify configuration keys.");
+      });
     }
 
     renderMenu();
