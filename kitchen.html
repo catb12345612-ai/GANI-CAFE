@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Kitchen Command</title>
+  <title>Gani Cafe - Kitchen Command & Tally</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
@@ -12,41 +12,73 @@
       --cyan: #06b6d4; --orange: #f59e0b; --green: #10b981; --text: #f8fafc;
     }
     body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
-    header h1 { margin: 0; color: var(--orange); font-size: 24px; letter-spacing: 1px; text-transform: uppercase; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+    header h1 { margin: 0; color: var(--orange); font-size: 22px; text-transform: uppercase; }
+    
+    /* Analytics & Tally Dashboard */
+    .dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-box { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; border-top: 4px solid var(--cyan); }
+    .stat-box h3 { margin: 0 0 5px 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
+    .stat-box p { margin: 0; font-size: 22px; font-weight: bold; color: var(--green); }
+
+    /* Inventory / Stock Section */
+    .stock-section { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 25px; }
+    .stock-grid { display: flex; gap: 10px; overflow-x: auto; padding-top: 10px; }
+    .stock-item { background: #1e293b; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .stock-toggle { cursor: pointer; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; }
+    .in-stock { background: var(--green); color: #000; }
+    .out-stock { background: #ef4444; color: #fff; }
+
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; border-left: 6px solid var(--orange); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; border-left: 6px solid var(--orange); }
     .card.preparing { border-left-color: var(--cyan); }
-    .item-list { list-style: none; padding: 0; margin: 12px 0; font-size: 15px; font-weight: bold; }
-    .item-list li { padding: 6px 0; border-bottom: 1px dashed var(--border); }
-    .btn { border: none; padding: 10px 15px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 13px; text-transform: uppercase; width: 100%; margin-top: 10px; transition: 0.2s; }
+    .item-list { list-style: none; padding: 0; margin: 12px 0; font-size: 14px; font-weight: bold; }
+    .item-list li { padding: 5px 0; border-bottom: 1px dashed var(--border); }
+    
+    .btn { border: none; padding: 10px 15px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 12px; text-transform: uppercase; width: 100%; margin-top: 8px; }
     .btn-prep { background: var(--cyan); color: #000; }
     .btn-serve { background: var(--green); color: #000; }
     .btn-clear { background: #334155; color: #fff; }
-    
-    .dev-footer { margin-top: 40px; text-align: center; font-size: 12px; color: #64748b; padding: 20px 0; border-top: 1px solid var(--border); }
-    .dev-footer strong { color: var(--cyan); }
+    .btn-verify { background: var(--orange); color: #000; margin-bottom: 5px; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>⚡ Gani Cafe KDS</h1>
-    <div style="background:#1e293b; padding:10px 20px; border-radius:8px; border:1px solid var(--cyan);">
-      <span style="font-size:14px; color:var(--cyan); font-weight:bold;">LIVE ORDERS: <span id="active-count" style="font-size:18px; color:#fff;">0</span></span>
+    <h1>⚡ Gani Cafe KDS & Revenue Tally</h1>
+    <div style="display:flex; gap:10px;">
+      <div style="background:#1e293b; padding:8px 15px; border-radius:8px; border:1px solid var(--cyan);">
+        <span style="font-size:12px; color:var(--cyan);">LIVE ORDERS: <strong id="active-count" style="color:#fff;">0</strong></span>
+      </div>
     </div>
   </header>
 
-  <div class="grid" id="orders-grid"></div>
-
-  <div class="dev-footer">
-    &copy; 2026 <strong>GANI CAFE</strong>. Kitchen Command Module.<br>
-    Developed with ❤️ by <strong>Syed Zeeshaan Ali</strong><br>
-    IG: <strong>@syedzeeshaanali07</strong> | 📞 <strong>+91 7989698613</strong>
+  <!-- REVENUE TALLY DASHBOARD -->
+  <div class="dashboard-stats">
+    <div class="stat-box">
+      <h3>📅 Today's Revenue</h3>
+      <p id="rev-today">₹0</p>
+    </div>
+    <div class="stat-box" style="border-top-color: var(--orange);">
+      <h3>🗓️ Monthly Revenue</h3>
+      <p id="rev-month" style="color: var(--orange);">₹0</p>
+    </div>
+    <div class="stat-box" style="border-top-color: var(--green);">
+      <h3>📈 Yearly Revenue</h3>
+      <p id="rev-year">₹0</p>
+    </div>
   </div>
 
+  <!-- STOCK & INVENTORY CONTROLS -->
+  <div class="stock-section">
+    <h3 style="margin:0; font-size:14px; color:var(--orange);">Kitchen Stock Management (Click to Toggle Availability)</h3>
+    <div class="stock-grid" id="stock-container"></div>
+  </div>
+
+  <!-- LIVE ORDERS KITCHEN GRID -->
+  <div class="grid" id="orders-grid"></div>
+
   <script>
-    // --- FIREBASE CONFIGURATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -58,73 +90,113 @@
       measurementId: "G-F7TXYZBYKY"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let previousCount = 0;
+    // Default Menu setup if missing in DB
+    const defaultMenu = {
+      1: { name: 'Irani Chai', cat: 'chai', price: 20, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=150', inStock: true },
+      2: { name: 'Masala Chai', cat: 'chai', price: 25, img: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=150', inStock: true },
+      3: { name: 'Kulhad Chai', cat: 'chai', price: 30, img: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=150', inStock: true },
+      4: { name: 'Kashmiri Kahwa', cat: 'chai', price: 40, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=150', inStock: true },
+      11: { name: 'Osmania Biscuits (2)', cat: 'snacks', price: 10, img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=150', inStock: true },
+      12: { name: 'Bun Maska', cat: 'snacks', price: 30, img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=150', inStock: true },
+      13: { name: 'Onion Samosa (2)', cat: 'snacks', price: 20, img: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=150', inStock: true },
+      14: { name: 'French Fries', cat: 'snacks', price: 70, img: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150', inStock: true },
+      21: { name: 'Cold Coffee', cat: 'beverages', price: 60, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150', inStock: true },
+      22: { name: 'Royal Falooda', cat: 'beverages', price: 80, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150', inStock: true }
+    };
 
-    // Loud High-Tech Kitchen Alarm Synth
-    function playAlarm() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.setValueAtTime(1760, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.5, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(); osc.stop(ctx.currentTime + 0.4);
-      } catch(e){}
+    // Initialize menu in database if not already present
+    db.ref('menu').once('value', snapshot => {
+      if (!snapshot.exists()) {
+        db.ref('menu').set(defaultMenu);
+      }
+    });
+
+    // Render Stock Toggles in Kitchen
+    db.ref('menu').on('value', snapshot => {
+      const menu = snapshot.val() || {};
+      const container = document.getElementById('stock-container');
+      container.innerHTML = "";
+      Object.keys(menu).forEach(id => {
+        let item = menu[id];
+        let btnClass = item.inStock !== false ? 'in-stock' : 'out-stock';
+        let btnText = item.inStock !== false ? 'In Stock' : 'Out of Stock';
+        container.innerHTML += `
+          <div class="stock-item">
+            <span>${item.name}</span>
+            <button class="stock-toggle ${btnClass}" onclick="toggleStock('${id}', ${item.inStock !== false})">${btnText}</button>
+          </div>`;
+      });
+    });
+
+    function toggleStock(id, currentState) {
+      db.ref(`menu/${id}`).update({ inStock: !currentState });
     }
 
+    // Listen to Orders, Calculate Revenues & Render Kitchen Cards
     db.ref('orders').on('value', (snapshot) => {
-      const data = snapshot.val();
+      const data = snapshot.val() || {};
       const grid = document.getElementById('orders-grid');
       grid.innerHTML = "";
 
-      if (!data) {
-        document.getElementById('active-count').innerText = 0;
-        return;
-      }
+      let todayRev = 0, monthRev = 0, yearRev = 0;
+      const now = new Date();
+      const currentDay = now.toDateString();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
 
-      // Filter out Cleared orders so they leave the screen
       const orders = Object.values(data).filter(o => o.status !== 'Cleared');
       document.getElementById('active-count').innerText = orders.length;
 
-      // Ring bell only if new order arrived
-      if (orders.length > previousCount) playAlarm();
-      previousCount = orders.length;
+      // Tally calculation across all orders in database
+      Object.values(data).forEach(o => {
+        if (o.status === 'Cleared' && o.timestamp) {
+          const orderDate = new Date(o.timestamp);
+          const amt = Number(o.total) || 0;
+
+          if (orderDate.toDateString() === currentDay) todayRev += amt;
+          if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) monthRev += amt;
+          if (orderDate.getFullYear() === currentYear) yearRev += amt;
+        }
+      });
+
+      document.getElementById('rev-today').innerText = `₹${todayRev}`;
+      document.getElementById('rev-month').innerText = `₹${monthRev}`;
+      document.getElementById('rev-year').innerText = `₹${yearRev}`;
 
       orders.reverse().forEach(order => {
         let itemsHtml = order.items.map(i => `<li>✔️ ${i}</li>`).join('');
         let statusClass = order.status === 'Preparing' ? 'preparing' : '';
         
+        let paymentBadge = order.paymentStatus === 'Verified' 
+          ? '<span style="color:var(--green); font-size:12px;">✅ Payment Confirmed</span>' 
+          : '<span style="color:#ef4444; font-size:12px;">⚠️ Payment Pending Verification</span>';
+
         let actionBtn = '';
         if (order.status === 'Pending') {
           actionBtn = `<button class="btn btn-prep" onclick="updateStatus('${order.orderId}', 'Preparing')">Start Cooking 🔥</button>`;
         } else if (order.status === 'Preparing') {
           actionBtn = `<button class="btn btn-serve" onclick="updateStatus('${order.orderId}', 'Served')">Mark Served 🚀</button>`;
         } else if (order.status === 'Served') {
-          actionBtn = `<button class="btn btn-clear" onclick="updateStatus('${order.orderId}', 'Cleared')">Bill Paid & Clear ✅</button>`;
+          actionBtn = `
+            ${order.paymentStatus !== 'Verified' ? `<button class="btn btn-verify" onclick="verifyPayment('${order.orderId}')">Confirm Payment Received 💵</button>` : ''}
+            <button class="btn btn-clear" onclick="updateStatus('${order.orderId}', 'Cleared')">Bill Paid & Clear ✅</button>`;
         }
 
         let timeStr = new Date(order.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
         grid.innerHTML += `
           <div class="card ${statusClass}">
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #1a253a; padding-bottom:10px;">
-              <strong style="color:var(--orange); font-size:18px;">TABLE #${order.table}</strong>
-              <span style="font-size:12px; color:#64748b;">${timeStr}</span>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #1a253a; padding-bottom:8px;">
+              <strong style="color:var(--orange); font-size:16px;">TABLE #${order.table}</strong>
+              <span style="font-size:11px; color:#64748b;">${timeStr}</span>
             </div>
             <ul class="item-list">${itemsHtml}</ul>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-              <div>
-                <span style="font-size:10px; color:#64748b; display:block;">PAYMENT</span>
-                <strong style="font-size:14px; color:#fff;">${order.paymentMode} - ₹${order.total}</strong>
-              </div>
+            <div style="margin: 8px 0; font-size:13px;">
+              <strong>${order.paymentMode} - ₹${order.total}</strong><br>
+              ${paymentBadge}
             </div>
             ${actionBtn}
           </div>`;
@@ -133,6 +205,10 @@
 
     function updateStatus(orderId, newStatus) {
       db.ref(`orders/${orderId}`).update({ status: newStatus });
+    }
+
+    function verifyPayment(orderId) {
+      db.ref(`orders/${orderId}`).update({ paymentStatus: 'Verified' });
     }
   </script>
 </body>
