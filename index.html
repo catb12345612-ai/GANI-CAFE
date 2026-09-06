@@ -3,137 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Premium Digital Dining</title>
+  <title>Gani Cafe - Kitchen Command Center & Billing Ledger</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     :root {
       --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7);
-      --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981;
+      --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); background-image: radial-gradient(circle at top right, #1e293b, #0f172a); color: var(--text); margin: 0; padding-bottom: 120px; }
-    header { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); background-image: radial-gradient(circle at top right, #1e293b, #0f172a); color: var(--text); margin: 0; padding: 20px; }
+    
+    header { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); flex-wrap: wrap; gap: 15px; }
     .brand { display: flex; align-items: center; gap: 12px; }
     .logo { font-size: 28px; background: linear-gradient(135deg, #d97706, #f59e0b); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(217,119,6,0.4); }
-    .header-actions { display: flex; align-items: center; gap: 10px; }
-    .table-badge { background: var(--gold); color: #000; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 13px; letter-spacing: 1px; }
-    .feedback-trigger-btn { background: rgba(217, 119, 6, 0.15); border: 1px solid var(--gold); color: var(--gold); padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-    .feedback-trigger-btn:hover { background: var(--gold); color: #000; }
-
-    .container { max-width: 600px; margin: 0 auto; padding: 15px; }
-    .category-tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; scrollbar-width: none; }
-    .tab-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 10px 18px; border-radius: 25px; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: all 0.3s ease; }
-    .tab-btn.active { background: var(--gold); color: #000; border-color: var(--gold); box-shadow: 0 0 15px rgba(217,119,6,0.3); }
-
-    .menu-card { background: var(--card-bg); backdrop-filter: blur(5px); border-radius: 14px; padding: 12px; display: flex; gap: 12px; align-items: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 10px; transition: transform 0.2s; }
-    .menu-card.out-of-stock { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
-    .item-img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; }
-    .item-info { flex-grow: 1; }
-    .item-name { font-size: 15px; font-weight: 700; margin: 0 0 4px 0; }
-    .item-price { font-size: 14px; color: var(--gold); font-weight: 700; margin: 0; }
-    .stock-label { font-size: 11px; color: #ef4444; font-weight: bold; margin-top: 4px; display: block; }
     
-    .stepper { display: flex; align-items: center; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
-    .stepper button { background: var(--gold); color: #000; border: none; width: 32px; height: 32px; font-weight: 900; font-size: 16px; cursor: pointer; }
-    .stepper span { padding: 0 10px; font-weight: 700; font-size: 14px; min-width: 15px; text-align: center; }
+    .nav-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nav-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+    .nav-btn.active { background: var(--gold); color: #000; border-color: var(--gold); box-shadow: 0 0 15px rgba(217,119,6,0.3); }
 
-    .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.9); border-top: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(15px); }
-    .pay-btn { background: linear-gradient(135deg, #d97706, #f59e0b); color: #000; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer; text-transform: uppercase; }
-    
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100; padding: 15px; }
-    .modal-box { background: #1e293b; width: 100%; max-width: 400px; border-radius: 18px; padding: 25px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-    .pay-option { border: 2px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; margin: 8px 0; cursor: pointer; font-weight: 700; }
-    .pay-option.selected { border-color: var(--gold); background: rgba(217,119,6,0.15); color: var(--gold); }
-    
-    /* Star Rating Custom Styles */
-    .star-rating { display: flex; justify-content: center; gap: 8px; margin: 15px 0; font-size: 30px; cursor: pointer; }
-    .star { color: #475569; transition: color 0.2s; }
-    .star.active { color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
-    .feedback-input { width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; color: #fff; font-size: 14px; box-sizing: border-box; resize: none; margin-bottom: 15px; outline: none; }
-    .feedback-input:focus { border-color: var(--gold); }
+    .section-view { display: none; }
+    .section-view.active { display: block; }
 
-    .dev-footer { margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-muted); padding: 20px 0; border-top: 1px dashed rgba(255,255,255,0.1); line-height: 1.8; }
-    .dev-footer strong { color: var(--gold); }
+    /* Summary Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 14px; backdrop-filter: blur(5px); }
+    .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-card .val { font-size: 26px; font-weight: 800; color: var(--gold); margin: 0; }
+
+    /* Tables */
+    .data-table-container { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow-x: auto; backdrop-filter: blur(5px); margin-bottom: 25px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; white-space: nowrap; }
+    th { background: rgba(15, 23, 42, 0.8); color: var(--gold); padding: 14px 18px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    tr:last-child td { border-bottom: none; }
+
+    /* Filter subtabs */
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+
+    /* Orders Grid */
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .order-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; }
+    
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
+    .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+
+    /* Billing Status Badges */
+    .badge-paid { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-inbill { background: rgba(245, 158, 11, 0.2); color: var(--orange); border: 1px solid var(--orange); }
+    .badge-unpaid { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+
+    .action-group { margin-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px; }
+    .action-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block; font-weight: 700; }
+    .action-btns { display: flex; gap: 6px; }
+    
+    .btn { flex: 1; padding: 8px 6px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: none; text-transform: uppercase; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-prep { background: var(--gold); color: #000; }
+    .btn-done { background: var(--green); color: #000; }
+    .btn-clear { background: #38bdf8; color: #000; width: 100%; margin-top: 10px; padding: 10px; font-size: 12px; font-weight: 800; }
+    
+    .btn-pay-paid { background: var(--green); color: #000; }
+    .btn-pay-inbill { background: var(--orange); color: #000; }
+    .btn-pay-unpaid { background: var(--red); color: #fff; }
+
+    /* Menu stock grid */
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+    .menu-item-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
+    .menu-item-card img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
   <header>
     <div class="brand">
-      <div class="logo">☕</div>
+      <div class="logo">🍳</div>
       <div>
-        <h1 style="font-size:18px; margin:0; letter-spacing:1px;">GANI CAFE</h1>
-        <p style="font-size:11px; margin:0; color:var(--text-muted);">Supreme Fine Dining</p>
+        <h1 style="font-size:18px; margin:0;">GANI CAFE KITCHEN</h1>
+        <p style="font-size:11px; margin:0; color:var(--text-muted);">Command Center, Tally & Clearance Ledger</p>
       </div>
     </div>
-    <div class="header-actions">
-      <button class="feedback-trigger-btn" onclick="openFeedbackModal()">⭐ Rate Us</button>
-      <div class="table-badge">TABLE <span id="tbl-num">1</span></div>
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="switchTab('orders', this)">Live Orders 🔥</button>
+      <button class="nav-btn" onclick="switchTab('tally', this)">📊 Sales Tally Ledger</button>
+      <button class="nav-btn" onclick="switchTab('feedback', this)">⭐ Customer Feedback</button>
+      <button class="nav-btn" onclick="switchTab('menu', this)">⚙️ Stock Manager</button>
     </div>
   </header>
 
-  <div class="container">
-    <div class="category-tabs">
-      <button class="tab-btn active" onclick="filterCat('chai', this)">☕ Premium Chai</button>
-      <button class="tab-btn" onclick="filterCat('snacks', this)">🥪 Cafe Snacks</button>
-      <button class="tab-btn" onclick="filterCat('beverages', this)">🥤 Cold Beverages</button>
+  <!-- 1. LIVE ORDERS SECTION -->
+  <div id="section-orders" class="section-view active">
+    <div class="filter-tabs" style="margin-bottom: 15px;">
+      <button class="filter-btn active" onclick="setOrderFilter('all', this)">All Active Orders</button>
+      <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Aren't Paid / Unpaid 🔴</button>
+      <button class="filter-btn" onclick="setOrderFilter('inbill', this)">In Bill (Running Tab) 🟡</button>
+      <button class="filter-btn" onclick="setOrderFilter('paid', this)">Paid 🟢</button>
     </div>
-    <div id="menu-container"></div>
-    <div class="dev-footer">&copy; 2026 <strong>GANI CAFE</strong>. Developed by <strong>Syed Zeeshaan Ali</strong></div>
+    <div id="live-orders-container" class="orders-grid">
+      <p style="color: var(--text-muted);">Loading active orders...</p>
+    </div>
   </div>
 
-  <div class="cart-bar">
-    <div>
-      <span id="cart-count" style="font-size:12px; color:var(--text-muted)">0 Items</span><br>
-      <span style="font-size:22px; font-weight:800; color:var(--gold)">₹<span id="cart-total">0</span></span>
+  <!-- 2. SALES TALLY LEDGER SECTION -->
+  <div id="section-tally" class="section-view">
+    <div class="filter-tabs">
+      <button class="filter-btn active" onclick="setTallyFilter('day', this)">Today</button>
+      <button class="filter-btn" onclick="setTallyFilter('week', this)">This Week</button>
+      <button class="filter-btn" onclick="setTallyFilter('month', this)">This Month</button>
+      <button class="filter-btn" onclick="setTallyFilter('year', this)">This Year</button>
+      <button class="filter-btn" onclick="setTallyFilter('all', this)">All-Time</button>
     </div>
-    <button class="pay-btn" onclick="openCheckout()">Order Now 🚀</button>
-  </div>
 
-  <!-- CHECKOUT MODAL -->
-  <div class="modal" id="checkout-modal">
-    <div class="modal-box">
-      <h3 style="margin-top:0;">Select Payment Mode</h3>
-      <div class="pay-option selected" id="opt-upi" onclick="setPay('UPI')">📱 UPI / Online Scan</div>
-      <div class="pay-option" id="opt-cash" onclick="setPay('Cash')">💵 Cash at Counter</div>
-      <div id="qr-box" style="margin:15px 0; background:#fff; padding:10px; border-radius:12px; display:inline-block;">
-        <img id="upi-qr" src="" style="width:160px; height:160px; display:block;">
-        <p style="font-size:12px; color:#000; margin:5px 0 0; font-weight:bold;">UPI ID: Q227869939@ybl</p>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h4>Total Revenue</h4>
+        <p class="val">₹<span id="tally-revenue">0</span></p>
       </div>
-      <button class="pay-btn" style="width:100%; margin-top:10px;" onclick="placeOrder()">Confirm & Dispatch 🔥</button>
-      <p style="font-size:12px; color:var(--text-muted); margin-top:15px; cursor:pointer;" onclick="closeModal('checkout-modal')">Cancel</p>
+      <div class="stat-card">
+        <h4>Total Orders</h4>
+        <p class="val" id="tally-orders-count">0</p>
+      </div>
+      <div class="stat-card">
+        <h4>Items Sold</h4>
+        <p class="val" id="tally-items-count">0</p>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom: 12px; color: var(--gold);">Product-wise Sales Tally</h3>
+    <div class="data-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Units Sold</th>
+            <th>Revenue Generated</th>
+          </tr>
+        </thead>
+        <tbody id="tally-product-tbody">
+          <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No sales data for this period.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- STATUS MODAL -->
-  <div class="modal" id="status-modal">
-    <div class="modal-box">
-      <h2 style="color:var(--gold); margin-top:0;">🎉 Order Dispatched!</h2>
-      <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px dashed var(--gold);">
-        <span style="font-size:11px; color:var(--text-muted);">LIVE KITCHEN STATUS</span>
-        <h2 id="live-status-text" style="color:var(--gold); margin:10px 0;">Sending...</h2>
-      </div>
-      <button class="pay-btn" style="width:100%; font-size:13px; padding:10px; background:#334155; color:#fff;" onclick="closeModal('status-modal'); openFeedbackModal();">Leave Feedback ⭐</button>
+  <!-- 3. CUSTOMER FEEDBACK SECTION -->
+  <div id="section-feedback" class="section-view">
+    <div class="data-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Table</th>
+            <th>Rating</th>
+            <th>Comment</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="feedback-tbody">
+          <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No feedback received yet.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- FEEDBACK MODAL -->
-  <div class="modal" id="feedback-modal">
-    <div class="modal-box">
-      <h3 style="margin-top:0; color:var(--gold);">How was your experience?</h3>
-      <p style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">Tap stars to rate</p>
-      <div class="star-rating" id="star-container">
-        <span class="star active" onclick="selectRating(1)">★</span>
-        <span class="star active" onclick="selectRating(2)">★</span>
-        <span class="star active" onclick="selectRating(3)">★</span>
-        <span class="star active" onclick="selectRating(4)">★</span>
-        <span class="star active" onclick="selectRating(5)">★</span>
-      </div>
-      <textarea id="feedback-comment" class="feedback-input" rows="3" placeholder="Tell us about the food, service, or ambiance..."></textarea>
-      <button class="pay-btn" style="width:100%;" onclick="submitFeedback()">Submit Feedback 🚀</button>
-      <p style="font-size:12px; color:var(--text-muted); margin-top:15px; cursor:pointer;" onclick="closeModal('feedback-modal')">Close</p>
-    </div>
+  <!-- 4. STOCK MANAGER SECTION -->
+  <div id="section-menu" class="section-view">
+    <div id="menu-stock-container" class="menu-grid"></div>
   </div>
+
+  <!-- Audio Alert for New Orders -->
+  <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
     const firebaseConfig = {
@@ -150,147 +193,300 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const tableNo = urlParams.get('table') || '1';
-    document.getElementById('tbl-num').innerText = tableNo;
-
+    let allOrders = {};
     let menuData = {};
-    let cart = {}, currentCat = 'chai', payMode = 'UPI', currentOrderId = null;
-    let selectedStarRating = 5;
+    let allFeedback = {};
+    let currentTallyFilter = 'day';
+    let currentOrderFilter = 'all';
+    let previousOrderCount = null;
 
-    // Load Live Menu & Stock from Firebase
+    // Navigation Tab Switcher
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('section-' + tabId).classList.add('active');
+      btn.classList.add('active');
+      if (tabId === 'tally') calculateTally();
+    }
+
+    // Load Menu Data
     db.ref('menu').on('value', (snapshot) => {
       menuData = snapshot.val() || {};
-      renderMenu();
+      renderStockManager();
+      if (document.getElementById('section-tally').classList.contains('active')) {
+        calculateTally();
+      }
     });
 
-    function renderMenu() {
-      const container = document.getElementById('menu-container');
+    // Load Orders Data
+    db.ref('orders').on('value', (snapshot) => {
+      allOrders = snapshot.val() || {};
+      let orderKeys = Object.keys(allOrders);
+      
+      if (previousOrderCount !== null && orderKeys.length > previousOrderCount) {
+        document.getElementById('alert-sound').play().catch(e => console.log(e));
+      }
+      previousOrderCount = orderKeys.length;
+
+      renderLiveOrders();
+      if (document.getElementById('section-tally').classList.contains('active')) {
+        calculateTally();
+      }
+    });
+
+    // Load Feedback Data
+    db.ref('feedback').on('value', (snapshot) => {
+      allFeedback = snapshot.val() || {};
+      renderFeedback();
+    });
+
+    function setOrderFilter(filter, btn) {
+      currentOrderFilter = filter;
+      document.querySelectorAll('#section-orders .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderLiveOrders();
+    }
+
+    // 1. Render Live Orders with Billing Status & Clearance Controls
+    function renderLiveOrders() {
+      const container = document.getElementById('live-orders-container');
+      container.innerHTML = "";
+      let keys = Object.keys(allOrders);
+
+      if (keys.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted);">No active orders right now.</p>`;
+        return;
+      }
+
+      let filteredKeys = keys.filter(id => {
+        let order = allOrders[id];
+        if (order.status === 'Archived' || order.status === 'Cleared') return false; // Filter out fully cleared orders from active view
+        
+        let payStatus = (order.paymentStatus || 'Unpaid').toLowerCase();
+        if (currentOrderFilter === 'paid') return payStatus.includes('paid') && !payStatus.includes('unpaid');
+        if (currentOrderFilter === 'inbill') return payStatus.includes('in bill') || payStatus.includes('running');
+        if (currentOrderFilter === 'unpaid') return payStatus.includes('unpaid') || payStatus.includes('aren');
+        return true;
+      });
+
+      if (filteredKeys.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted);">No orders match this status filter.</p>`;
+        return;
+      }
+
+      filteredKeys.reverse().forEach(id => {
+        let order = allOrders[id];
+        let prepBadgeClass = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
+        
+        let rawPayStatus = order.paymentStatus || 'Unpaid (Aren\'t Paid)';
+        let payBadgeClass = 'badge-unpaid';
+        if (rawPayStatus === 'Paid') payBadgeClass = 'badge-paid';
+        else if (rawPayStatus === 'In Bill') payBadgeClass = 'badge-inbill';
+
+        let itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
+
+        container.innerHTML += `
+          <div class="order-card">
+            <div>
+              <div class="order-header">
+                <span style="font-weight: 800; font-size: 16px; color: var(--gold);">Table ${order.table}</span>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                  <span class="badge ${prepBadgeClass}">${order.status}</span>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px;">
+                <span style="color:var(--text-muted);">Mode: <strong>${order.paymentMode || 'UPI'}</strong></span>
+                <span class="badge ${payBadgeClass}">${rawPayStatus}</span>
+              </div>
+              <ul style="margin: 0 0 12px 0; padding-left: 20px; line-height: 1.5; font-size: 13px;">${itemsHtml}</ul>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 15px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
+                <span>Total: ₹${order.total}</span>
+              </div>
+              
+              <!-- Kitchen Prep Status Buttons -->
+              <div class="action-group" style="margin-top:0;">
+                <span class="action-label">Kitchen Status</span>
+                <div class="action-btns">
+                  <button class="btn btn-prep" onclick="updateOrderStatus('${id}', 'Preparing')">Prepare 👨‍🍳</button>
+                  <button class="btn btn-done" onclick="updateOrderStatus('${id}', 'Completed')">Complete ✅</button>
+                </div>
+              </div>
+
+              <!-- Billing / Payment Status Buttons -->
+              <div class="action-group">
+                <span class="action-label">Billing Status</span>
+                <div class="action-btns">
+                  <button class="btn btn-pay-unpaid" onclick="updatePaymentStatus('${id}', 'Unpaid')">Aren't Paid 🔴</button>
+                  <button class="btn btn-pay-inbill" onclick="updatePaymentStatus('${id}', 'In Bill')">In Bill 🟡</button>
+                  <button class="btn btn-pay-paid" onclick="updatePaymentStatus('${id}', 'Paid')">Paid 🟢</button>
+                </div>
+              </div>
+
+              <!-- Final Clearance Button -->
+              <button class="btn btn-clear" onclick="clearOrder('${id}')">Give Clearance & Archive 🧹</button>
+
+            </div>
+          </div>`;
+      });
+    }
+
+    function updateOrderStatus(orderId, status) {
+      db.ref(`orders/${orderId}`).update({ status: status });
+    }
+
+    function updatePaymentStatus(orderId, statusText) {
+      db.ref(`orders/${orderId}`).update({ paymentStatus: statusText });
+    }
+
+    function clearOrder(orderId) {
+      if (confirm("Are you sure you want to give final clearance and clear this order from the active queue? (Sales data remains permanently stored in the Tally Ledger)")) {
+        db.ref(`orders/${orderId}`).update({ status: 'Cleared' });
+      }
+    }
+
+    // 2. Sales Tally Engine
+    function setTallyFilter(filter, btn) {
+      currentTallyFilter = filter;
+      document.querySelectorAll('#section-tally .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calculateTally();
+    }
+
+    function calculateTally() {
+      let now = new Date();
+      let totalRev = 0;
+      let totalOrdersCount = 0;
+      let totalUnitsSold = 0;
+      let productSales = {};
+
+      Object.keys(menuData).forEach(id => {
+        let item = menuData[id];
+        productSales[item.name] = { cat: item.cat || 'General', qty: 0, rev: 0, price: item.price };
+      });
+
+      Object.keys(allOrders).forEach(id => {
+        let order = allOrders[id];
+        if (!order.timestamp) return;
+
+        let orderDate = new Date(order.timestamp);
+        let includeOrder = false;
+
+        if (currentTallyFilter === 'day') {
+          includeOrder = orderDate.toDateString() === now.toDateString();
+        } else if (currentTallyFilter === 'week') {
+          let diffTime = Math.abs(now - orderDate);
+          let diffDays = diffTime / (1000 * 60 * 60 * 24);
+          includeOrder = diffDays <= 7;
+        } else if (currentTallyFilter === 'month') {
+          includeOrder = orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+        } else if (currentTallyFilter === 'year') {
+          includeOrder = orderDate.getFullYear() === now.getFullYear();
+        } else if (currentTallyFilter === 'all') {
+          includeOrder = true;
+        }
+
+        if (includeOrder) {
+          totalRev += (order.total || 0);
+          totalOrdersCount++;
+
+          if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(itemStr => {
+              let match = itemStr.match(/^(\d+)x\s+(.+)$/);
+              if (match) {
+                let qty = parseInt(match[1]);
+                let name = match[2].trim();
+                totalUnitsSold += qty;
+
+                if (!productSales[name]) {
+                  productSales[name] = { cat: 'Cafe Item', qty: 0, rev: 0, price: 0 };
+                }
+                productSales[name].qty += qty;
+                let unitPrice = productSales[name].price || (order.total / totalUnitsSold); 
+                productSales[name].rev += qty * unitPrice;
+              }
+            });
+          }
+        }
+      });
+
+      document.getElementById('tally-revenue').innerText = totalRev.toLocaleString();
+      document.getElementById('tally-orders-count').innerText = totalOrdersCount;
+      document.getElementById('tally-items-count').innerText = totalUnitsSold;
+
+      let tbody = document.getElementById('tally-product-tbody');
+      tbody.innerHTML = "";
+
+      let sortedProducts = Object.keys(productSales).sort((a, b) => productSales[b].qty - productSales[a].qty);
+      let hasSales = false;
+
+      sortedProducts.forEach(prodName => {
+        let p = productSales[prodName];
+        if (p.qty > 0) {
+          hasSales = true;
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${prodName}</strong></td>
+              <td><span style="font-size:11px; color:var(--gold); text-transform:uppercase;">${p.cat}</span></td>
+              <td>${p.qty}</td>
+              <td>₹${p.rev.toLocaleString()}</td>
+            </tr>`;
+        }
+      });
+
+      if (!hasSales) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No sales recorded for this timeframe.</td></tr>`;
+      }
+    }
+
+    // 3. Render Feedback
+    function renderFeedback() {
+      let tbody = document.getElementById('feedback-tbody');
+      tbody.innerHTML = "";
+      let keys = Object.keys(allFeedback);
+
+      if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No feedback received yet.</td></tr>`;
+        return;
+      }
+
+      keys.reverse().forEach(id => {
+        let fb = allFeedback[id];
+        let stars = '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating);
+        let timeStr = new Date(fb.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>Table ${fb.table}</strong></td>
+            <td style="color: var(--gold);">${stars}</td>
+            <td>${fb.comment}</td>
+            <td style="color: var(--text-muted); font-size:12px;">${timeStr}</td>
+          </tr>`;
+      });
+    }
+
+    // 4. Stock Manager
+    function renderStockManager() {
+      const container = document.getElementById('menu-stock-container');
       container.innerHTML = "";
       Object.keys(menuData).forEach(id => {
         let item = menuData[id];
-        if (item.cat === currentCat) {
-          let qty = cart[id] || 0;
-          let stockClass = item.inStock === false ? 'out-of-stock' : '';
-          let stockText = item.inStock === false ? '<span class="stock-label">❌ Out of Stock</span>' : '';
-          container.innerHTML += `
-            <div class="menu-card ${stockClass}">
-              <img src="${item.img}" class="item-img">
-              <div class="item-info">
-                <h3 class="item-name">${item.name}</h3>
-                <p class="item-price">₹${item.price}</p>
-                ${stockText}
-              </div>
-              <div class="stepper">
-                <button onclick="updateQty('${id}', -1)">-</button>
-                <span>${qty}</span>
-                <button onclick="updateQty('${id}', 1)">+</button>
-              </div>
-            </div>`;
-        }
+        let inStock = item.inStock !== false;
+        let btnText = inStock ? '🟢 In Stock' : '🔴 Out of Stock';
+        let btnColor = inStock ? 'background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid var(--green);' : 'background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red);';
+
+        container.innerHTML += `
+          <div class="menu-item-card">
+            <img src="${item.img}">
+            <h4 style="margin:5px 0; font-size:14px;">${item.name}</h4>
+            <p style="color:var(--gold); font-weight:700; margin:0 0 10px 0;">₹${item.price}</p>
+            <button class="btn" style="${btnColor} width:100%; padding: 8px;" onclick="toggleStock('${id}', ${inStock})">${btnText}</button>
+          </div>`;
       });
     }
 
-    function filterCat(cat, btn) {
-      currentCat = cat;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active'); renderMenu();
-    }
-
-    function updateQty(id, change) {
-      cart[id] = (cart[id] || 0) + change;
-      if (cart[id] < 0) cart[id] = 0;
-      renderMenu(); updateCartSummary();
-    }
-
-    function updateCartSummary() {
-      let count = 0, total = 0;
-      Object.keys(cart).forEach(id => {
-        if(menuData[id]) {
-          let qty = cart[id];
-          count += qty; total += qty * menuData[id].price;
-        }
-      });
-      document.getElementById('cart-count').innerText = count + " Items";
-      document.getElementById('cart-total').innerText = total;
-      document.getElementById('upi-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=Q227869939@ybl&pn=GaniCafe&am=${total}&cu=INR`;
-    }
-
-    function setPay(mode) {
-      payMode = mode;
-      document.getElementById('opt-upi').className = mode === 'UPI' ? 'pay-option selected' : 'pay-option';
-      document.getElementById('opt-cash').className = mode === 'Cash' ? 'pay-option selected' : 'pay-option';
-      document.getElementById('qr-box').style.display = mode === 'UPI' ? 'inline-block' : 'none';
-    }
-
-    function openCheckout() {
-      let total = parseInt(document.getElementById('cart-total').innerText);
-      if (total === 0) return alert("Select at least 1 item!");
-      document.getElementById('checkout-modal').style.display = 'flex';
-    }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    function placeOrder() {
-      let orderedItems = [], total = 0;
-      Object.keys(cart).forEach(id => {
-        let qty = cart[id];
-        if (qty > 0 && menuData[id]) { 
-          orderedItems.push(`${qty}x ${menuData[id].name}`); 
-          total += qty * menuData[id].price; 
-        }
-      });
-
-      const orderRef = db.ref('orders').push();
-      currentOrderId = orderRef.key;
-      
-      orderRef.set({
-        orderId: currentOrderId, table: tableNo, items: orderedItems,
-        total: total, paymentMode: payMode, paymentStatus: 'Pending Verification', 
-        status: 'Pending', timestamp: Date.now()
-      });
-
-      closeModal('checkout-modal');
-      document.getElementById('status-modal').style.display = 'flex';
-
-      db.ref(`orders/${currentOrderId}`).on('value', (snapshot) => {
-        const val = snapshot.val();
-        if (val) {
-          document.getElementById('live-status-text').innerText = val.status === 'Pending' ? '👨‍🍳 Received in Kitchen' : val.status;
-        }
-      });
-    }
-
-    // Feedback System Logic
-    function openFeedbackModal() {
-      document.getElementById('feedback-modal').style.display = 'flex';
-    }
-
-    function selectRating(rating) {
-      selectedStarRating = rating;
-      const stars = document.querySelectorAll('.star');
-      stars.forEach((star, index) => {
-        if (index < rating) {
-          star.classList.add('active');
-        } else {
-          star.classList.remove('active');
-        }
-      });
-    }
-
-    function submitFeedback() {
-      let comment = document.getElementById('feedback-comment').value.trim();
-      db.ref('feedback').push({
-        table: tableNo,
-        rating: selectedStarRating,
-        comment: comment || 'No comments provided',
-        timestamp: Date.now()
-      }).then(() => {
-        alert("Thank you! Your feedback has been sent to the cafe.");
-        document.getElementById('feedback-comment').value = "";
-        closeModal('feedback-modal');
-      }).catch((err) => {
-        alert("Failed to submit feedback. Please check your connection.");
-      });
+    function toggleStock(id, currentStatus) {
+      db.ref(`menu/${id}`).update({ inStock: !currentStatus });
     }
   </script>
 </body>
