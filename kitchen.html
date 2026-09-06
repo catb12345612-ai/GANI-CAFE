@@ -5,51 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gani Cafe - God-Tier Autonomous KDS Terminal & Firebase Live Hub</title>
   
-  <!-- Firebase App & Firestore SDKs -->
-  <script src="// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
-  authDomain: "algani-cafe.firebaseapp.com",
-  databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
-  projectId: "algani-cafe",
-  storageBucket: "algani-cafe.firebasestorage.app",
-  messagingSenderId: "44056411552",
-  appId: "1:44056411552:web:b67f0cf82791a81fb0f8c5",
-  measurementId: "G-Q2ELLZ03SE"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);"></script>
-  <script src="// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
-  authDomain: "algani-cafe.firebaseapp.com",
-  databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
-  projectId: "algani-cafe",
-  storageBucket: "algani-cafe.firebasestorage.app",
-  messagingSenderId: "44056411552",
-  appId: "1:44056411552:web:b67f0cf82791a81fb0f8c5",
-  measurementId: "G-Q2ELLZ03SE"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);"></script>
+  <!-- Firebase App & Firestore SDKs (Compat Layer to match implementation) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
 
   <style>
     :root {
@@ -455,14 +414,16 @@ const analytics = getAnalytics(app);"></script>
   </div>
 
   <script>
-    // Firebase Config Keys (Replace with your working project configurations if needed)
+    // Updated Firebase Configuration
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
+      authDomain: "algani-cafe.firebaseapp.com",
+      databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
+      projectId: "algani-cafe",
+      storageBucket: "algani-cafe.firebasestorage.app",
+      messagingSenderId: "44056411552",
+      appId: "1:44056411552:web:a245596401ca636fb0f8c5",
+      measurementId: "G-9GDVR0V5VE"
     };
 
     // Initialize Firebase & Firestore
@@ -470,8 +431,9 @@ const analytics = getAnalytics(app);"></script>
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
+    const analytics = firebase.analytics();
 
-    // Google Apps Script Web App URL backup fallback
+    // Google Apps Script Web App URL endpoint specified
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNH26QYsZwkfJaD2ZZbVbBigJzfACXXE61owqSiS7LQ8ulCCXzzYVkF6cnTxxOV13t/exec";
 
     let previousOrderCount = 0;
@@ -499,7 +461,7 @@ const analytics = getAnalytics(app);"></script>
           osc.stop(audioCtx.currentTime + timeOffset + duration);
         };
 
-        playTone(880, 0, 0.15);     // First beep (A5)
+        playTone(880, 0, 0.15);      // First beep (A5)
         playTone(1318.51, 0.2, 0.25); // Second beep (E6 chime)
       } catch (e) {
         console.log("Audio alert suppressed by browser policy:", e);
@@ -525,11 +487,20 @@ const analytics = getAnalytics(app);"></script>
             ticketStates[ticketId] = data.status === "Ready" || data.status === "Completed" ? "ready" : "incoming";
           }
 
+          let formattedDetails = data.details || "Custom Order";
+          if (data.items) {
+            if (Array.isArray(data.items)) {
+              formattedDetails = JSON.stringify(data.items);
+            } else if (typeof data.items === 'string') {
+              formattedDetails = data.items;
+            }
+          }
+
           const ticketObj = {
-            timestamp: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+            timestamp: data.createdAt && typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
             id: ticketId,
             table: data.table || "1",
-            details: data.items ? JSON.stringify(data.items) : (data.details || "Custom Order"),
+            details: formattedDetails,
             total: data.total || 0,
             status: data.status || "Preparing",
             currentState: ticketStates[ticketId]
