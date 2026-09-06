@@ -3,165 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Menu & Live Order Status</title>
+  <title>Gani Cafe - Kitchen & Admin Dashboard</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     :root { --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b; --blue: #0ea5e9; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
     header { background: var(--card-bg); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 15px; }
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
-    .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
-    .card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-    .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .section-box { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; }
+    .btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: all 0.2s; font-size: 11px; }
     .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .cart-section, .status-section, .feedback-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
     .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
     .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
     .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
     .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
     .badge-paid { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
     .badge-unpaid { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
-    .badge-inbill { background: rgba(245, 158, 11, 0.2); color: var(--orange); border: 1px solid var(--orange); }
-    .qr-box { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; text-align: center; }
-    .qr-box img { width: 130px; height: 130px; }
-    .table-notice { background: rgba(217, 119, 6, 0.15); border: 1px solid var(--gold); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 8px; }
-
-    /* Digital Bill Modal Overlay */
-    #customer-bill-modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(8px);
-      display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
-    }
-    .bill-receipt-card {
-      background: #ffffff; color: #1e293b; width: 100%; max-width: 420px;
-      border-radius: 16px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-      position: relative; font-family: 'Courier New', Courier, monospace;
-    }
-    .receipt-header { text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 16px; margin-bottom: 16px; }
-    .receipt-header h2 { margin: 0; font-size: 22px; color: #0f172a; font-family: sans-serif; font-weight: 900; }
-    .receipt-header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-family: sans-serif; }
-    .receipt-meta { font-size: 12px; margin-bottom: 16px; font-family: sans-serif; display: flex; justify-content: space-between; }
-    .receipt-items-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
-    .receipt-items-table th { background: #f1f5f9; color: #334155; padding: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; text-align: left; }
-    .receipt-items-table td { padding: 8px; border-bottom: 1px dashed #e2e8f0; }
-    .receipt-total { border-top: 2px solid #0f172a; padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; font-family: sans-serif; }
-    .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748b; font-family: sans-serif; border-top: 1px dashed #cbd5e1; padding-top: 12px; }
-
-    @media print {
-      body * { visibility: hidden; }
-      #customer-bill-modal, #customer-bill-modal * { visibility: visible; }
-      #customer-bill-modal { position: absolute; left: 0; top: 0; background: #fff; backdrop-filter: none; padding: 0; }
-      .no-print { display: none !important; }
-    }
+    .order-card { background: rgba(15, 23, 42, 0.8); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Gani Cafe Menu</h1>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <label for="table-num" style="font-weight: 700; font-size: 14px;">Select Table:</label>
-      <input type="number" id="table-num" value="1" min="1" max="10" onchange="filterCustomerOrders()" style="width: 60px; padding: 6px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:6px; font-weight:bold; text-align:center;">
+    <h1>🍳 Gani Cafe - Kitchen & Admin Panel</h1>
+    <div>
+      <a href="index.html" target="_blank" class="btn" style="background: var(--blue); color: #fff; text-decoration: none; padding: 8px 14px;">Open Customer Menu ➔</a>
     </div>
   </header>
 
-  <div class="table-notice">
-    <span>📍</span> Please select your correct <strong>Table Number</strong> above before placing your order! Active orders will stay displayed until served and cleared.
-  </div>
-
-  <div id="menu-container" class="menu-grid"></div>
-
-  <div class="cart-section">
-    <h3>Your Order Cart</h3>
-    <ul id="cart-list" style="padding-left: 0; list-style: none; margin-bottom: 15px;">
-      <li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>
-    </ul>
-    <p><strong>Total: ₹<span id="cart-total">0</span></strong></p>
-    
-    <div style="margin: 15px 0;">
-      <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 700;">Select Payment Method:</label>
-      <select id="payment-mode" onchange="togglePaymentUI()" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
-        <option value="UPI">UPI / QR Code</option>
-        <option value="Cash">Cash / Pay at Counter</option>
-      </select>
-    </div>
-
-    <div id="qr-container" style="margin-bottom: 15px;">
-      <div class="qr-box">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=ganicafe@upi&pn=GaniCafe&cu=INR" alt="Payment QR">
-        <p style="color:#000; font-size:11px; margin:5px 0 0 0; font-weight:700;">Scan to Pay via UPI</p>
+  <div class="dashboard-grid">
+    <div class="section-box">
+      <h3>Active Kitchen Orders</h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Manage cooking queue and update live statuses.</p>
+      <div id="kitchen-orders-container">
+        <p style="color: var(--text-muted);">Loading live orders...</p>
       </div>
     </div>
 
-    <button class="btn" onclick="placeOrder()">Place Order 🚀</button>
-  </div>
-
-  <div class="status-section">
-    <h3>Live Order Status & Billing Tracker (Table <span id="display-table">1</span>)</h3>
-    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your orders remain saved here in real-time and will not disappear or refresh until the kitchen serves and clears them.</p>
-    
-    <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
-      <p style="color: var(--text-muted);">No active orders for this table.</p>
-    </div>
-
-    <button class="btn" style="background: var(--blue); color: #fff; width: 100%; margin-top: 20px; padding: 12px; font-size: 13px;" onclick="openCustomerBillModal()">📄 View & Download Complete Table Bill / Invoice</button>
-  </div>
-
-  <div class="feedback-section">
-    <h3>💬 Share Your Feedback</h3>
-    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">We love hearing from you! Please let us know about your cafe experience.</p>
-    <div style="display: grid; gap: 12px; max-width: 450px;">
-      <input type="text" id="feedback-name" placeholder="Your Name / Nickname" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
-      <select id="feedback-rating" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
-        <option value="5">⭐⭐⭐⭐⭐ (5/5 - Excellent Experience)</option>
-        <option value="4">⭐⭐⭐⭐ (4/5 - Good)</option>
-        <option value="3">⭐⭐⭐ (3/5 - Average)</option>
-        <option value="2">⭐⭐ (2/5 - Poor)</option>
-        <option value="1">⭐ (1/5 - Very Bad)</option>
-      </select>
-      <textarea id="feedback-comment" placeholder="Write your comments or suggestions..." rows="3" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; resize: vertical;"></textarea>
-      <button class="btn" onclick="submitFeedback()">Submit Feedback 📝</button>
-    </div>
-  </div>
-
-  <!-- Digital Bill Modal Overlay -->
-  <div id="customer-bill-modal">
-    <div class="bill-receipt-card">
-      <div class="receipt-header">
-        <h2>GANI CAFE</h2>
-        <p>Customer Dining Invoice</p>
-      </div>
-      <div class="receipt-meta">
-        <span id="customer-bill-modal-table">Table: 1</span>
-        <span id="customer-bill-modal-time">Date: --</span>
-      </div>
-      <table class="receipt-items-table">
-        <thead>
-          <tr>
-            <th>Item Description</th>
-            <th style="text-align:right;">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody id="customer-bill-modal-items-tbody">
-          <!-- Populated dynamically -->
-        </tbody>
-      </table>
-      <div class="receipt-total">
-        <span>GRAND TOTAL:</span>
-        <span id="customer-bill-modal-grand-total">₹0</span>
-      </div>
-      <div class="receipt-footer">
-        <p>Thank you for dining at Gani Cafe! ⭐</p>
-        <p style="font-size: 9px; margin-top: 4px;">Take a screenshot or print for your records</p>
-      </div>
-      <div class="no-print" style="margin-top: 20px; display: flex; gap: 10px;">
-        <button class="btn" style="flex:1; background: #0284c7; color: #fff; padding: 10px; font-size: 12px;" onclick="window.print()">🖨️ Print / Save PDF</button>
-        <button class="btn" style="flex:1; background: #cbd5e1; color: #0f172a; padding: 10px; font-size: 12px;" onclick="closeCustomerBillModal()">Close ✕</button>
+    <div class="section-box">
+      <h3>Menu Stock Management</h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Toggle item availability instantly for customers.</p>
+      <div id="kitchen-menu-container" style="display: grid; gap: 10px;">
+        <p style="color: var(--text-muted);">Loading menu stock...</p>
       </div>
     </div>
   </div>
 
-  <audio id="customer-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+  <audio id="kitchen-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
     const firebaseConfig = {
@@ -174,20 +62,18 @@
       appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
       measurementId: "G-F7TXYZBYKY"
     };
-    
-    // Check if Firebase is already initialized to prevent errors
+
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.database();
 
-    let cart = {};
+    let allOrders = {};
     let menuItems = {};
-    let allOrdersData = {};
-    let previousTableStatuses = {};
+    let previousOrderCount = 0;
 
     function playSound() {
-      let audio = document.getElementById('customer-alert-sound');
+      let audio = document.getElementById('kitchen-alert-sound');
       if (audio) {
         audio.currentTime = 0;
         audio.play().catch(e => console.log(e));
@@ -197,264 +83,105 @@
     function formatDateTime(timestamp) {
       if (!timestamp) return 'N/A';
       let d = new Date(timestamp);
-      let dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-      let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      return `${dateStr}, ${timeStr}`;
+      return `${d.toLocaleDateString([], {month:'short', day:'numeric'})}, ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
     }
 
-    function renderMenu() {
-      let container = document.getElementById('menu-container');
-      container.innerHTML = '';
-      Object.keys(menuItems).forEach(id => {
-        let item = menuItems[id];
-        if (item.inStock !== false) {
-          let qty = cart[id] || 0;
-          let actionHtml = qty === 0 
-            ? `<button class="btn" onclick="addToCart('${id}')">Add to Cart</button>`
-            : `<div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
-                 <button class="btn" style="padding: 4px 10px;" onclick="decreaseQuantity('${id}')">-</button>
-                 <span style="font-weight: bold; font-size: 16px;">${qty}</span>
-                 <button class="btn" style="padding: 4px 10px;" onclick="increaseQuantity('${id}')">+</button>
-               </div>`;
+    db.ref('orders').on('value', snap => {
+      allOrders = snap.val() || {};
+      let keys = Object.keys(allOrders);
+      
+      let activeKeys = keys.filter(k => allOrders[k].status !== 'Cleared');
+      if (activeKeys.length > previousOrderCount) {
+        playSound();
+      }
+      previousOrderCount = activeKeys.length;
 
-          container.innerHTML += `
-            <div class="card">
-              <img src="${item.img}" alt="${item.name}">
-              <h4>${item.name}</h4>
-              <p>₹${item.price}</p>
-              ${actionHtml}
-            </div>`;
-        }
-      });
-    }
+      renderKitchenOrders();
+    });
 
     db.ref('menu').on('value', snap => {
       menuItems = snap.val() || {};
-      renderMenu();
+      renderKitchenMenu();
     });
 
-    db.ref('orders').on('value', snap => {
-      allOrdersData = snap.val() || {};
-      let currentTable = document.getElementById('table-num').value;
-      
-      Object.keys(allOrdersData).forEach(id => {
-        let order = allOrdersData[id];
-        if (String(order.table) === String(currentTable)) {
-          if (previousTableStatuses[id] && previousTableStatuses[id] !== order.status) {
-            if (order.status === 'Completed' || order.status === 'Preparing') {
-              playSound();
-            }
-          }
-          previousTableStatuses[id] = order.status;
-        }
-      });
-
-      filterCustomerOrders();
-    });
-
-    function togglePaymentUI() {
-      let mode = document.getElementById('payment-mode').value;
-      let qrContainer = document.getElementById('qr-container');
-      qrContainer.style.display = (mode === 'UPI') ? 'block' : 'none';
-    }
-
-    function addToCart(id) {
-      cart[id] = (cart[id] || 0) + 1;
-      playSound();
-      renderMenu();
-      updateCartUI();
-    }
-
-    function increaseQuantity(id) {
-      cart[id] = (cart[id] || 0) + 1;
-      playSound();
-      renderMenu();
-      updateCartUI();
-    }
-
-    function decreaseQuantity(id) {
-      if (cart[id] > 1) {
-        cart[id]--;
-      } else {
-        delete cart[id];
-      }
-      playSound();
-      renderMenu();
-      updateCartUI();
-    }
-
-    function updateCartUI() {
-      let list = document.getElementById('cart-list');
-      let totalEl = document.getElementById('cart-total');
-      list.innerHTML = '';
-      let total = 0;
-      let hasItems = false;
-
-      Object.keys(cart).forEach(id => {
-        let qty = cart[id];
-        let item = menuItems[id];
-        if (item && qty > 0) {
-          hasItems = true;
-          total += item.price * qty;
-          list.innerHTML += `
-            <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(15, 23, 42, 0.4); padding: 8px 12px; border-radius: 8px;">
-              <span style="font-weight: 600; font-size: 14px;">${item.name}</span>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="decreaseQuantity('${id}')">-</button>
-                <span style="font-weight: bold; min-width: 20px; text-align: center;">${qty}</span>
-                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="increaseQuantity('${id}')">+</button>
-                <span style="font-weight: bold; min-width: 60px; text-align: right;">₹${item.price * qty}</span>
-              </div>
-            </li>`;
-        }
-      });
-
-      if (!hasItems) {
-        list.innerHTML = `<li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>`;
-      }
-      totalEl.innerText = total;
-    }
-
-    function placeOrder() {
-      let table = document.getElementById('table-num').value;
-      let paymentMode = document.getElementById('payment-mode').value;
-      let items = [];
-      let total = 0;
-      Object.keys(cart).forEach(id => {
-        let qty = cart[id];
-        let item = menuItems[id];
-        if (item && qty > 0) {
-          items.push(`${qty}x ${item.name}`);
-          total += item.price * qty;
-        }
-      });
-      if (items.length === 0) { alert('Your cart is empty!'); return; }
-      if (!table) { alert('Please select a table number!'); return; }
-      
-      db.ref('orders').push({
-        table: table,
-        items: items,
-        total: total,
-        status: 'Pending',
-        paymentStatus: 'Unpaid',
-        paymentMode: paymentMode,
-        timestamp: Date.now()
-      });
-      playSound();
-      alert('Order placed successfully for Table ' + table + '!');
-      cart = {};
-      renderMenu();
-      updateCartUI();
-    }
-
-    function openCustomerBillModal() {
-      let currentTable = document.getElementById('table-num').value;
-      let keys = Object.keys(allOrdersData);
-      let tableOrders = keys.filter(id => {
-        let order = allOrdersData[id];
-        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
-      });
-
-      if (tableOrders.length === 0) {
-        alert(`No active orders found for Table ${currentTable} to generate a bill.`);
-        return;
-      }
-
-      document.getElementById('customer-bill-modal-table').innerText = `Table: ${currentTable}`;
-      document.getElementById('customer-bill-modal-time').innerText = `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-
-      let tbody = document.getElementById('customer-bill-modal-items-tbody');
-      tbody.innerHTML = "";
-      let grandTotal = 0;
-
-      tableOrders.forEach(orderId => {
-        let order = allOrdersData[orderId];
-        grandTotal += (order.total || 0);
-        if (order.items) {
-          order.items.forEach(itemStr => {
-            tbody.innerHTML += `
-              <tr>
-                <td>${itemStr}</td>
-                <td style="text-align:right;">₹${order.total}</td>
-              </tr>`;
-          });
-        }
-      });
-
-      document.getElementById('customer-bill-modal-grand-total').innerText = `₹${grandTotal}`;
-      document.getElementById('customer-bill-modal').style.display = 'flex';
-    }
-
-    function closeCustomerBillModal() {
-      document.getElementById('customer-bill-modal').style.display = 'none';
-    }
-
-    function submitFeedback() {
-      let table = document.getElementById('table-num').value;
-      let name = document.getElementById('feedback-name').value.trim();
-      let rating = document.getElementById('feedback-rating').value;
-      let comment = document.getElementById('feedback-comment').value.trim();
-
-      if (!name) { alert('Please enter your name!'); return; }
-      if (!comment) { alert('Please write a feedback comment!'); return; }
-
-      db.ref('feedback').push({
-        table: table,
-        name: name,
-        rating: rating,
-        comment: comment,
-        timestamp: Date.now()
-      });
-
-      playSound();
-      alert('Thank you for your valuable feedback!');
-      document.getElementById('feedback-name').value = '';
-      document.getElementById('feedback-comment').value = '';
-    }
-
-    function filterCustomerOrders() {
-      let currentTable = document.getElementById('table-num').value;
-      document.getElementById('display-table').innerText = currentTable;
-      let container = document.getElementById('customer-orders-container');
+    function renderKitchenOrders() {
+      let container = document.getElementById('kitchen-orders-container');
       container.innerHTML = '';
 
-      let keys = Object.keys(allOrdersData);
-      let tableOrders = keys.filter(id => {
-        let order = allOrdersData[id];
-        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
-      });
+      let keys = Object.keys(allOrders);
+      let activeOrders = keys.filter(id => allOrders[id].status !== 'Cleared' && allOrders[id].status !== 'Archived');
 
-      if (tableOrders.length === 0) {
-        container.innerHTML = `<p style="color: var(--text-muted);">No active orders for this table. Place an order above!</p>`;
+      if (activeOrders.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted);">No active orders right now.</p>`;
         return;
       }
 
-      tableOrders.reverse().forEach(id => {
-        let order = allOrdersData[id];
+      activeOrders.reverse().forEach(id => {
+        let order = allOrders[id];
         let prepBadge = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
-        let payBadge = order.paymentStatus.includes('Paid') ? 'badge-paid' : (order.paymentStatus.includes('In Bill') ? 'badge-inbill' : 'badge-unpaid');
-        let itemsHtml = order.items.map(i => `<li>${i}</li>`).join('');
-        let formattedTime = formatDateTime(order.timestamp);
+        let payBadge = order.paymentStatus && order.paymentStatus.includes('Paid') ? 'badge-paid' : 'badge-unpaid';
+        let itemsHtml = order.items ? order.items.map(i => `<li>${i}</li>`).join('') : '';
 
         container.innerHTML += `
-          <div style="background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <div>
-                <strong>Order ID: #${id.slice(-5)}</strong>
-                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px;">📅 ${formattedTime}</span>
-              </div>
-              <div style="display:flex; gap:6px;">
-                <span class="badge ${prepBadge}">Kitchen: ${order.status}</span>
-                <span class="badge ${payBadge}">Payment: ${order.paymentStatus}</span>
+          <div class="order-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <strong>Table ${order.table} (#${id.slice(-5)})</strong>
+              <div style="display:flex; gap:4px;">
+                <span class="badge ${prepBadge}">${order.status}</span>
+                <span class="badge ${payBadge}">${order.paymentStatus || 'Unpaid'}</span>
               </div>
             </div>
-            <p style="margin:5px 0; font-size:13px; color:var(--text-muted);">Payment Mode: <strong>${order.paymentMode}</strong></p>
-            <ul style="margin: 5px 0 10px 0; padding-left: 20px; font-size: 13px;">${itemsHtml}</ul>
-            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:14px;">
-              <span>Total: ₹${order.total}</span>
+            <p style="font-size:11px; color:var(--text-muted); margin:2px 0 6px 0;">Time: ${formatDateTime(order.timestamp)} | Mode: <strong>${order.paymentMode || 'UPI'}</strong></p>
+            <ul style="margin: 5px 0 10px 0; padding-left: 18px; font-size: 13px;">${itemsHtml}</ul>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">
+              <span style="font-size:13px; font-weight:bold;">₹${order.total}</span>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                ${order.status === 'Pending' ? `<button class="btn" style="background:var(--orange);" onclick="updateStatus('${id}', 'Preparing')">Start Cooking</button>` : ''}
+                ${order.status !== 'Completed' ? `<button class="btn" style="background:var(--green); color:#fff;" onclick="updateStatus('${id}', 'Completed')">Mark Ready</button>` : ''}
+                ${(!order.paymentStatus || order.paymentStatus === 'Unpaid') ? `<button class="btn" style="background:var(--blue); color:#fff;" onclick="markPaid('${id}')">Mark Paid</button>` : ''}
+                <button class="btn" style="background:var(--red); color:#fff;" onclick="clearOrder('${id}')">Clear ✕</button>
+              </div>
             </div>
           </div>`;
       });
+    }
+
+    function renderKitchenMenu() {
+      let container = document.getElementById('kitchen-menu-container');
+      container.innerHTML = '';
+
+      Object.keys(menuItems).forEach(id => {
+        let item = menuItems[id];
+        let inStock = item.inStock !== false;
+        container.innerHTML += `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+            <div>
+              <span style="font-weight:600; font-size:13px; display:block;">${item.name}</span>
+              <span style="font-size:11px; color:var(--text-muted);">₹${item.price}</span>
+            </div>
+            <button class="btn" style="background: ${inStock ? 'var(--green)' : 'var(--red)'}; color: #fff;" onclick="toggleStock('${id}', ${inStock})">
+              ${inStock ? 'In Stock ✓' : 'Sold Out ✕'}
+            </button>
+          </div>`;
+      });
+    }
+
+    function updateStatus(id, newStatus) {
+      db.ref(`orders/${id}`).update({ status: newStatus });
+    }
+
+    function markPaid(id) {
+      db.ref(`orders/${id}`).update({ paymentStatus: 'Paid' });
+    }
+
+    function clearOrder(id) {
+      if (confirm('Are you sure you want to clear/archive this order?')) {
+        db.ref(`orders/${id}`).update({ status: 'Cleared' });
+      }
+    }
+
+    function toggleStock(id, currentStatus) {
+      db.ref(`menu/${id}`).update({ inStock: !currentStatus });
     }
   </script>
 </body>
