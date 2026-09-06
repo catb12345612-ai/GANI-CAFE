@@ -1,9 +1,10 @@
+<!-- KITCHEN COMMAND & FEEDBACK DASHBOARD (kitchen.html) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Kitchen Command & Records</title>
+  <title>Gani Cafe - Kitchen Command, Tally & Feedback</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
@@ -21,13 +22,16 @@
     .stat-box h3 { margin: 0 0 5px 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
     .stat-box p { margin: 0; font-size: 22px; font-weight: bold; color: var(--green); }
 
-    /* Item Sales Tally Section */
-    .tally-section { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 25px; }
+    /* Sections */
+    .section-box { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 25px; }
     .tally-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
     .tally-card { background: #1e293b; border: 1px solid var(--border); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-    /* Stock & Inventory Section */
-    .stock-section { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 25px; }
+    /* Feedback Grid */
+    .feedback-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
+    .feedback-card { background: #1e293b; border: 1px solid var(--border); padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); font-size: 13px; }
+
+    /* Stock Management */
     .stock-grid { display: flex; gap: 10px; overflow-x: auto; padding-top: 10px; }
     .stock-item { background: #1e293b; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
     .stock-toggle { cursor: pointer; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; }
@@ -50,9 +54,12 @@
 <body>
 
   <header>
-    <h1>⚡ Gani Cafe Command & Records</h1>
-    <div style="background:#1e293b; padding:8px 15px; border-radius:8px; border:1px solid var(--cyan);">
-      <span style="font-size:12px; color:var(--cyan);">LIVE ORDERS: <strong id="active-count" style="color:#fff;">0</strong></span>
+    <h1>⚡ Gani Cafe Command, Tally & Feedback</h1>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button onclick="enableAudio()" style="background:var(--cyan); border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px;">🔊 Enable Audio Alerts</button>
+      <div style="background:#1e293b; padding:8px 15px; border-radius:8px; border:1px solid var(--cyan);">
+        <span style="font-size:12px; color:var(--cyan);">LIVE ORDERS: <strong id="active-count" style="color:#fff;">0</strong></span>
+      </div>
     </div>
   </header>
 
@@ -73,15 +80,23 @@
   </div>
 
   <!-- ITEM-WISE QUANTITIES SOLD TODAY -->
-  <div class="tally-section">
-    <h3 style="margin:0; font-size:14px; color:var(--cyan);">📦 Today's Item-Wise Quantity Tally (What Sold Today)</h3>
+  <div class="section-box">
+    <h3 style="margin:0; font-size:14px; color:var(--cyan);">📦 Today's Item-Wise Quantity Tally</h3>
     <div class="tally-grid" id="item-tally-container">
       <p style="color:#64748b; font-size:13px; margin:5px 0;">No items sold yet today.</p>
     </div>
   </div>
 
+  <!-- CUSTOMER FEEDBACK SECTION -->
+  <div class="section-box" style="border-left: 4px solid var(--orange);">
+    <h3 style="margin:0 0 10px 0; font-size:14px; color:var(--orange);">💬 Customer Feedback & Ratings</h3>
+    <div class="feedback-grid" id="feedback-container">
+      <p style="color:#64748b; font-size:13px; margin:0;">No customer feedback received yet.</p>
+    </div>
+  </div>
+
   <!-- STOCK & INVENTORY CONTROLS -->
-  <div class="stock-section">
+  <div class="section-box">
     <h3 style="margin:0; font-size:14px; color:var(--orange);">Kitchen Stock Management (Click to Toggle Availability)</h3>
     <div class="stock-grid" id="stock-container"></div>
   </div>
@@ -105,24 +120,36 @@
     const db = firebase.database();
 
     let previousActiveCount = 0;
+    let previousFeedbackCount = 0;
+    let audioCtx = null;
 
-    // Loud High-Tech Kitchen Alarm Synth (Plays when a new order arrives)
-    function playAlarm() {
+    function enableAudio() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      alert("Audio alerts enabled successfully!");
+    }
+
+    function playAlarm(type = 'order') {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         osc.type = 'square';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.setValueAtTime(1760, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.5, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(); osc.stop(ctx.currentTime + 0.4);
+        if (type === 'order') {
+          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(1760, audioCtx.currentTime + 0.15);
+        } else {
+          // Feedback chime
+          osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.2);
+        }
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
       } catch(e) {}
     }
 
-    // Render Stock Toggles in Kitchen
+    // Listen to Menu / Stock
     db.ref('menu').on('value', snapshot => {
       const menu = snapshot.val() || {};
       const container = document.getElementById('stock-container');
@@ -143,7 +170,38 @@
       db.ref(`menu/${id}`).update({ inStock: !currentState });
     }
 
-    // Listen to Orders, Calculate Revenues & Item Tally
+    // Listen to Customer Feedback
+    db.ref('feedback').on('value', snapshot => {
+      const data = snapshot.val() || {};
+      const container = document.getElementById('feedback-container');
+      container.innerHTML = "";
+      const feedbacks = Object.values(data);
+
+      if (feedbacks.length > previousFeedbackCount && previousFeedbackCount !== 0) {
+        playAlarm('feedback');
+      }
+      previousFeedbackCount = feedbacks.length;
+
+      if (feedbacks.length === 0) {
+        container.innerHTML = `<p style="color:#64748b; font-size:13px; margin:0;">No customer feedback received yet.</p>`;
+      } else {
+        feedbacks.reverse().forEach(fb => {
+          let stars = '⭐'.repeat(Number(fb.rating) || 5);
+          let timeStr = fb.timestamp ? new Date(fb.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+          container.innerHTML += `
+            <div class="feedback-card">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <strong>Table #${fb.table || 'N/A'}</strong>
+                <span style="color:#94a3b8; font-size:11px;">${timeStr}</span>
+              </div>
+              <div style="margin-bottom:4px;">${stars}</div>
+              <p style="margin:0; color:#f1f5f9;">"${fb.comment || 'No comment'}"</p>
+            </div>`;
+        });
+      }
+    });
+
+    // Listen to Orders
     db.ref('orders').on('value', (snapshot) => {
       const data = snapshot.val() || {};
       const grid = document.getElementById('orders-grid');
@@ -159,26 +217,22 @@
       const orders = Object.values(data).filter(o => o.status !== 'Cleared');
       document.getElementById('active-count').innerText = orders.length;
 
-      // Trigger alarm sound if a new order arrives
-      if (orders.length > previousActiveCount) {
-        playAlarm();
+      if (orders.length > previousActiveCount && previousActiveCount !== 0) {
+        playAlarm('order');
       }
       previousActiveCount = orders.length;
 
-      // Analyze all orders for revenue and item counts
       Object.values(data).forEach(o => {
         if (o.timestamp) {
           const orderDate = new Date(o.timestamp);
           const amt = Number(o.total) || 0;
 
-          // Calculate completed/cleared revenues
           if (o.status === 'Cleared') {
             if (orderDate.toDateString() === currentDay) todayRev += amt;
             if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) monthRev += amt;
             if (orderDate.getFullYear() === currentYear) yearRev += amt;
           }
 
-          // Tally item quantities for TODAY across all orders
           if (orderDate.toDateString() === currentDay && o.items) {
             o.items.forEach(itemStr => {
               let parts = itemStr.split('x ');
@@ -190,12 +244,10 @@
         }
       });
 
-      // Update Revenue UI
       document.getElementById('rev-today').innerText = `₹${todayRev}`;
       document.getElementById('rev-month').innerText = `₹${monthRev}`;
       document.getElementById('rev-year').innerText = `₹${yearRev}`;
 
-      // Update Item Tally UI
       const tallyContainer = document.getElementById('item-tally-container');
       tallyContainer.innerHTML = "";
       const itemKeys = Object.keys(todayItemCounts);
@@ -211,7 +263,6 @@
         });
       }
 
-      // Render Active Orders Grid
       orders.reverse().forEach(order => {
         let itemsHtml = order.items.map(i => `<li>✔️ ${i}</li>`).join('');
         let statusClass = order.status === 'Preparing' ? 'preparing' : '';
