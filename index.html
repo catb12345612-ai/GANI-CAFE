@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gani Cafe - QR Menu, Ordering, Payment & Feedback</title>
   
-  <!-- Firebase App & Firestore SDKs -->
+  <!-- Firebase App & Firestore SDKs (Compat Version) -->
   <script src="// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -332,10 +332,6 @@ const analytics = getAnalytics(app);"></script>
       background: #fafafa;
     }
 
-    .pay-option input {
-      display: none;
-    }
-
     .pay-option.selected {
       border-color: var(--primary);
       background: #fffbeb;
@@ -547,17 +543,19 @@ const analytics = getAnalytics(app);"></script>
   </div>
 
   <script>
-    // Firebase Config Keys (Replace with your actual Firebase project credentials)
+    // Firebase Config Keys
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
+      authDomain: "algani-cafe.firebaseapp.com",
+      databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
+      projectId: "algani-cafe",
+      storageBucket: "algani-cafe.firebasestorage.app",
+      messagingSenderId: "44056411552",
+      appId: "1:44056411552:web:a245596401ca636fb0f8c5",
+      measurementId: "G-9GDVR0V5VE"
     };
 
-    // Initialize Firebase and Firestore Database safely
+    // Initialize Firebase and Firestore Database safely using compat library
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
@@ -587,7 +585,7 @@ const analytics = getAnalytics(app);"></script>
     let activeOrderDocId = null;
     let orderListenerUnsubscribe = null;
 
-    // Web Audio API Synthesized Chime (No external audio file dependency = 0 missing resource errors)
+    // Web Audio API Synthesized Chime
     function playOrderChime() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -595,8 +593,8 @@ const analytics = getAnalytics(app);"></script>
         const gainNode = audioCtx.createGain();
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
-        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5 note
+        oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); 
 
         gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
@@ -613,6 +611,7 @@ const analytics = getAnalytics(app);"></script>
 
     function renderMenu() {
       const menuContainer = document.getElementById('menu-items');
+      if (!menuContainer) return;
       menuContainer.innerHTML = "";
       ganiMenu.forEach(item => {
         let qty = cartQuantities[item.id] || 0;
@@ -636,7 +635,8 @@ const analytics = getAnalytics(app);"></script>
       if (!cartQuantities[itemId]) cartQuantities[itemId] = 0;
       cartQuantities[itemId] += change;
       if (cartQuantities[itemId] < 0) cartQuantities[itemId] = 0;
-      document.getElementById(`qty-${itemId}`).innerText = cartQuantities[itemId];
+      const qtyElement = document.getElementById(`qty-${itemId}`);
+      if (qtyElement) qtyElement.innerText = cartQuantities[itemId];
       updateCartSummary();
     }
 
@@ -725,10 +725,9 @@ const analytics = getAnalytics(app);"></script>
       document.getElementById('feedback-text').value = "";
     }
 
-    // Attach real-time listener to Firebase to watch order status updates & billing status live
     function trackLiveOrderStatus(docId) {
       if (orderListenerUnsubscribe) {
-        orderListenerUnsubscribe(); // Clean up old listener if any
+        orderListenerUnsubscribe();
       }
 
       const trackerBox = document.getElementById('live-order-tracker');
@@ -778,7 +777,6 @@ const analytics = getAnalytics(app);"></script>
         paymentMode: selectedPaymentMode
       };
 
-      // 1. Post data to Google Apps Script backup asynchronously
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -786,19 +784,18 @@ const analytics = getAnalytics(app);"></script>
         body: JSON.stringify(orderPayload)
       }).catch(err => console.log(err));
 
-      // 2. Push real-time data document to Firebase Firestore
       db.collection("orders").add({
         table: tableNo,
         items: orderedItems,
         total: grandTotal,
         paymentMode: selectedPaymentMode,
-        status: "Preparing", // Initial tracking status for kitchen & billing
+        status: "Preparing",
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       })
       .then((docRef) => {
         activeOrderDocId = docRef.id;
-        playOrderChime(); // Trigger acoustic notification chime
-        trackLiveOrderStatus(activeOrderDocId); // Start live state monitoring
+        playOrderChime();
+        trackLiveOrderStatus(activeOrderDocId);
 
         alert(`🎉 Order placed successfully via ${selectedPaymentMode}! Sent to kitchen terminal.`);
         closeCheckoutModal();
