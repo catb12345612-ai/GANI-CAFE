@@ -1,108 +1,162 @@
-<!-- KITCHEN COMMAND & FEEDBACK DASHBOARD (kitchen.html) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Kitchen Command, Tally & Feedback</title>
+  <title>Gani Cafe - Kitchen Command Center & Tally</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     :root {
-      --bg: #05070b; --card-bg: #0d1322; --border: #1a253a;
-      --cyan: #06b6d4; --orange: #f59e0b; --green: #10b981; --text: #f8fafc;
+      --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7);
+      --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444;
     }
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
-    header h1 { margin: 0; color: var(--orange); font-size: 22px; text-transform: uppercase; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); background-image: radial-gradient(circle at top right, #1e293b, #0f172a); color: var(--text); margin: 0; padding: 20px; }
     
-    /* Analytics & Tally Dashboard */
-    .dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-    .stat-box { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; border-top: 4px solid var(--cyan); }
-    .stat-box h3 { margin: 0 0 5px 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
-    .stat-box p { margin: 0; font-size: 22px; font-weight: bold; color: var(--green); }
-
-    /* Sections */
-    .section-box { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 25px; }
-    .tally-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
-    .tally-card { background: #1e293b; border: 1px solid var(--border); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-
-    /* Feedback Grid */
-    .feedback-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
-    .feedback-card { background: #1e293b; border: 1px solid var(--border); padding: 12px; border-radius: 8px; border-left: 4px solid var(--orange); font-size: 13px; }
-
-    /* Stock Management */
-    .stock-grid { display: flex; gap: 10px; overflow-x: auto; padding-top: 10px; }
-    .stock-item { background: #1e293b; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-    .stock-toggle { cursor: pointer; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; border: none; }
-    .in-stock { background: var(--green); color: #000; }
-    .out-stock { background: #ef4444; color: #fff; }
-
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; border-left: 6px solid var(--orange); }
-    .card.preparing { border-left-color: var(--cyan); }
-    .item-list { list-style: none; padding: 0; margin: 12px 0; font-size: 14px; font-weight: bold; }
-    .item-list li { padding: 5px 0; border-bottom: 1px dashed var(--border); }
+    header { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { font-size: 28px; background: linear-gradient(135deg, #d97706, #f59e0b); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(217,119,6,0.4); }
     
-    .btn { border: none; padding: 10px 15px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 12px; text-transform: uppercase; width: 100%; margin-top: 8px; }
-    .btn-prep { background: var(--cyan); color: #000; }
-    .btn-serve { background: var(--green); color: #000; }
-    .btn-clear { background: #334155; color: #fff; }
-    .btn-verify { background: var(--orange); color: #000; margin-bottom: 5px; }
+    .nav-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nav-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+    .nav-btn.active { background: var(--gold); color: #000; border-color: var(--gold); box-shadow: 0 0 15px rgba(217,119,6,0.3); }
+
+    .section-view { display: none; }
+    .section-view.active { display: block; }
+
+    /* Summary Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 14px; backdrop-filter: blur(5px); }
+    .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-card .val { font-size: 26px; font-weight: 800; color: var(--gold); margin: 0; }
+
+    /* Tables */
+    .data-table-container { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; backdrop-filter: blur(5px); margin-bottom: 25px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th { background: rgba(15, 23, 42, 0.8); color: var(--gold); padding: 14px 18px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    tr:last-child td { border-bottom: none; }
+
+    /* Filter subtabs */
+    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .filter-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+
+    /* Orders Grid */
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .order-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+
+    .action-btns { display: flex; gap: 8px; margin-top: 15px; }
+    .btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; border: none; text-transform: uppercase; }
+    .btn-prep { background: var(--gold); color: #000; }
+    .btn-done { background: var(--green); color: #000; }
+    .btn-stock { background: #334155; color: #fff; margin-top: 10px; width: 100%; }
+
+    /* Menu stock grid */
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+    .menu-item-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
+    .menu-item-card img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>⚡ Gani Cafe Command, Tally & Feedback</h1>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <button onclick="enableAudio()" style="background:var(--cyan); border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:11px;">🔊 Enable Audio Alerts</button>
-      <div style="background:#1e293b; padding:8px 15px; border-radius:8px; border:1px solid var(--cyan);">
-        <span style="font-size:12px; color:var(--cyan);">LIVE ORDERS: <strong id="active-count" style="color:#fff;">0</strong></span>
+    <div class="brand">
+      <div class="logo">🍳</div>
+      <div>
+        <h1 style="font-size:18px; margin:0;">GANI CAFE KITCHEN</h1>
+        <p style="font-size:11px; margin:0; color:var(--text-muted);">Command Center & Tally Ledger</p>
       </div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="switchTab('orders', this)">Live Orders 🔥</button>
+      <button class="nav-btn" onclick="switchTab('tally', this)">📊 Sales Tally Ledger</button>
+      <button class="nav-btn" onclick="switchTab('feedback', this)">⭐ Customer Feedback</button>
+      <button class="nav-btn" onclick="switchTab('menu', this)">⚙️ Stock Manager</button>
     </div>
   </header>
 
-  <!-- REVENUE TALLY DASHBOARD -->
-  <div class="dashboard-stats">
-    <div class="stat-box">
-      <h3>📅 Today's Revenue</h3>
-      <p id="rev-today">₹0</p>
-    </div>
-    <div class="stat-box" style="border-top-color: var(--orange);">
-      <h3>🗓️ Monthly Revenue</h3>
-      <p id="rev-month" style="color: var(--orange);">₹0</p>
-    </div>
-    <div class="stat-box" style="border-top-color: var(--green);">
-      <h3>📈 Yearly Revenue</h3>
-      <p id="rev-year">₹0</p>
+  <!-- 1. LIVE ORDERS SECTION -->
+  <div id="section-orders" class="section-view active">
+    <div id="live-orders-container" class="orders-grid">
+      <p style="color: var(--text-muted);">Loading active orders...</p>
     </div>
   </div>
 
-  <!-- ITEM-WISE QUANTITIES SOLD TODAY -->
-  <div class="section-box">
-    <h3 style="margin:0; font-size:14px; color:var(--cyan);">📦 Today's Item-Wise Quantity Tally</h3>
-    <div class="tally-grid" id="item-tally-container">
-      <p style="color:#64748b; font-size:13px; margin:5px 0;">No items sold yet today.</p>
+  <!-- 2. SALES TALLY LEDGER SECTION -->
+  <div id="section-tally" class="section-view">
+    <div class="filter-tabs">
+      <button class="filter-btn active" onclick="setTallyFilter('day', this)">Today</button>
+      <button class="filter-btn" onclick="setTallyFilter('week', this)">This Week</button>
+      <button class="filter-btn" onclick="setTallyFilter('month', this)">This Month</button>
+      <button class="filter-btn" onclick="setTallyFilter('year', this)">This Year</button>
+      <button class="filter-btn" onclick="setTallyFilter('all', this)">All-Time</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h4>Total Revenue</h4>
+        <p class="val">₹<span id="tally-revenue">0</span></p>
+      </div>
+      <div class="stat-card">
+        <h4>Total Orders</h4>
+        <p class="val" id="tally-orders-count">0</p>
+      </div>
+      <div class="stat-card">
+        <h4>Items Sold</h4>
+        <p class="val" id="tally-items-count">0</p>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom: 12px; color: var(--gold);">Product-wise Sales Tally</h3>
+    <div class="data-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Units Sold</th>
+            <th>Revenue Generated</th>
+          </tr>
+        </thead>
+        <tbody id="tally-product-tbody">
+          <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No sales data for this period.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- CUSTOMER FEEDBACK SECTION -->
-  <div class="section-box" style="border-left: 4px solid var(--orange);">
-    <h3 style="margin:0 0 10px 0; font-size:14px; color:var(--orange);">💬 Customer Feedback & Ratings</h3>
-    <div class="feedback-grid" id="feedback-container">
-      <p style="color:#64748b; font-size:13px; margin:0;">No customer feedback received yet.</p>
+  <!-- 3. CUSTOMER FEEDBACK SECTION -->
+  <div id="section-feedback" class="section-view">
+    <div class="data-table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Table</th>
+            <th>Rating</th>
+            <th>Comment</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="feedback-tbody">
+          <tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No feedback received yet.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- STOCK & INVENTORY CONTROLS -->
-  <div class="section-box">
-    <h3 style="margin:0; font-size:14px; color:var(--orange);">Kitchen Stock Management (Click to Toggle Availability)</h3>
-    <div class="stock-grid" id="stock-container"></div>
+  <!-- 4. STOCK MANAGER SECTION -->
+  <div id="section-menu" class="section-view">
+    <div id="menu-stock-container" class="menu-grid"></div>
   </div>
 
-  <!-- LIVE ORDERS KITCHEN GRID -->
-  <div class="grid" id="orders-grid"></div>
+  <!-- Audio Alert for New Orders / Feedback -->
+  <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
     const firebaseConfig = {
@@ -119,193 +173,243 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let previousActiveCount = 0;
-    let previousFeedbackCount = 0;
-    let audioCtx = null;
+    let allOrders = {};
+    let menuData = {};
+    let allFeedback = {};
+    let currentTallyFilter = 'day';
+    let previousOrderCount = null;
 
-    function enableAudio() {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      alert("Audio alerts enabled successfully!");
+    // Navigation Tab Switcher
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('section-' + tabId).classList.add('active');
+      btn.classList.add('active');
+      if (tabId === 'tally') calculateTally();
     }
 
-    function playAlarm(type = 'order') {
-      try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'square';
-        if (type === 'order') {
-          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-          osc.frequency.setValueAtTime(1760, audioCtx.currentTime + 0.15);
-        } else {
-          // Feedback chime
-          osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-          osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.2);
-        }
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-      } catch(e) {}
-    }
+    // Load Menu Data
+    db.ref('menu').on('value', (snapshot) => {
+      menuData = snapshot.val() || {};
+      renderStockManager();
+      if (document.getElementById('section-tally').classList.contains('active')) {
+        calculateTally();
+      }
+    });
 
-    // Listen to Menu / Stock
-    db.ref('menu').on('value', snapshot => {
-      const menu = snapshot.val() || {};
-      const container = document.getElementById('stock-container');
+    // Load Orders Data
+    db.ref('orders').on('value', (snapshot) => {
+      allOrders = snapshot.val() || {};
+      let orderKeys = Object.keys(allOrders);
+      
+      // Play sound on brand new pending order
+      if (previousOrderCount !== null && orderKeys.length > previousOrderCount) {
+        document.getElementById('alert-sound').play().catch(e => console.log(e));
+      }
+      previousOrderCount = orderKeys.length;
+
+      renderLiveOrders();
+      if (document.getElementById('section-tally').classList.contains('active')) {
+        calculateTally();
+      }
+    });
+
+    // Load Feedback Data
+    db.ref('feedback').on('value', (snapshot) => {
+      allFeedback = snapshot.val() || {};
+      renderFeedback();
+    });
+
+    // 1. Render Live Orders
+    function renderLiveOrders() {
+      const container = document.getElementById('live-orders-container');
       container.innerHTML = "";
-      Object.keys(menu).forEach(id => {
-        let item = menu[id];
-        let btnClass = item.inStock !== false ? 'in-stock' : 'out-stock';
-        let btnText = item.inStock !== false ? 'In Stock' : 'Out of Stock';
+      let keys = Object.keys(allOrders);
+
+      if (keys.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted);">No active orders right now.</p>`;
+        return;
+      }
+
+      keys.reverse().forEach(id => {
+        let order = allOrders[id];
+        if (order.status === 'Completed' || order.status === 'Cancelled') return; // Hide past orders from kitchen queue
+
+        let badgeClass = order.status === 'Pending' ? 'badge-pending' : 'badge-preparing';
+        let itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
+
         container.innerHTML += `
-          <div class="stock-item">
-            <span>${item.name}</span>
-            <button class="stock-toggle ${btnClass}" onclick="toggleStock('${id}', ${item.inStock !== false})">${btnText}</button>
+          <div class="order-card">
+            <div>
+              <div class="order-header">
+                <span style="font-weight: 800; font-size: 16px; color: var(--gold);">Table ${order.table}</span>
+                <span class="badge ${badgeClass}">${order.status}</span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin:0 0 8px 0;">Pay: <strong>${order.paymentMode}</strong></p>
+              <ul style="margin: 0 0 15px 0; padding-left: 20px; line-height: 1.6;">${itemsHtml}</ul>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 16px; margin-bottom: 10px;">Total: ₹${order.total}</div>
+              <div class="action-btns">
+                <button class="btn btn-prep" onclick="updateOrderStatus('${id}', 'Preparing')">Prepare 👨‍🍳</button>
+                <button class="btn btn-done" onclick="updateOrderStatus('${id}', 'Completed')">Complete ✅</button>
+              </div>
+            </div>
           </div>`;
       });
-    });
-
-    function toggleStock(id, currentState) {
-      db.ref(`menu/${id}`).update({ inStock: !currentState });
     }
 
-    // Listen to Customer Feedback
-    db.ref('feedback').on('value', snapshot => {
-      const data = snapshot.val() || {};
-      const container = document.getElementById('feedback-container');
-      container.innerHTML = "";
-      const feedbacks = Object.values(data);
+    function updateOrderStatus(orderId, status) {
+      db.ref(`orders/${orderId}`).update({ status: status });
+    }
 
-      if (feedbacks.length > previousFeedbackCount && previousFeedbackCount !== 0) {
-        playAlarm('feedback');
-      }
-      previousFeedbackCount = feedbacks.length;
+    // 2. Sales Tally Engine (Day, Week, Month, Year, All)
+    function setTallyFilter(filter, btn) {
+      currentTallyFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calculateTally();
+    }
 
-      if (feedbacks.length === 0) {
-        container.innerHTML = `<p style="color:#64748b; font-size:13px; margin:0;">No customer feedback received yet.</p>`;
-      } else {
-        feedbacks.reverse().forEach(fb => {
-          let stars = '⭐'.repeat(Number(fb.rating) || 5);
-          let timeStr = fb.timestamp ? new Date(fb.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-          container.innerHTML += `
-            <div class="feedback-card">
-              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                <strong>Table #${fb.table || 'N/A'}</strong>
-                <span style="color:#94a3b8; font-size:11px;">${timeStr}</span>
-              </div>
-              <div style="margin-bottom:4px;">${stars}</div>
-              <p style="margin:0; color:#f1f5f9;">"${fb.comment || 'No comment'}"</p>
-            </div>`;
-        });
-      }
-    });
+    function calculateTally() {
+      let now = new Date();
+      let totalRev = 0;
+      let totalOrdersCount = 0;
+      let totalUnitsSold = 0;
+      let productSales = {}; // { productName: { cat, qty, rev } }
 
-    // Listen to Orders
-    db.ref('orders').on('value', (snapshot) => {
-      const data = snapshot.val() || {};
-      const grid = document.getElementById('orders-grid');
-      grid.innerHTML = "";
+      // Initialize product mapping from menu
+      Object.keys(menuData).forEach(id => {
+        let item = menuData[id];
+        productSales[item.name] = { cat: item.cat || 'General', qty: 0, rev: 0, price: item.price };
+      });
 
-      let todayRev = 0, monthRev = 0, yearRev = 0;
-      let todayItemCounts = {};
-      const now = new Date();
-      const currentDay = now.toDateString();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
+      Object.keys(allOrders).forEach(id => {
+        let order = allOrders[id];
+        if (!order.timestamp) return;
 
-      const orders = Object.values(data).filter(o => o.status !== 'Cleared');
-      document.getElementById('active-count').innerText = orders.length;
+        let orderDate = new Date(order.timestamp);
+        let includeOrder = false;
 
-      if (orders.length > previousActiveCount && previousActiveCount !== 0) {
-        playAlarm('order');
-      }
-      previousActiveCount = orders.length;
+        if (currentTallyFilter === 'day') {
+          includeOrder = orderDate.toDateString() === now.toDateString();
+        } else if (currentTallyFilter === 'week') {
+          // Within last 7 days
+          let diffTime = Math.abs(now - orderDate);
+          let diffDays = diffTime / (1000 * 60 * 60 * 24);
+          includeOrder = diffDays <= 7;
+        } else if (currentTallyFilter === 'month') {
+          includeOrder = orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
+        } else if (currentTallyFilter === 'year') {
+          includeOrder = orderDate.getFullYear() === now.getFullYear();
+        } else if (currentTallyFilter === 'all') {
+          includeOrder = true;
+        }
 
-      Object.values(data).forEach(o => {
-        if (o.timestamp) {
-          const orderDate = new Date(o.timestamp);
-          const amt = Number(o.total) || 0;
+        if (includeOrder) {
+          totalRev += (order.total || 0);
+          totalOrdersCount++;
 
-          if (o.status === 'Cleared') {
-            if (orderDate.toDateString() === currentDay) todayRev += amt;
-            if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) monthRev += amt;
-            if (orderDate.getFullYear() === currentYear) yearRev += amt;
-          }
+          // Parse items e.g., ["2x Masala Chai", "1x Bun Maska"]
+          if (order.items && Array.isArray(order.items)) {
+            order.items.forEach(itemStr => {
+              let match = itemStr.match(/^(\d+)x\s+(.+)$/);
+              if (match) {
+                let qty = parseInt(match[1]);
+                let name = match[2].trim();
+                totalUnitsSold += qty;
 
-          if (orderDate.toDateString() === currentDay && o.items) {
-            o.items.forEach(itemStr => {
-              let parts = itemStr.split('x ');
-              let qty = parseInt(parts[0]) || 1;
-              let itemName = parts.slice(1).join('x ') || itemStr;
-              todayItemCounts[itemName] = (todayItemCounts[itemName] || 0) + qty;
+                if (!productSales[name]) {
+                  productSales[name] = { cat: 'Cafe Item', qty: 0, rev: 0, price: 0 };
+                }
+                productSales[name].qty += qty;
+                // find unit price or estimate
+                let unitPrice = productSales[name].price || (order.total / totalUnitsSold); 
+                productSales[name].rev += qty * unitPrice;
+              }
             });
           }
         }
       });
 
-      document.getElementById('rev-today').innerText = `₹${todayRev}`;
-      document.getElementById('rev-month').innerText = `₹${monthRev}`;
-      document.getElementById('rev-year').innerText = `₹${yearRev}`;
+      // Update Summary Cards
+      document.getElementById('tally-revenue').innerText = totalRev.toLocaleString();
+      document.getElementById('tally-orders-count').innerText = totalOrdersCount;
+      document.getElementById('tally-items-count').innerText = totalUnitsSold;
 
-      const tallyContainer = document.getElementById('item-tally-container');
-      tallyContainer.innerHTML = "";
-      const itemKeys = Object.keys(todayItemCounts);
-      if (itemKeys.length === 0) {
-        tallyContainer.innerHTML = `<p style="color:#64748b; font-size:13px; margin:5px 0;">No items sold yet today.</p>`;
-      } else {
-        itemKeys.forEach(name => {
-          tallyContainer.innerHTML += `
-            <div class="tally-card">
-              <span style="font-size:13px; font-weight:bold;">${name}</span>
-              <span style="font-size:15px; color:var(--green); font-weight:800;">${todayItemCounts[name]} sold</span>
-            </div>`;
-        });
-      }
+      // Render Product Tally Table
+      let tbody = document.getElementById('tally-product-tbody');
+      tbody.innerHTML = "";
 
-      orders.reverse().forEach(order => {
-        let itemsHtml = order.items.map(i => `<li>✔️ ${i}</li>`).join('');
-        let statusClass = order.status === 'Preparing' ? 'preparing' : '';
-        
-        let paymentBadge = order.paymentStatus === 'Verified' 
-          ? '<span style="color:var(--green); font-size:12px;">✅ Payment Confirmed</span>' 
-          : '<span style="color:#ef4444; font-size:12px;">⚠️ Payment Pending Verification</span>';
+      let sortedProducts = Object.keys(productSales).sort((a, b) => productSales[b].qty - productSales[a].qty);
+      let hasSales = false;
 
-        let actionBtn = '';
-        if (order.status === 'Pending') {
-          actionBtn = `<button class="btn btn-prep" onclick="updateStatus('${order.orderId}', 'Preparing')">Start Cooking 🔥</button>`;
-        } else if (order.status === 'Preparing') {
-          actionBtn = `<button class="btn btn-serve" onclick="updateStatus('${order.orderId}', 'Served')">Mark Served 🚀</button>`;
-        } else if (order.status === 'Served') {
-          actionBtn = `
-            ${order.paymentStatus !== 'Verified' ? `<button class="btn btn-verify" onclick="verifyPayment('${order.orderId}')">Confirm Payment Received 💵</button>` : ''}
-            <button class="btn btn-clear" onclick="updateStatus('${order.orderId}', 'Cleared')">Bill Paid & Clear ✅</button>`;
+      sortedProducts.forEach(prodName => {
+        let p = productSales[prodName];
+        if (p.qty > 0) {
+          hasSales = true;
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${prodName}</strong></td>
+              <td><span style="font-size:11px; color:var(--gold); text-transform:uppercase;">${p.cat}</span></td>
+              <td>${p.qty}</td>
+              <td>₹${p.rev.toLocaleString()}</td>
+            </tr>`;
         }
-
-        let timeStr = new Date(order.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-        grid.innerHTML += `
-          <div class="card ${statusClass}">
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #1a253a; padding-bottom:8px;">
-              <strong style="color:var(--orange); font-size:16px;">TABLE #${order.table}</strong>
-              <span style="font-size:11px; color:#64748b;">${timeStr}</span>
-            </div>
-            <ul class="item-list">${itemsHtml}</ul>
-            <div style="margin: 8px 0; font-size:13px;">
-              <strong>${order.paymentMode} - ₹${order.total}</strong><br>
-              ${paymentBadge}
-            </div>
-            ${actionBtn}
-          </div>`;
       });
-    });
 
-    function updateStatus(orderId, newStatus) {
-      db.ref(`orders/${orderId}`).update({ status: newStatus });
+      if (!hasSales) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No sales recorded for this timeframe.</td></tr>`;
+      }
     }
 
-    function verifyPayment(orderId) {
-      db.ref(`orders/${orderId}`).update({ paymentStatus: 'Verified' });
+    // 3. Render Feedback
+    function renderFeedback() {
+      let tbody = document.getElementById('feedback-tbody');
+      tbody.innerHTML = "";
+      let keys = Object.keys(allFeedback);
+
+      if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No feedback received yet.</td></tr>`;
+        return;
+      }
+
+      keys.reverse().forEach(id => {
+        let fb = allFeedback[id];
+        let stars = '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating);
+        let timeStr = new Date(fb.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>Table ${fb.table}</strong></td>
+            <td style="color: var(--gold);">${stars}</td>
+            <td>${fb.comment}</td>
+            <td style="color: var(--text-muted); font-size:12px;">${timeStr}</td>
+          </tr>`;
+      });
+    }
+
+    // 4. Stock Manager
+    function renderStockManager() {
+      const container = document.getElementById('menu-stock-container');
+      container.innerHTML = "";
+      Object.keys(menuData).forEach(id => {
+        let item = menuData[id];
+        let inStock = item.inStock !== false;
+        let btnText = inStock ? '🟢 In Stock' : '🔴 Out of Stock';
+        let btnColor = inStock ? 'background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid var(--green);' : 'background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red);';
+
+        container.innerHTML += `
+          <div class="menu-item-card">
+            <img src="${item.img}">
+            <h4 style="margin:5px 0; font-size:14px;">${item.name}</h4>
+            <p style="color:var(--gold); font-weight:700; margin:0 0 10px 0;">₹${item.price}</p>
+            <button class="btn" style="${btnColor} width:100%;" onclick="toggleStock('${id}', ${inStock})">${btnText}</button>
+          </div>`;
+      });
+    }
+
+    function toggleStock(id, currentStatus) {
+      db.ref(`menu/${id}`).update({ inStock: !currentStatus });
     }
   </script>
 </body>
