@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Kitchen Command & Tally</title>
+  <title>Gani Cafe - Kitchen Command & Records</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
@@ -16,12 +16,17 @@
     header h1 { margin: 0; color: var(--orange); font-size: 22px; text-transform: uppercase; }
     
     /* Analytics & Tally Dashboard */
-    .dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
     .stat-box { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; border-top: 4px solid var(--cyan); }
     .stat-box h3 { margin: 0 0 5px 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
     .stat-box p { margin: 0; font-size: 22px; font-weight: bold; color: var(--green); }
 
-    /* Inventory / Stock Section */
+    /* Item Sales Tally Section */
+    .tally-section { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 25px; }
+    .tally-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+    .tally-card { background: #1e293b; border: 1px solid var(--border); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Stock & Inventory Section */
     .stock-section { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 10px; margin-bottom: 25px; }
     .stock-grid { display: flex; gap: 10px; overflow-x: auto; padding-top: 10px; }
     .stock-item { background: #1e293b; border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
@@ -45,11 +50,9 @@
 <body>
 
   <header>
-    <h1>⚡ Gani Cafe KDS & Revenue Tally</h1>
-    <div style="display:flex; gap:10px;">
-      <div style="background:#1e293b; padding:8px 15px; border-radius:8px; border:1px solid var(--cyan);">
-        <span style="font-size:12px; color:var(--cyan);">LIVE ORDERS: <strong id="active-count" style="color:#fff;">0</strong></span>
-      </div>
+    <h1>⚡ Gani Cafe Command & Records</h1>
+    <div style="background:#1e293b; padding:8px 15px; border-radius:8px; border:1px solid var(--cyan);">
+      <span style="font-size:12px; color:var(--cyan);">LIVE ORDERS: <strong id="active-count" style="color:#fff;">0</strong></span>
     </div>
   </header>
 
@@ -66,6 +69,14 @@
     <div class="stat-box" style="border-top-color: var(--green);">
       <h3>📈 Yearly Revenue</h3>
       <p id="rev-year">₹0</p>
+    </div>
+  </div>
+
+  <!-- ITEM-WISE QUANTITIES SOLD TODAY -->
+  <div class="tally-section">
+    <h3 style="margin:0; font-size:14px; color:var(--cyan);">📦 Today's Item-Wise Quantity Tally (What Sold Today)</h3>
+    <div class="tally-grid" id="item-tally-container">
+      <p style="color:#64748b; font-size:13px; margin:5px 0;">No items sold yet today.</p>
     </div>
   </div>
 
@@ -93,26 +104,23 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Default Menu setup if missing in DB
-    const defaultMenu = {
-      1: { name: 'Irani Chai', cat: 'chai', price: 20, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=150', inStock: true },
-      2: { name: 'Masala Chai', cat: 'chai', price: 25, img: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=150', inStock: true },
-      3: { name: 'Kulhad Chai', cat: 'chai', price: 30, img: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=150', inStock: true },
-      4: { name: 'Kashmiri Kahwa', cat: 'chai', price: 40, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=150', inStock: true },
-      11: { name: 'Osmania Biscuits (2)', cat: 'snacks', price: 10, img: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=150', inStock: true },
-      12: { name: 'Bun Maska', cat: 'snacks', price: 30, img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=150', inStock: true },
-      13: { name: 'Onion Samosa (2)', cat: 'snacks', price: 20, img: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=150', inStock: true },
-      14: { name: 'French Fries', cat: 'snacks', price: 70, img: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150', inStock: true },
-      21: { name: 'Cold Coffee', cat: 'beverages', price: 60, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150', inStock: true },
-      22: { name: 'Royal Falooda', cat: 'beverages', price: 80, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150', inStock: true }
-    };
+    let previousActiveCount = 0;
 
-    // Initialize menu in database if not already present
-    db.ref('menu').once('value', snapshot => {
-      if (!snapshot.exists()) {
-        db.ref('menu').set(defaultMenu);
-      }
-    });
+    // Loud High-Tech Kitchen Alarm Synth (Plays when a new order arrives)
+    function playAlarm() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1760, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.4);
+      } catch(e) {}
+    }
 
     // Render Stock Toggles in Kitchen
     db.ref('menu').on('value', snapshot => {
@@ -135,13 +143,14 @@
       db.ref(`menu/${id}`).update({ inStock: !currentState });
     }
 
-    // Listen to Orders, Calculate Revenues & Render Kitchen Cards
+    // Listen to Orders, Calculate Revenues & Item Tally
     db.ref('orders').on('value', (snapshot) => {
       const data = snapshot.val() || {};
       const grid = document.getElementById('orders-grid');
       grid.innerHTML = "";
 
       let todayRev = 0, monthRev = 0, yearRev = 0;
+      let todayItemCounts = {};
       const now = new Date();
       const currentDay = now.toDateString();
       const currentMonth = now.getMonth();
@@ -150,22 +159,59 @@
       const orders = Object.values(data).filter(o => o.status !== 'Cleared');
       document.getElementById('active-count').innerText = orders.length;
 
-      // Tally calculation across all orders in database
+      // Trigger alarm sound if a new order arrives
+      if (orders.length > previousActiveCount) {
+        playAlarm();
+      }
+      previousActiveCount = orders.length;
+
+      // Analyze all orders for revenue and item counts
       Object.values(data).forEach(o => {
-        if (o.status === 'Cleared' && o.timestamp) {
+        if (o.timestamp) {
           const orderDate = new Date(o.timestamp);
           const amt = Number(o.total) || 0;
 
-          if (orderDate.toDateString() === currentDay) todayRev += amt;
-          if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) monthRev += amt;
-          if (orderDate.getFullYear() === currentYear) yearRev += amt;
+          // Calculate completed/cleared revenues
+          if (o.status === 'Cleared') {
+            if (orderDate.toDateString() === currentDay) todayRev += amt;
+            if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) monthRev += amt;
+            if (orderDate.getFullYear() === currentYear) yearRev += amt;
+          }
+
+          // Tally item quantities for TODAY across all orders
+          if (orderDate.toDateString() === currentDay && o.items) {
+            o.items.forEach(itemStr => {
+              let parts = itemStr.split('x ');
+              let qty = parseInt(parts[0]) || 1;
+              let itemName = parts.slice(1).join('x ') || itemStr;
+              todayItemCounts[itemName] = (todayItemCounts[itemName] || 0) + qty;
+            });
+          }
         }
       });
 
+      // Update Revenue UI
       document.getElementById('rev-today').innerText = `₹${todayRev}`;
       document.getElementById('rev-month').innerText = `₹${monthRev}`;
       document.getElementById('rev-year').innerText = `₹${yearRev}`;
 
+      // Update Item Tally UI
+      const tallyContainer = document.getElementById('item-tally-container');
+      tallyContainer.innerHTML = "";
+      const itemKeys = Object.keys(todayItemCounts);
+      if (itemKeys.length === 0) {
+        tallyContainer.innerHTML = `<p style="color:#64748b; font-size:13px; margin:5px 0;">No items sold yet today.</p>`;
+      } else {
+        itemKeys.forEach(name => {
+          tallyContainer.innerHTML += `
+            <div class="tally-card">
+              <span style="font-size:13px; font-weight:bold;">${name}</span>
+              <span style="font-size:15px; color:var(--green); font-weight:800;">${todayItemCounts[name]} sold</span>
+            </div>`;
+        });
+      }
+
+      // Render Active Orders Grid
       orders.reverse().forEach(order => {
         let itemsHtml = order.items.map(i => `<li>✔️ ${i}</li>`).join('');
         let statusClass = order.status === 'Preparing' ? 'preparing' : '';
