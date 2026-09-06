@@ -112,7 +112,6 @@
     <button class="pay-btn" onclick="openCheckout()">Order Now 🚀</button>
   </div>
 
-  <!-- Checkout Modal (UPI/QR) -->
   <div class="modal" id="checkout-modal">
     <div class="modal-box">
       <h3 style="margin-top:0;">Select Payment Mode</h3>
@@ -128,7 +127,6 @@
     </div>
   </div>
 
-  <!-- Status Modal -->
   <div class="modal" id="status-modal">
     <div class="modal-box">
       <h2 style="color:var(--gold); margin-top:0;">🎉 Order Dispatched!</h2>
@@ -140,7 +138,6 @@
     </div>
   </div>
 
-  <!-- Feedback Modal -->
   <div class="modal" id="feedback-modal">
     <div class="modal-box">
       <h2 style="color:var(--gold); margin-top:0;">How was your food?</h2>
@@ -155,21 +152,21 @@
 
   <script>
     // --- FIREBASE CONFIGURATION ---
- // --- FIREBASE CONFIGURATION ---
-  const firebaseConfig = {
-    apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
-    authDomain: "gani-cafe-52066.firebaseapp.com",
-    databaseURL: "https://gani-cafe-52066-default-rtdb.firebaseio.com",
-    projectId: "gani-cafe-52066",
-    storageBucket: "gani-cafe-52066.appspot.com",
-    messagingSenderId: "292009300507",
-    appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
-    measurementId: "G-F7TXYZBYKY"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
+      authDomain: "gani-cafe-52066.firebaseapp.com",
+      databaseURL: "https://gani-cafe-52066-default-rtdb.firebaseio.com",
+      projectId: "gani-cafe-52066",
+      storageBucket: "gani-cafe-52066.appspot.com",
+      messagingSenderId: "292009300507",
+      appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
+      measurementId: "G-F7TXYZBYKY"
+    };
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     // Table Setup
     const urlParams = new URLSearchParams(window.location.search);
     const tableNo = urlParams.get('table') || '1';
@@ -199,7 +196,7 @@
       } catch(e) {}
     }
 
-    // 30 Items (Chai, Snacks, Beverages)
+    // Menu Data
     const menuData = [
       { id: 1, cat: 'chai', name: 'Irani Chai', price: 20, img: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=150' },
       { id: 2, cat: 'chai', name: 'Masala Chai', price: 25, img: 'https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=150' },
@@ -210,8 +207,7 @@
       { id: 13, cat: 'snacks', name: 'Onion Samosa (2)', price: 20, img: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=150' },
       { id: 14, cat: 'snacks', name: 'French Fries', price: 70, img: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150' },
       { id: 21, cat: 'beverages', name: 'Cold Coffee', price: 60, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150' },
-      { id: 22, cat: 'beverages', name: 'Royal Falooda', price: 80, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150' },
-      // Add the rest of your items here...
+      { id: 22, cat: 'beverages', name: 'Royal Falooda', price: 80, img: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=150' }
     ];
 
     let cart = {}, currentCat = 'chai', payMode = 'UPI', currentOrderId = null, userRating = 5;
@@ -259,8 +255,7 @@
       document.getElementById('cart-count').innerText = count + " Items";
       document.getElementById('cart-total').innerText = total;
       
-      // Dynamic UPI Code
-      const upiID = "Q227869939@ybl"; // PUT YOUR ACTUAL UPI HERE
+      const upiID = "Q227869939@ybl";
       document.getElementById('upi-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=upi://pay?pa=${upiID}&pn=GaniCafe&am=${total}&cu=INR`;
     }
 
@@ -298,7 +293,6 @@
       closeModal('checkout-modal');
       document.getElementById('status-modal').style.display = 'flex';
 
-      // Live Listener for Status & Feedback Trigger
       db.ref(`orders/${currentOrderId}/status`).on('value', (snapshot) => {
         const val = snapshot.val();
         if (val) {
@@ -312,13 +306,12 @@
               closeModal('status-modal');
               document.getElementById('feedback-modal').style.display = 'flex';
               setRating(5);
-            }, 3000); // Wait 3 seconds then ask for feedback
+            }, 3000);
           }
         }
       });
     }
 
-    // Feedback System Logic
     function setRating(stars) {
       playSound('click'); userRating = stars;
       const spans = document.getElementById('star-container').children;
