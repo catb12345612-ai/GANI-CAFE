@@ -3,32 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Menu & Ordering</title>
+  <title>Gani Cafe - Menu & Live Order Status</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
-    :root { --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; }
+    :root { --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-    header { background: var(--card-bg); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); }
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+    header { background: var(--card-bg); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 15px; }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
     .card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-    .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    .cart-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-top: 25px; border: 1px solid rgba(255,255,255,0.08); }
+    .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+    .cart-section, .status-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
+    .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-paid { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge-unpaid { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-inbill { background: rgba(245, 158, 11, 0.2); color: var(--orange); border: 1px solid var(--orange); }
+    .qr-box { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; text-align: center; }
+    .qr-box img { width: 130px; height: 130px; }
   </style>
 </head>
 <body>
   <header>
     <h1>Gani Cafe Menu</h1>
-    <div>Table: <input type="number" id="table-num" value="1" style="width: 50px; padding: 5px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px;"></div>
+    <div>Table: <input type="number" id="table-num" value="1" onchange="filterCustomerOrders()" style="width: 50px; padding: 5px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px;"></div>
   </header>
+
+  <!-- Live Menu Grid -->
   <div id="menu-container" class="menu-grid"></div>
+
+  <!-- Cart Section -->
   <div class="cart-section">
     <h3>Your Order Cart</h3>
-    <ul id="cart-list" style="padding-left: 20px;"></ul>
+    <ul id="cart-list" style="padding-left: 20px; margin-bottom: 15px;"></ul>
     <p><strong>Total: ₹<span id="cart-total">0</span></strong></p>
-    <button class="btn" onclick="placeOrder()">Place Order</button>
+    
+    <div style="margin: 15px 0;">
+      <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 700;">Select Payment Method:</label>
+      <select id="payment-mode" onchange="togglePaymentUI()" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
+        <option value="UPI">UPI / QR Code</option>
+        <option value="Cash">Cash / Pay at Counter</option>
+      </select>
+    </div>
+
+    <div id="qr-container" style="margin-bottom: 15px;">
+      <div class="qr-box">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=ganicafe@upi&pn=GaniCafe&cu=INR" alt="Payment QR">
+        <p style="color:#000; font-size:11px; margin:5px 0 0 0; font-weight:700;">Scan to Pay via UPI</p>
+      </div>
+    </div>
+
+    <button class="btn" onclick="placeOrder()">Place Order 🚀</button>
   </div>
+
+  <!-- Live Table Order Status Tracker -->
+  <div class="status-section">
+    <h3>Live Order Status & Billing Tracker (Table <span id="display-table">1</span>)</h3>
+    <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
+      <p style="color: var(--text-muted);">No active orders for this table.</p>
+    </div>
+  </div>
+
+  <!-- Audio Alert for Customer Status Updates -->
+  <audio id="customer-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
@@ -44,6 +85,8 @@
     const db = firebase.database();
     let cart = {};
     let menuItems = {};
+    let allOrdersData = {};
+    let previousTableStatuses = {};
 
     db.ref('menu').on('value', snap => {
       menuItems = snap.val() || {};
@@ -62,6 +105,32 @@
         }
       });
     });
+
+    db.ref('orders').on('value', snap => {
+      allOrdersData = snap.val() || {};
+      let currentTable = document.getElementById('table-num').value;
+      
+      // Check for status changes on this table's orders to trigger audio chime
+      Object.keys(allOrdersData).forEach(id => {
+        let order = allOrdersData[id];
+        if (String(order.table) === String(currentTable)) {
+          if (previousTableStatuses[id] && previousTableStatuses[id] !== order.status) {
+            if (order.status === 'Completed' || order.status === 'Preparing') {
+              document.getElementById('customer-alert-sound').play().catch(e => console.log(e));
+            }
+          }
+          previousTableStatuses[id] = order.status;
+        }
+      });
+
+      filterCustomerOrders();
+    });
+
+    function togglePaymentUI() {
+      let mode = document.getElementById('payment-mode').value;
+      let qrContainer = document.getElementById('qr-container');
+      qrContainer.style.display = (mode === 'UPI') ? 'block' : 'none';
+    }
 
     function addToCart(id) {
       cart[id] = (cart[id] || 0) + 1;
@@ -86,6 +155,7 @@
 
     function placeOrder() {
       let table = document.getElementById('table-num').value;
+      let paymentMode = document.getElementById('payment-mode').value;
       let items = [];
       let total = 0;
       Object.keys(cart).forEach(id => {
@@ -97,18 +167,60 @@
         }
       });
       if (items.length === 0) { alert('Cart is empty'); return; }
+      
       db.ref('orders').push({
         table: table,
         items: items,
         total: total,
         status: 'Pending',
         paymentStatus: 'Unpaid',
-        paymentMode: 'UPI',
+        paymentMode: paymentMode,
         timestamp: Date.now()
       });
       alert('Order placed successfully!');
       cart = {};
       updateCartUI();
+    }
+
+    function filterCustomerOrders() {
+      let currentTable = document.getElementById('table-num').value;
+      document.getElementById('display-table').innerText = currentTable;
+      let container = document.getElementById('customer-orders-container');
+      container.innerHTML = '';
+
+      let keys = Object.keys(allOrdersData);
+      let tableOrders = keys.filter(id => {
+        let order = allOrdersData[id];
+        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
+      });
+
+      if (tableOrders.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted);">No active orders for this table.</p>`;
+        return;
+      }
+
+      tableOrders.reverse().forEach(id => {
+        let order = allOrdersData[id];
+        let prepBadge = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
+        let payBadge = order.paymentStatus.includes('Paid') ? 'badge-paid' : (order.paymentStatus.includes('In Bill') ? 'badge-inbill' : 'badge-unpaid');
+        let itemsHtml = order.items.map(i => `<li>${i}</li>`).join('');
+
+        container.innerHTML += `
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong>Order ID: #${id.slice(-5)}</strong>
+              <div style="display:flex; gap:6px;">
+                <span class="badge ${prepBadge}">Kitchen: ${order.status}</span>
+                <span class="badge ${payBadge}">Payment: ${order.paymentStatus}</span>
+              </div>
+            </div>
+            <p style="margin:5px 0; font-size:13px; color:var(--text-muted);">Payment Mode: <strong>${order.paymentMode}</strong></p>
+            <ul style="margin: 5px 0 10px 0; padding-left: 20px; font-size: 13px;">${itemsHtml}</ul>
+            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:14px;">
+              <span>Total: ₹${order.total}</span>
+            </div>
+          </div>`;
+      });
     }
   </script>
 </body>
