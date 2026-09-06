@@ -6,8 +6,50 @@
   <title>Gani Cafe - QR Menu, Ordering, Payment & Feedback</title>
   
   <!-- Firebase App & Firestore SDKs -->
-  <script src="https://script.google.com/macros/s/AKfycbyNH26QYsZwkfJaD2ZZbVbBigJzfACXXE61owqSiS7LQ8ulCCXzzYVkF6cnTxxOV13t/exec"></script>
-  <script src="https://script.google.com/macros/s/AKfycbyNH26QYsZwkfJaD2ZZbVbBigJzfACXXE61owqSiS7LQ8ulCCXzzYVkF6cnTxxOV13t/exec"></script>
+  <script src="// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
+  authDomain: "algani-cafe.firebaseapp.com",
+  databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
+  projectId: "algani-cafe",
+  storageBucket: "algani-cafe.firebasestorage.app",
+  messagingSenderId: "44056411552",
+  appId: "1:44056411552:web:a245596401ca636fb0f8c5",
+  measurementId: "G-9GDVR0V5VE"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);"></script>
+  <script src="// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
+  authDomain: "algani-cafe.firebaseapp.com",
+  databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
+  projectId: "algani-cafe",
+  storageBucket: "algani-cafe.firebasestorage.app",
+  messagingSenderId: "44056411552",
+  appId: "1:44056411552:web:a245596401ca636fb0f8c5",
+  measurementId: "G-9GDVR0V5VE"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);"></script>
 
   <style>
     :root {
@@ -505,7 +547,7 @@
   </div>
 
   <script>
-    // Firebase Config Keys
+    // Firebase Config Keys (Replace with your actual Firebase project credentials)
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_AUTH_DOMAIN",
@@ -515,8 +557,10 @@
       appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase and Firestore Database
-    firebase.initializeApp(firebaseConfig);
+    // Initialize Firebase and Firestore Database safely
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.firestore();
 
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNH26QYsZwkfJaD2ZZbVbBigJzfACXXE61owqSiS7LQ8ulCCXzzYVkF6cnTxxOV13t/exec";
