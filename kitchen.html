@@ -3,78 +3,208 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Kitchen Command Center & Billing Ledger</title>
+  <title>Gani Cafe - Executive Kitchen Command Center</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     :root {
-      --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7);
-      --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b;
+      --gold: #f59e0b; 
+      --gold-glow: rgba(245, 158, 11, 0.25);
+      --bg: #090d16; 
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc; 
+      --text-muted: #94a3b8; 
+      --green: #10b981; 
+      --red: #ef4444; 
+      --orange: #f97316;
+      --blue: #0ea5e9;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); background-image: radial-gradient(circle at top right, #1e293b, #0f172a); color: var(--text); margin: 0; padding: 20px; }
     
-    header { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); flex-wrap: wrap; gap: 15px; }
-    .brand { display: flex; align-items: center; gap: 12px; }
-    .logo { font-size: 28px; background: linear-gradient(135deg, #d97706, #f59e0b); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(217,119,6,0.4); }
+    * { box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background: var(--bg); 
+      background-image: radial-gradient(circle at 10% 10%, #1e293b 0%, #090d16 90%); 
+      color: var(--text); 
+      margin: 0; 
+      padding: 24px; 
+      min-height: 100vh;
+    }
     
-    .nav-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
-    .nav-btn { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
-    .nav-btn.active { background: var(--gold); color: #000; border-color: var(--gold); box-shadow: 0 0 15px rgba(217,119,6,0.3); }
+    header { 
+      background: rgba(15, 23, 42, 0.85); 
+      backdrop-filter: blur(16px); 
+      padding: 18px 28px; 
+      border-radius: 16px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      border: 1px solid var(--card-border); 
+      margin-bottom: 28px; 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+      flex-wrap: wrap; 
+      gap: 20px; 
+    }
+    
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .logo { 
+      font-size: 26px; 
+      background: linear-gradient(135deg, #f59e0b, #d97706); 
+      border-radius: 12px; 
+      width: 48px; 
+      height: 48px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      box-shadow: 0 0 20px var(--gold-glow); 
+    }
+    
+    .header-info h1 { font-size: 19px; margin: 0; font-weight: 800; letter-spacing: 0.5px; }
+    .header-info p { font-size: 12px; margin: 3px 0 0 0; color: var(--text-muted); font-weight: 500; }
 
-    .section-view { display: none; }
+    /* Live Clock Styling */
+    .live-clock-badge {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--card-border);
+      padding: 8px 16px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .live-clock-time { font-size: 15px; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+    .live-clock-date { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+    .nav-tabs { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; margin-top: 5px; }
+    @media(min-width: 900px) { .nav-tabs { width: auto; margin-top: 0; } }
+    
+    .nav-btn { 
+      background: rgba(30, 41, 59, 0.5); 
+      border: 1px solid var(--card-border); 
+      color: var(--text-muted); 
+      padding: 10px 18px; 
+      border-radius: 12px; 
+      font-weight: 700; 
+      font-size: 13px;
+      cursor: pointer; 
+      transition: all 0.25s ease; 
+    }
+    .nav-btn:hover { color: var(--text); background: rgba(30, 41, 59, 0.9); }
+    .nav-btn.active { 
+      background: var(--gold); 
+      color: #000; 
+      border-color: var(--gold); 
+      box-shadow: 0 0 15px var(--gold-glow); 
+    }
+
+    .section-view { display: none; animation: fadeIn 0.3s ease-in-out; }
     .section-view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Summary Cards */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-    .stat-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 14px; backdrop-filter: blur(5px); }
-    .stat-card h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-    .stat-card .val { font-size: 26px; font-weight: 800; color: var(--gold); margin: 0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
+    .stat-card { 
+      background: var(--card-bg); 
+      border: 1px solid var(--card-border); 
+      padding: 22px; 
+      border-radius: 16px; 
+      backdrop-filter: blur(8px); 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .stat-card h4 { margin: 0 0 10px 0; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
+    .stat-card .val { font-size: 28px; font-weight: 800; color: var(--gold); margin: 0; letter-spacing: -0.5px; }
 
     /* Tables */
-    .data-table-container { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow-x: auto; backdrop-filter: blur(5px); margin-bottom: 25px; }
+    .data-table-container { 
+      background: var(--card-bg); 
+      border: 1px solid var(--card-border); 
+      border-radius: 16px; 
+      overflow-x: auto; 
+      backdrop-filter: blur(8px); 
+      margin-bottom: 28px; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; white-space: nowrap; }
-    th { background: rgba(15, 23, 42, 0.8); color: var(--gold); padding: 14px 18px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    th { background: rgba(15, 23, 42, 0.9); color: var(--gold); padding: 16px 20px; font-weight: 700; border-bottom: 1px solid var(--card-border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+    td { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); }
     tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.015); }
 
     /* Filter subtabs */
-    .filter-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .filter-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+    .filter-tabs { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+    .filter-btn { 
+      background: rgba(255,255,255,0.03); 
+      border: 1px solid var(--card-border); 
+      color: var(--text-muted); 
+      padding: 8px 18px; 
+      border-radius: 10px; 
+      font-size: 13px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+    }
+    .filter-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+    .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: 700; }
 
     /* Orders Grid */
-    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-    .order-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
-    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; }
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    .order-card { 
+      background: var(--card-bg); 
+      border: 1px solid var(--card-border); 
+      border-radius: 16px; 
+      padding: 22px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .order-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--gold);
+    }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; }
     
-    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
-    .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
-    .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
-    .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; letter-spacing: 0.5px; }
+    .badge-pending { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-preparing { background: rgba(245, 158, 11, 0.15); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
 
     /* Billing Status Badges */
-    .badge-paid { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
-    .badge-inbill { background: rgba(245, 158, 11, 0.2); color: var(--orange); border: 1px solid var(--orange); }
-    .badge-unpaid { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    .badge-paid { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-inbill { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
+    .badge-unpaid { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
 
-    .action-group { margin-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px; }
-    .action-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: block; font-weight: 700; }
+    .action-group { margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.08); padding-top: 12px; }
+    .action-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: block; font-weight: 700; letter-spacing: 0.8px; }
     .action-btns { display: flex; gap: 6px; }
     
-    .btn { flex: 1; padding: 8px 6px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; border: none; text-transform: uppercase; transition: opacity 0.2s; }
-    .btn:hover { opacity: 0.85; }
+    .btn { flex: 1; padding: 9px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; border: none; text-transform: uppercase; transition: all 0.2s; letter-spacing: 0.5px; }
+    .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
     .btn-prep { background: var(--gold); color: #000; }
     .btn-done { background: var(--green); color: #000; }
-    .btn-clear { background: #38bdf8; color: #000; width: 100%; margin-top: 10px; padding: 10px; font-size: 12px; font-weight: 800; }
+    .btn-clear { background: var(--blue); color: #000; width: 100%; margin-top: 14px; padding: 11px; font-size: 12px; font-weight: 800; border-radius: 8px; }
     
     .btn-pay-paid { background: var(--green); color: #000; }
     .btn-pay-inbill { background: var(--orange); color: #000; }
     .btn-pay-unpaid { background: var(--red); color: #fff; }
 
     /* Menu stock grid */
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-    .menu-item-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
-    .menu-item-card img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+    .menu-item-card { 
+      background: var(--card-bg); 
+      border: 1px solid var(--card-border); 
+      border-radius: 16px; 
+      padding: 20px; 
+      text-align: center; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .menu-item-card img { width: 75px; height: 75px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; border: 2px solid var(--card-border); }
   </style>
 </head>
 <body>
@@ -82,25 +212,32 @@
   <header>
     <div class="brand">
       <div class="logo">🍳</div>
-      <div>
-        <h1 style="font-size:18px; margin:0;">GANI CAFE KITCHEN</h1>
-        <p style="font-size:11px; margin:0; color:var(--text-muted);">Command Center, Tally & Clearance Ledger</p>
+      <div class="header-info">
+        <h1>GANI CAFE KITCHEN</h1>
+        <p>Command Center, Tally & Clearance Ledger</p>
       </div>
     </div>
+    
+    <!-- Live Digital Clock Widget -->
+    <div class="live-clock-badge">
+      <span class="live-clock-time" id="live-time">--:--:-- --</span>
+      <span class="live-clock-date" id="live-date">---, --- --, ----</span>
+    </div>
+
     <div class="nav-tabs">
       <button class="nav-btn active" onclick="switchTab('orders', this)">Live Orders 🔥</button>
-      <button class="nav-btn" onclick="switchTab('tally', this)">📊 Sales Tally Ledger</button>
-      <button class="nav-btn" onclick="switchTab('feedback', this)">⭐ Customer Feedback</button>
+      <button class="nav-btn" onclick="switchTab('tally', this)">📊 Sales Tally</button>
+      <button class="nav-btn" onclick="switchTab('feedback', this)">⭐ Feedback</button>
       <button class="nav-btn" onclick="switchTab('menu', this)">⚙️ Stock Manager</button>
     </div>
   </header>
 
   <!-- 1. LIVE ORDERS SECTION -->
   <div id="section-orders" class="section-view active">
-    <div class="filter-tabs" style="margin-bottom: 15px;">
+    <div class="filter-tabs">
       <button class="filter-btn active" onclick="setOrderFilter('all', this)">All Active Orders</button>
-      <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Unpaid / Aren't Paid 🔴</button>
-      <button class="filter-btn" onclick="setOrderFilter('inbill', this)">In Bill (Running Tab) 🟡</button>
+      <button class="filter-btn" onclick="setOrderFilter('unpaid', this)">Unpaid 🔴</button>
+      <button class="filter-btn" onclick="setOrderFilter('inbill', this)">In Bill 🟡</button>
       <button class="filter-btn" onclick="setOrderFilter('paid', this)">Paid 🟢</button>
     </div>
     <div id="live-orders-container" class="orders-grid">
@@ -133,7 +270,7 @@
       </div>
     </div>
 
-    <h3 style="margin-bottom: 12px; color: var(--gold);">Product-wise Sales Tally</h3>
+    <h3 style="margin-bottom: 14px; color: var(--gold); font-size: 16px;">Product-wise Sales Tally</h3>
     <div class="data-table-container">
       <table>
         <thead>
@@ -179,6 +316,15 @@
   <audio id="kitchen-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
+    // Initialize Real-time Live Clock
+    function updateLiveClock() {
+      const now = new Date();
+      document.getElementById('live-time').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('live-date').innerText = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    setInterval(updateLiveClock, 1000);
+    updateLiveClock();
+
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -220,7 +366,6 @@
       allOrders = snapshot.val() || {};
       let orderKeys = Object.keys(allOrders);
       
-      // Play alert sound for kitchen staff when a new order comes in
       if (previousOrderCount !== null && orderKeys.length > previousOrderCount) {
         document.getElementById('kitchen-alert-sound').play().catch(e => console.log(e));
       }
@@ -280,24 +425,28 @@
         else if (rawPayStatus.includes('In Bill')) payBadgeClass = 'badge-inbill';
 
         let itemsHtml = order.items.map(item => `<li>${item}</li>`).join('');
+        let orderTimeStr = order.timestamp ? new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
         container.innerHTML += `
           <div class="order-card">
             <div>
               <div class="order-header">
-                <span style="font-weight: 800; font-size: 16px; color: var(--gold);">Table ${order.table}</span>
-                <div style="display: flex; gap: 5px; align-items: center;">
+                <div>
+                  <span style="font-weight: 800; font-size: 16px; color: var(--gold);">Table ${order.table}</span>
+                  <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px;">Ordered at: ${orderTimeStr}</span>
+                </div>
+                <div>
                   <span class="badge ${prepBadgeClass}">${order.status}</span>
                 </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 12px;">
                 <span style="color:var(--text-muted);">Mode: <strong>${order.paymentMode || 'UPI'}</strong></span>
                 <span class="badge ${payBadgeClass}">${rawPayStatus}</span>
               </div>
-              <ul style="margin: 0 0 12px 0; padding-left: 20px; line-height: 1.5; font-size: 13px;">${itemsHtml}</ul>
+              <ul style="margin: 0 0 14px 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">${itemsHtml}</ul>
             </div>
             <div>
-              <div style="font-weight: 800; font-size: 15px; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-weight: 800; font-size: 15px; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;">
                 <span>Total: ₹${order.total}</span>
               </div>
               
@@ -394,7 +543,7 @@
                   productSales[name] = { cat: 'Cafe Item', qty: 0, rev: 0, price: 0 };
                 }
                 productSales[name].qty += qty;
-                let unitPrice = productSales[name].price || (order.total / totalUnitsSold); 
+                let unitPrice = productSales[name].price || (order.total / (totalUnitsSold || 1)); 
                 productSales[name].rev += qty * unitPrice;
               }
             });
@@ -462,14 +611,14 @@
         let item = menuData[id];
         let inStock = item.inStock !== false;
         let btnText = inStock ? '🟢 In Stock' : '🔴 Out of Stock';
-        let btnColor = inStock ? 'background: rgba(16,185,129,0.2); color: var(--green); border: 1px solid var(--green);' : 'background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red);';
+        let btnColor = inStock ? 'background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3);' : 'background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3);';
 
         container.innerHTML += `
           <div class="menu-item-card">
-            <img src="${item.img}">
-            <h4 style="margin:5px 0; font-size:14px;">${item.name}</h4>
-            <p style="color:var(--gold); font-weight:700; margin:0 0 10px 0;">₹${item.price}</p>
-            <button class="btn" style="${btnColor} width:100%; padding: 8px;" onclick="toggleStock('${id}', ${inStock})">${btnText}</button>
+            <img src="${item.img}" alt="${item.name}">
+            <h4 style="margin:6px 0; font-size:14px;">${item.name}</h4>
+            <p style="color:var(--gold); font-weight:700; margin:0 0 12px 0;">₹${item.price}</p>
+            <button class="btn" style="${btnColor} width:100%; padding: 9px;" onclick="toggleStock('${id}', ${inStock})">${btnText}</button>
           </div>`;
       });
     }
