@@ -6,7 +6,6 @@
   <title>Gani Cafe - QR Menu, Ordering, Payment & Feedback</title>
   
   <!-- Firebase App & Firestore SDKs -->
-  <!-- Firebase App & Firestore SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <style>
@@ -191,7 +190,6 @@
       <div class="qr-container" id="qr-box-container" style="display: block;">
         <p style="font-size: 12px; color: var(--text-muted); margin: 5px 0;">Scan via GPay / PhonePe / Paytm</p>
         <div style="background: white; padding: 10px; border-radius: 8px; display: inline-block; border: 1px solid #cbd5e1;">
-          <!-- Changed to placeholder image to avoid missing image errors on your end -->
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=Q227869939@ybl" alt="UPI QR" style="width: 140px; height: 140px; display: block;" />
         </div>
         <p style="font-size: 11px; margin-top: 5px;">UPI ID: <strong style="color:var(--primary)">Q227869939@ybl</strong></p>
@@ -230,19 +228,19 @@
   </div>
 
   <script>
-    // --- REPLACE THIS URL WITH YOUR GOOGLE APPS SCRIPT URL ---
-    const SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
+    // Your Google Apps Script Web App URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjLDutugGTJKorkZNkOwAFvuhFB-pRDDQCFNqGdIo/exec";
 
-    // Firebase Config
+    // Firebase Config (Compat SDK Initialization)
     const firebaseConfig = {
-      apiKey: "AIzaSyAc5Nfz9pNp4dNmNr3OKQFcZEaBJ5KH3dg",
-      authDomain: "algani-cafe.firebaseapp.com",
-      databaseURL: "https://algani-cafe-default-rtdb.firebaseio.com",
-      projectId: "algani-cafe",
-      storageBucket: "algani-cafe.firebasestorage.app",
-      messagingSenderId: "44056411552",
-      appId: "1:44056411552:web:a245596401ca636fb0f8c5",
-      measurementId: "G-9GDVR0V5VE"
+      apiKey: "AIzaSyD2JGeXQMLRPMtN5df7h_BUEY0jXZKc2mw",
+      authDomain: "gani-cafe.firebaseapp.com",
+      databaseURL: "https://gani-cafe-default-rtdb.firebaseio.com",
+      projectId: "gani-cafe",
+      storageBucket: "gani-cafe.firebasestorage.app",
+      messagingSenderId: "76475039319",
+      appId: "1:76475039319:web:00e15744cc2e3ee68b6d12",
+      measurementId: "G-3LHB3MXGST"
     };
 
     if (!firebase.apps.length) {
@@ -350,7 +348,7 @@
         comments: document.getElementById('feedback-text').value || "No comments",
       };
 
-      if(SCRIPT_URL !== "https://script.google.com/macros/s/AKfycbxjLDutugGTJKorkZNkOwAFvuhFB-pRDDQCFNqGdIo/dev") {
+      if (SCRIPT_URL) {
          fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
       }
 
@@ -392,7 +390,7 @@
       };
 
       // 1. Send to Google Sheets
-      if(SCRIPT_URL !== "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+      if (SCRIPT_URL) {
         fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
       }
 
