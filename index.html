@@ -1,168 +1,397 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Menu & Live Order Status</title>
+  <title>Gani Cafe | Elite Autonomous Dining Experience</title>
+  
+  <!-- Tailwind CSS CDN for Ultra-Modern Styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            elite: {
+              950: '#030712',
+              900: '#0b0f19',
+              800: '#111827',
+              700: '#1f2937',
+              600: '#374151',
+              accent: '#f59e0b',
+              glow: 'rgba(245, 158, 11, 0.15)',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'shimmer': 'shimmer 2.5s infinite linear',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons & Canvas Confetti for Elite VFX -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <style>
-    :root { --gold: #d97706; --bg: #0f172a; --card-bg: rgba(30, 41, 59, 0.7); --text: #f8fafc; --text-muted: #94a3b8; --green: #10b981; --red: #ef4444; --orange: #f59e0b; --blue: #0ea5e9; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-    header { background: var(--card-bg); padding: 15px 25px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 15px; }
-    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
-    .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; text-align: center; }
-    .card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-    .btn { background: var(--gold); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
-    .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .cart-section, .status-section, .feedback-section { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); }
-    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
-    .badge-pending { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
-    .badge-preparing { background: rgba(217, 119, 6, 0.2); color: var(--gold); border: 1px solid var(--gold); }
-    .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
-    .badge-paid { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
-    .badge-unpaid { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
-    .badge-inbill { background: rgba(245, 158, 11, 0.2); color: var(--orange); border: 1px solid var(--orange); }
-    .qr-box { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 10px; text-align: center; }
-    .qr-box img { width: 130px; height: 130px; }
-    .table-notice { background: rgba(217, 119, 6, 0.15); border: 1px solid var(--gold); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; font-weight: 600; color: var(--gold); display: flex; align-items: center; gap: 8px; }
+    /* Custom High-End Glassmorphism & Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #030712; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
 
-    /* Digital Bill Modal Overlay */
-    #customer-bill-modal {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(8px);
-      display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px;
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     }
-    .bill-receipt-card {
-      background: #ffffff; color: #1e293b; width: 100%; max-width: 420px;
-      border-radius: 16px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-      position: relative; font-family: 'Courier New', Courier, monospace;
-    }
-    .receipt-header { text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 16px; margin-bottom: 16px; }
-    .receipt-header h2 { margin: 0; font-size: 22px; color: #0f172a; font-family: sans-serif; font-weight: 900; }
-    .receipt-header p { margin: 4px 0 0 0; font-size: 12px; color: #64748b; font-family: sans-serif; }
-    .receipt-meta { font-size: 12px; margin-bottom: 16px; font-family: sans-serif; display: flex; justify-content: space-between; }
-    .receipt-items-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
-    .receipt-items-table th { background: #f1f5f9; color: #334155; padding: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #cbd5e1; text-align: left; }
-    .receipt-items-table td { padding: 8px; border-bottom: 1px dashed #e2e8f0; }
-    .receipt-total { border-top: 2px solid #0f172a; padding-top: 12px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; font-family: sans-serif; }
-    .receipt-footer { text-align: center; margin-top: 20px; font-size: 11px; color: #64748b; font-family: sans-serif; border-top: 1px dashed #cbd5e1; padding-top: 12px; }
 
-    @media print {
-      body * { visibility: hidden; }
-      #customer-bill-modal, #customer-bill-modal * { visibility: visible; }
-      #customer-bill-modal { position: absolute; left: 0; top: 0; background: #fff; backdrop-filter: none; padding: 0; }
-      .no-print { display: none !important; }
+    .glass-card {
+      background: rgba(31, 41, 55, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.2);
+    }
+
+    .shimmer-text {
+      background: linear-gradient(90deg, #f8fafc 0%, #f59e0b 50%, #f8fafc 100%);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      animation: shimmer 4s linear infinite;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.07) 0%, rgba(0,0,0,0) 70%);
+      z-index: -1;
+      pointer-events: none;
     }
   </style>
 </head>
-<body>
-  <header>
-    <h1>Gani Cafe Menu</h1>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <label for="table-num" style="font-weight: 700; font-size: 14px;">Select Table:</label>
-      <input type="number" id="table-num" value="1" min="1" max="10" onchange="filterCustomerOrders()" style="width: 60px; padding: 6px; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:6px; font-weight:bold; text-align:center;">
-    </div>
-  </header>
+<body class="bg-elite-950 text-slate-100 font-sans min-h-screen selection:bg-amber-500 selection:text-black antialiased">
 
-  <div class="table-notice">
-    <span>📍</span> Please select your correct <strong>Table Number</strong> above before placing your order! Active orders will stay displayed until served and cleared.
-  </div>
+  <!-- Ambient Light Orbs (VFX Background) -->
+  <div class="ambient-glow -top-48 -left-48 animate-pulse-slow"></div>
+  <div class="ambient-glow top-1/2 -right-48 animate-pulse-slow" style="animation-delay: 1.5s;"></div>
 
-  <div id="menu-container" class="menu-grid"></div>
-
-  <div class="cart-section">
-    <h3>Your Order Cart</h3>
-    <ul id="cart-list" style="padding-left: 0; list-style: none; margin-bottom: 15px;">
-      <li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>
-    </ul>
-    <p><strong>Total: ₹<span id="cart-total">0</span></strong></p>
+  <!-- Main Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
-    <div style="margin: 15px 0;">
-      <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 5px; font-weight: 700;">Select Payment Method:</label>
-      <select id="payment-mode" onchange="togglePaymentUI()" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
-        <option value="UPI">UPI / QR Code</option>
-        <option value="Cash">Cash / Pay at Counter</option>
-      </select>
-    </div>
-
-    <div id="qr-container" style="margin-bottom: 15px;">
-      <div class="qr-box">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=ganicafe@upi&pn=GaniCafe&cu=INR" alt="Payment QR">
-        <p style="color:#000; font-size:11px; margin:5px 0 0 0; font-weight:700;">Scan to Pay via UPI</p>
+    <!-- Elite Header -->
+    <header class="glass-panel rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent"></div>
+      
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-black font-black text-2xl tracking-tighter">
+          G
+        </div>
+        <div>
+          <h1 class="text-2xl font-black tracking-tight shimmer-text">GANI CAFE</h1>
+          <p class="text-xs text-slate-400 font-mono tracking-wider uppercase flex items-center gap-2 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Autonomous Node v4.9 • Live Telemetry Active
+          </p>
+        </div>
       </div>
+
+      <div class="flex items-center gap-4 flex-wrap justify-center">
+        <!-- Audio Synth Toggle -->
+        <button onclick="toggleAudioEngine()" id="audio-toggle-btn" class="px-4 py-2.5 rounded-xl glass-card text-xs font-mono font-semibold text-amber-400 hover:bg-slate-800 transition flex items-center gap-2">
+          <i data-lucide="volume-2" class="w-4 h-4"></i>
+          <span>SFX: <span id="sfx-status">ONLINE</span></span>
+        </button>
+
+        <!-- Table Selector Pill -->
+        <div class="flex items-center gap-3 glass-card px-4 py-2 rounded-xl">
+          <span class="text-xs font-bold text-slate-400 uppercase font-mono">Terminal Table</span>
+          <div class="relative">
+            <input type="number" id="table-num" value="1" min="1" max="20" onchange="handleTableChange()" 
+                   class="w-16 bg-elite-950 text-amber-400 font-black text-center py-1.5 rounded-lg border border-slate-700 focus:border-amber-500 focus:outline-none font-mono">
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Operational Notice Banner -->
+    <div class="glass-card rounded-xl p-4 mb-8 border-l-4 border-amber-500 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-300 font-medium">
+          Verify your <strong class="text-amber-400 font-mono">Terminal Table Number</strong> prior to dispatching orders. Telemetry tracks live updates real-time.
+        </p>
+      </div>
+      <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Secure Protocol</span>
     </div>
 
-    <button class="btn" onclick="placeOrder()">Place Order 🚀</button>
-  </div>
+    <!-- Main Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Column: Menu Catalog (8 Cols) -->
+      <div class="lg:col-span-8 space-y-6">
+        <div class="flex justify-between items-center">
+          <h2 class="text-lg font-bold tracking-tight text-slate-200 flex items-center gap-2">
+            <i data-lucide="utensils" class="w-5 h-5 text-amber-500"></i>
+            Catalog Matrix
+          </h2>
+          <div id="catalog-count" class="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
+            Loading items...
+          </div>
+        </div>
 
-  <div class="status-section">
-    <h3>Live Order Status & Billing Tracker (Table <span id="display-table">1</span>)</h3>
-    <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Your orders remain saved here in real-time and will not disappear or refresh until the kitchen serves and clears them.</p>
-    
-    <div id="customer-orders-container" style="display: grid; gap: 15px; margin-top: 15px;">
-      <p style="color: var(--text-muted);">No active orders for this table.</p>
-    </div>
+        <div id="menu-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Dynamic Menu Cards Rendered Here -->
+        </div>
+      </div>
 
-    <button class="btn" style="background: var(--blue); color: #fff; width: 100%; margin-top: 20px; padding: 12px; font-size: 13px;" onclick="openCustomerBillModal()">📄 View & Download Complete Table Bill / Invoice</button>
-  </div>
+      <!-- Right Column: Cart, Telemetry & Actions (4 Cols) -->
+      <div class="lg:col-span-4 space-y-6">
+        
+        <!-- Cart Module -->
+        <div class="glass-panel rounded-2xl p-6 relative">
+          <div class="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
+            <span id="cart-item-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-black shadow-lg shadow-amber-500/30 hidden">0 Items</span>
+          </div>
 
-  <div class="feedback-section">
-    <h3>💬 Share Your Feedback</h3>
-    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">We love hearing from you! Please let us know about your cafe experience.</p>
-    <div style="display: grid; gap: 12px; max-width: 450px;">
-      <input type="text" id="feedback-name" placeholder="Your Name / Nickname" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
-      <select id="feedback-rating" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-weight: 600;">
-        <option value="5">⭐⭐⭐⭐⭐ (5/5 - Excellent Experience)</option>
-        <option value="4">⭐⭐⭐⭐ (4/5 - Good)</option>
-        <option value="3">⭐⭐⭐ (3/5 - Average)</option>
-        <option value="2">⭐⭐ (2/5 - Poor)</option>
-        <option value="1">⭐ (1/5 - Very Bad)</option>
-      </select>
-      <textarea id="feedback-comment" placeholder="Write your comments or suggestions..." rows="3" style="padding: 8px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; resize: vertical;"></textarea>
-      <button class="btn" onclick="submitFeedback()">Submit Feedback 📝</button>
+          <h3 class="text-base font-bold text-slate-200 mb-4 flex items-center gap-2">
+            <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-500"></i>
+            Active Cart Queue
+          </h3>
+
+          <ul id="cart-list" class="space-y-3 mb-6 max-h-64 overflow-y-auto pr-1">
+            <li class="text-sm text-slate-500 text-center py-6 font-mono">Cart is empty. Select items from the catalog.</li>
+          </ul>
+
+          <div class="pt-4 border-t border-slate-800 space-y-4">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-mono uppercase text-slate-400">Total Valuation</span>
+              <span class="text-xl font-black font-mono text-amber-400">₹<span id="cart-total">0</span></span>
+            </div>
+
+            <div>
+              <label class="block text-xs font-mono uppercase text-slate-400 mb-2">Settlement Channel</label>
+              <select id="payment-mode" onchange="togglePaymentUI()" class="w-full bg-elite-950 text-slate-200 text-sm font-medium py-2.5 px-3 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none">
+                <option value="UPI">UPI / Dynamic QR Gateway</option>
+                <option value="Cash">Physical Counter Settlement</option>
+              </select>
+            </div>
+
+            <!-- QR Box Container -->
+            <div id="qr-container" class="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+              <div class="bg-white p-2 rounded-lg shadow-xl mb-2">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=ganicafe@upi&pn=GaniCafe&cu=INR" alt="UPI QR" class="w-28 h-28">
+              </div>
+              <span class="text-[11px] font-mono font-bold text-amber-400">Scan via GPay / PhonePe / Paytm</span>
+            </div>
+
+            <button onclick="placeOrder()" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+              <i data-lucide="rocket" class="w-4 h-4"></i>
+              Dispatch Order
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Status Tracker Module -->
+        <div class="glass-panel rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4 text-amber-500"></i>
+              Telemetry Tracker (Table <span id="display-table" class="text-amber-400">1</span>)
+            </h3>
+          </div>
+          <p class="text-[11px] text-slate-400 mb-4 leading-relaxed font-mono">
+            Orders persist until kitchen finalization and table clearance.
+          </p>
+
+          <div id="customer-orders-container" class="space-y-3 max-h-72 overflow-y-auto pr-1">
+            <p class="text-xs text-slate-500 text-center font-mono py-4">No active telemetry found.</p>
+          </div>
+
+          <button onclick="openCustomerBillModal()" class="w-full mt-4 py-3 px-4 rounded-xl glass-card text-xs font-bold text-cyan-400 hover:bg-cyan-950/30 transition flex items-center justify-center gap-2 border border-cyan-500/20">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            Generate Complete Invoice PDF
+          </button>
+        </div>
+
+        <!-- Feedback Module -->
+        <div class="glass-panel rounded-2xl p-6">
+          <h3 class="text-base font-bold text-slate-200 mb-2 flex items-center gap-2">
+            <i data-lucide="message-square-plus" class="w-4 h-4 text-amber-500"></i>
+            Node Feedback
+          </h3>
+          <p class="text-[11px] text-slate-400 mb-4 font-mono">Contribute telemetry feedback regarding your session.</p>
+          
+          <div class="space-y-3">
+            <input type="text" id="feedback-name" placeholder="Operator Nickname" class="w-full bg-elite-950 text-sm text-slate-200 px-3 py-2 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none">
+            <select id="feedback-rating" class="w-full bg-elite-950 text-sm text-slate-200 px-3 py-2 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none font-medium">
+              <option value="5">⭐⭐⭐⭐⭐ (5/5 - Subliminal Experience)</option>
+              <option value="4">⭐⭐⭐⭐ (4/5 - Optimal)</option>
+              <option value="3">⭐⭐⭐ (3/5 - Standard)</option>
+              <option value="2">⭐⭐ (2/5 - Sub-optimal)</option>
+              <option value="1">⭐ (1/5 - Faulty)</option>
+            </select>
+            <textarea id="feedback-comment" placeholder="Detailed diagnostic report..." rows="2" class="w-full bg-elite-950 text-sm text-slate-200 px-3 py-2 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none resize-none"></textarea>
+            <button onclick="submitFeedback()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-bold uppercase transition border border-slate-700 flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-3.5 h-3.5 text-amber-400"></i>
+              Transmit Feedback
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
   <!-- Digital Bill Modal Overlay -->
-  <div id="customer-bill-modal">
-    <div class="bill-receipt-card">
-      <div class="receipt-header">
-        <h2>GANI CAFE</h2>
-        <p>Customer Dining Invoice</p>
+  <div id="customer-bill-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden justify-center items-center z-50 p-4">
+    <div class="glass-panel rounded-2xl w-full max-w-md p-6 bg-white text-slate-900 font-mono relative shadow-2xl">
+      <div class="text-center border-b-2 border-dashed border-slate-300 pb-4 mb-4">
+        <h2 class="text-xl font-black tracking-tight text-slate-900 font-sans">GANI CAFE</h2>
+        <p class="text-[11px] text-slate-500 uppercase tracking-widest mt-1">Certified Digital Invoice</p>
       </div>
-      <div class="receipt-meta">
-        <span id="customer-bill-modal-table">Table: 1</span>
+      
+      <div class="flex justify-between text-xs text-slate-600 mb-4 font-sans">
+        <span id="customer-bill-modal-table" class="font-bold">Table: 1</span>
         <span id="customer-bill-modal-time">Date: --</span>
       </div>
-      <table class="receipt-items-table">
+
+      <table class="w-full text-xs mb-4">
         <thead>
-          <tr>
-            <th>Item Description</th>
-            <th style="text-align:right;">Subtotal</th>
+          <tr class="border-b border-slate-300 text-slate-500">
+            <th class="py-2 text-left uppercase">Item Description</th>
+            <th class="py-2 text-right uppercase">Subtotal</th>
           </tr>
         </thead>
-        <tbody id="customer-bill-modal-items-tbody">
+        <tbody id="customer-bill-modal-items-tbody" class="divide-y divide-slate-100">
           <!-- Populated dynamically -->
         </tbody>
       </table>
-      <div class="receipt-total">
+
+      <div class="border-t-2 border-slate-900 pt-3 flex justify-between items-center text-base font-black font-sans mb-6">
         <span>GRAND TOTAL:</span>
-        <span id="customer-bill-modal-grand-total">₹0</span>
+        <span id="customer-bill-modal-grand-total" class="text-amber-600">₹0</span>
       </div>
-      <div class="receipt-footer">
-        <p>Thank you for dining at Gani Cafe! ⭐</p>
-        <p style="font-size: 9px; margin-top: 4px;">Take a screenshot or print for your records</p>
+
+      <div class="text-center text-[10px] text-slate-500 border-t border-dashed border-slate-300 pt-3 mb-6 font-sans">
+        <p class="font-bold">Thank you for dining at Gani Cafe! 🌟</p>
+        <p class="mt-0.5">Autonomous Telemetry Verification Complete</p>
       </div>
-      <div class="no-print" style="margin-top: 20px; display: flex; gap: 10px;">
-        <button class="btn" style="flex:1; background: #0284c7; color: #fff; padding: 10px; font-size: 12px;" onclick="window.print()">🖨️ Print / Save PDF</button>
-        <button class="btn" style="flex:1; background: #cbd5e1; color: #0f172a; padding: 10px; font-size: 12px;" onclick="closeCustomerBillModal()">Close ✕</button>
+
+      <div class="flex gap-3 no-print">
+        <button onclick="window.print()" class="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20">
+          <i data-lucide="printer" class="w-4 h-4"></i> Print / PDF
+        </button>
+        <button onclick="closeCustomerBillModal()" class="flex-1 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider">
+          Close
+        </button>
       </div>
     </div>
   </div>
 
-  <audio id="customer-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+  <!-- Web Audio Synth & SFX Engine (No External Audio Dependency) -->
+  <script>
+    let audioCtx = null;
+    let sfxEnabled = true;
 
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSynthBeep(type = 'success') {
+      if (!sfxEnabled) return;
+      try {
+        initAudioContext();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(554.37, now + 0.08);
+          osc.frequency.setValueAtTime(659.25, now + 0.16);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'status') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.exponentialRampToValueAtTime(440, now + 0.2);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        }
+      } catch (e) {
+        console.log("Audio Context Error:", e);
+      }
+    }
+
+    function toggleAudioEngine() {
+      sfxEnabled = !sfxEnabled;
+      const statusEl = document.getElementById('sfx-status');
+      statusEl.innerText = sfxEnabled ? "ONLINE" : "MUTED";
+      statusEl.className = sfxEnabled ? "text-amber-400" : "text-slate-500";
+      playSynthBeep('click');
+    }
+  </script>
+
+  <!-- Firebase & Core Application Logic -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
@@ -185,48 +414,53 @@
     let allOrdersData = {};
     let previousTableStatuses = {};
 
-    function playSound() {
-      let audio = document.getElementById('customer-alert-sound');
-      if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(e => console.log(e));
-      }
-    }
-
     function formatDateTime(timestamp) {
       if (!timestamp) return 'N/A';
       let d = new Date(timestamp);
       let dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-      let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      return `${dateStr}, ${timeStr}`;
+      let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      return `${dateStr} • ${timeStr}`;
     }
 
     function renderMenu() {
       let container = document.getElementById('menu-container');
       container.innerHTML = '';
+      let count = 0;
+
       Object.keys(menuItems).forEach(id => {
         let item = menuItems[id];
         if (item.inStock !== false) {
+          count++;
           let qty = cart[id] || 0;
           let actionHtml = qty === 0 
-            ? `<button class="btn" onclick="addToCart('${id}')">Add to Cart</button>`
-            : `<div style="display: flex; justify-content: center; align-items: center; gap: 10px;">
-                 <button class="btn" style="padding: 4px 10px;" onclick="decreaseQuantity('${id}')">-</button>
-                 <span style="font-weight: bold; font-size: 16px;">${qty}</span>
-                 <button class="btn" style="padding: 4px 10px;" onclick="increaseQuantity('${id}')">+</button>
+            ? `<button onclick="addToCart('${id}')" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-amber-500 hover:text-black font-mono text-xs font-bold text-slate-200 transition border border-slate-700 flex items-center justify-center gap-1.5">
+                 <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add to Cart
+               </button>`
+            : `<div class="flex items-center justify-between bg-elite-950 p-1.5 rounded-xl border border-amber-500/30">
+                 <button onclick="decreaseQuantity('${id}')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold flex items-center justify-center transition">-</button>
+                 <span class="font-mono font-black text-sm text-amber-400 px-3">${qty}</span>
+                 <button onclick="increaseQuantity('${id}')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold flex items-center justify-center transition">+</button>
                </div>`;
 
           container.innerHTML += `
-            <div class="card">
-              <img src="${item.img}" alt="${item.name}">
-              <h4>${item.name}</h4>
-              <p>₹${item.price}</p>
-              ${actionHtml}
+            <div class="glass-card rounded-2xl p-4 flex flex-col justify-between group">
+              <div class="flex items-center gap-4 mb-3">
+                <img src="${item.img}" alt="${item.name}" class="w-16 h-16 rounded-xl object-cover border border-slate-700 group-hover:scale-105 transition duration-300">
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-bold text-sm text-slate-200 truncate">${item.name}</h4>
+                  <p class="font-mono text-amber-400 font-bold text-sm mt-0.5">₹${item.price}</p>
+                </div>
+              </div>
+              <div>${actionHtml}</div>
             </div>`;
         }
       });
+
+      document.getElementById('catalog-count').innerText = `${count} Items Active`;
+      lucide.createIcons();
     }
 
+    // Firebase Listeners
     db.ref('menu').on('value', snap => {
       menuItems = snap.val() || {};
       renderMenu();
@@ -241,7 +475,7 @@
         if (String(order.table) === String(currentTable)) {
           if (previousTableStatuses[id] && previousTableStatuses[id] !== order.status) {
             if (order.status === 'Completed' || order.status === 'Preparing') {
-              playSound();
+              playSynthBeep('status');
             }
           }
           previousTableStatuses[id] = order.status;
@@ -254,19 +488,20 @@
     function togglePaymentUI() {
       let mode = document.getElementById('payment-mode').value;
       let qrContainer = document.getElementById('qr-container');
-      qrContainer.style.display = (mode === 'UPI') ? 'block' : 'none';
+      qrContainer.style.display = (mode === 'UPI') ? 'flex' : 'none';
+      playSynthBeep('click');
     }
 
     function addToCart(id) {
       cart[id] = (cart[id] || 0) + 1;
-      playSound();
+      playSynthBeep('click');
       renderMenu();
       updateCartUI();
     }
 
     function increaseQuantity(id) {
       cart[id] = (cart[id] || 0) + 1;
-      playSound();
+      playSynthBeep('click');
       renderMenu();
       updateCartUI();
     }
@@ -277,7 +512,7 @@
       } else {
         delete cart[id];
       }
-      playSound();
+      playSynthBeep('click');
       renderMenu();
       updateCartUI();
     }
@@ -285,8 +520,10 @@
     function updateCartUI() {
       let list = document.getElementById('cart-list');
       let totalEl = document.getElementById('cart-total');
+      let badgeEl = document.getElementById('cart-item-badge');
       list.innerHTML = '';
       let total = 0;
+      let totalItemsCount = 0;
       let hasItems = false;
 
       Object.keys(cart).forEach(id => {
@@ -294,24 +531,32 @@
         let item = menuItems[id];
         if (item && qty > 0) {
           hasItems = true;
+          totalItemsCount += qty;
           total += item.price * qty;
           list.innerHTML += `
-            <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(15, 23, 42, 0.4); padding: 8px 12px; border-radius: 8px;">
-              <span style="font-weight: 600; font-size: 14px;">${item.name}</span>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="decreaseQuantity('${id}')">-</button>
-                <span style="font-weight: bold; min-width: 20px; text-align: center;">${qty}</span>
-                <button class="btn" style="padding: 2px 8px; font-size: 12px;" onclick="increaseQuantity('${id}')">+</button>
-                <span style="font-weight: bold; min-width: 60px; text-align: right;">₹${item.price * qty}</span>
+            <li class="flex items-center justify-between bg-elite-950/60 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-xs font-semibold text-slate-200 truncate max-w-[120px]">${item.name}</span>
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-slate-400">x${qty}</span>
+                <span class="font-mono font-bold text-xs text-amber-400 min-w-[45px] text-right">₹${item.price * qty}</span>
               </div>
             </li>`;
         }
       });
 
       if (!hasItems) {
-        list.innerHTML = `<li style="color: var(--text-muted);">Your cart is empty. Add items from the menu above!</li>`;
+        list.innerHTML = `<li class="text-xs text-slate-500 text-center py-6 font-mono">Cart is empty. Select items from the catalog.</li>`;
+        badgeEl.classList.add('hidden');
+      } else {
+        badgeEl.innerText = `${totalItemsCount} Items`;
+        badgeEl.classList.remove('hidden');
       }
       totalEl.innerText = total;
+    }
+
+    function handleTableChange() {
+      playSynthBeep('click');
+      filterCustomerOrders();
     }
 
     function placeOrder() {
@@ -319,6 +564,7 @@
       let paymentMode = document.getElementById('payment-mode').value;
       let items = [];
       let total = 0;
+
       Object.keys(cart).forEach(id => {
         let qty = cart[id];
         let item = menuItems[id];
@@ -327,9 +573,18 @@
           total += item.price * qty;
         }
       });
-      if (items.length === 0) { alert('Your cart is empty!'); return; }
-      if (!table) { alert('Please select a table number!'); return; }
-      
+
+      if (items.length === 0) { alert('Cart is empty.'); return; }
+      if (!table) { alert('Specify valid table.'); return; }
+
+      // Elite Confetti VFX on Order Dispatch
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#f59e0b', '#38bdf8', '#10b981']
+      });
+
       db.ref('orders').push({
         table: table,
         items: items,
@@ -339,8 +594,8 @@
         paymentMode: paymentMode,
         timestamp: Date.now()
       });
-      playSound();
-      alert('Order placed successfully for Table ' + table + '!');
+
+      playSynthBeep('success');
       cart = {};
       renderMenu();
       updateCartUI();
@@ -355,7 +610,7 @@
       });
 
       if (tableOrders.length === 0) {
-        alert(`No active orders found for Table ${currentTable} to generate a bill.`);
+        alert(`No active orders found for Table ${currentTable}.`);
         return;
       }
 
@@ -373,8 +628,8 @@
           order.items.forEach(itemStr => {
             tbody.innerHTML += `
               <tr>
-                <td>${itemStr}</td>
-                <td style="text-align:right;">₹${order.total}</td>
+                <td class="py-2">${itemStr}</td>
+                <td class="py-2 text-right font-bold">₹${order.total}</td>
               </tr>`;
           });
         }
@@ -382,10 +637,12 @@
 
       document.getElementById('customer-bill-modal-grand-total').innerText = `₹${grandTotal}`;
       document.getElementById('customer-bill-modal').style.display = 'flex';
+      playSynthBeep('click');
     }
 
     function closeCustomerBillModal() {
       document.getElementById('customer-bill-modal').style.display = 'none';
+      playSynthBeep('click');
     }
 
     function submitFeedback() {
@@ -394,8 +651,8 @@
       let rating = document.getElementById('feedback-rating').value;
       let comment = document.getElementById('feedback-comment').value.trim();
 
-      if (!name) { alert('Please enter your name!'); return; }
-      if (!comment) { alert('Please write a feedback comment!'); return; }
+      if (!name) { alert('Enter operator name.'); return; }
+      if (!comment) { alert('Enter diagnostic comments.'); return; }
 
       db.ref('feedback').push({
         table: table,
@@ -405,8 +662,8 @@
         timestamp: Date.now()
       });
 
-      playSound();
-      alert('Thank you for your valuable feedback!');
+      playSynthBeep('success');
+      alert('Feedback successfully transmitted to telemetry.');
       document.getElementById('feedback-name').value = '';
       document.getElementById('feedback-comment').value = '';
     }
@@ -424,37 +681,43 @@
       });
 
       if (tableOrders.length === 0) {
-        container.innerHTML = `<p style="color: var(--text-muted);">No active orders for this table. Place an order above!</p>`;
+        container.innerHTML = `<p class="text-xs text-slate-500 text-center font-mono py-4">No active telemetry found.</p>`;
         return;
       }
 
       tableOrders.reverse().forEach(id => {
         let order = allOrdersData[id];
-        let prepBadge = order.status === 'Pending' ? 'badge-pending' : (order.status === 'Completed' ? 'badge-completed' : 'badge-preparing');
-        let payBadge = order.paymentStatus.includes('Paid') ? 'badge-paid' : (order.paymentStatus.includes('In Bill') ? 'badge-inbill' : 'badge-unpaid');
-        let itemsHtml = order.items.map(i => `<li>${i}</li>`).join('');
+        let prepColor = order.status === 'Pending' ? 'text-rose-400 bg-rose-950/40 border-rose-500/30' : (order.status === 'Completed' ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-amber-400 bg-amber-950/40 border-amber-500/30');
+        let payColor = order.paymentStatus.includes('Paid') ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-rose-400 bg-rose-950/40 border-rose-500/30';
+        let itemsHtml = order.items.map(i => `<li class="text-xs text-slate-300 font-mono">• ${i}</li>`).join('');
         let formattedTime = formatDateTime(order.timestamp);
 
         container.innerHTML += `
-          <div style="background: rgba(15, 23, 42, 0.6); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div class="glass-card p-3.5 rounded-xl space-y-2">
+            <div class="flex justify-between items-start">
               <div>
-                <strong>Order ID: #${id.slice(-5)}</strong>
-                <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px;">📅 ${formattedTime}</span>
+                <span class="font-mono text-xs font-bold text-slate-200">#${id.slice(-5)}</span>
+                <span class="text-[10px] text-slate-400 font-mono block mt-0.5">${formattedTime}</span>
               </div>
-              <div style="display:flex; gap:6px;">
-                <span class="badge ${prepBadge}">Kitchen: ${order.status}</span>
-                <span class="badge ${payBadge}">Payment: ${order.paymentStatus}</span>
+              <div class="flex gap-1.5 flex-wrap justify-end">
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-md border ${prepColor}">${order.status}</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-md border ${payColor}">${order.paymentStatus}</span>
               </div>
             </div>
-            <p style="margin:5px 0; font-size:13px; color:var(--text-muted);">Payment Mode: <strong>${order.paymentMode}</strong></p>
-            <ul style="margin: 5px 0 10px 0; padding-left: 20px; font-size: 13px;">${itemsHtml}</ul>
-            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800; font-size:14px;">
-              <span>Total: ₹${order.total}</span>
+            <ul class="space-y-1 pl-1">${itemsHtml}</ul>
+            <div class="flex justify-between items-center pt-2 border-t border-slate-800 text-xs font-mono">
+              <span class="text-slate-400">Mode: ${order.paymentMode}</span>
+              <span class="font-bold text-amber-400">₹${order.total}</span>
             </div>
           </div>`;
       });
+      lucide.createIcons();
     }
+
+    // Initialize Lucide Icons on load
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
   </script>
 </body>
 </html>
