@@ -165,17 +165,21 @@
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDKolbW45oIWKrKEn523lxN2oWY_YQFBM",
+      apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
       databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "gani-cafe-52066",
-      storageBucket: "gani-cafe-52066.appspot.com",
+      storageBucket: "gani-cafe-52066.firebasestorage.app",
       messagingSenderId: "292009300507",
       appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
       measurementId: "G-F7TXYZBYKY"
     };
-    firebase.initializeApp(firebaseConfig);
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
     const db = firebase.database();
+    
     let cart = {};
     let menuItems = {};
     let allOrdersData = {};
