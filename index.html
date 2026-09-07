@@ -1,790 +1,611 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe | Elite Autonomous Dining Experience</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            elite: {
-              950: '#030712',
-              900: '#0b0f19',
-              800: '#111827',
-              700: '#1f2937',
-              600: '#374151',
-              accent: '#f59e0b',
-              glow: 'rgba(245, 158, 11, 0.15)',
-            }
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
-          },
-          animation: {
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'float': 'float 6s ease-in-out infinite',
-            'shimmer': 'shimmer 2.5s infinite linear',
-          },
-          keyframes: {
-            float: {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-8px)' },
-            },
-            shimmer: {
-              '0%': { backgroundPosition: '-200% 0' },
-              '100%': { backgroundPosition: '200% 0' },
-            }
-          }
-        }
-      }
-    }
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#030712">
+<title>GANI CAFE — Order</title>
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Lucide Icons & Canvas Confetti -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-  <style>
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #030712; }
-    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
-
-    .glass-panel {
-      background: rgba(17, 24, 39, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    }
-
-    .glass-card {
-      background: rgba(31, 41, 55, 0.4);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .glass-card:hover {
-      border-color: rgba(245, 158, 11, 0.4);
-      box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.2);
-    }
-
-    .shimmer-text {
-      background: linear-gradient(90deg, #f8fafc 0%, #f59e0b 50%, #f8fafc 100%);
-      background-size: 200% auto;
-      color: transparent;
-      -webkit-background-clip: text;
-      animation: shimmer 4s linear infinite;
-    }
-
-    .ambient-glow {
-      position: fixed;
-      width: 500px;
-      height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.07) 0%, rgba(0,0,0,0) 70%);
-      z-index: -1;
-      pointer-events: none;
-    }
-  </style>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#030712;
+  color:#e5e7eb;
+  font-family:Inter,system-ui,sans-serif
+}
+.card{
+  background:rgba(17,24,39,.72);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 20px 60px rgba(0,0,0,.25)
+}
+.item{
+  background:rgba(31,41,55,.45);
+  border:1px solid rgba(255,255,255,.07);
+}
+.status{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:8px;
+  font-size:10px;
+  font-weight:800;
+  border:1px solid rgba(255,255,255,.12)
+}
+</style>
 </head>
-<body class="bg-elite-950 text-slate-100 font-sans min-h-screen selection:bg-amber-500 selection:text-black antialiased">
 
-  <!-- Ambient Light Orbs -->
-  <div class="ambient-glow -top-48 -left-48 animate-pulse-slow"></div>
-  <div class="ambient-glow top-1/2 -right-48 animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+<body>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
-    <!-- Header Section -->
-    <header class="glass-panel rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
-      <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent"></div>
-      
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-black font-black text-2xl tracking-tighter">
-          G
-        </div>
-        <div>
-          <h1 class="text-2xl font-black tracking-tight shimmer-text">GANI CAFE</h1>
-          <p class="text-xs text-slate-400 font-mono tracking-wider uppercase flex items-center gap-2 mt-0.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Autonomous Node v5.1 • Live Telemetry Active
-          </p>
-        </div>
-      </div>
+<div class="max-w-6xl mx-auto p-4 sm:p-6">
 
-      <div class="flex items-center gap-4 flex-wrap justify-center">
-        <!-- SFX Engine Toggle -->
-        <button onclick="toggleAudioEngine()" id="audio-toggle-btn" class="px-4 py-2.5 rounded-xl glass-card text-xs font-mono font-semibold text-amber-400 hover:bg-slate-800 transition flex items-center gap-2">
-          <i data-lucide="volume-2" class="w-4 h-4"></i>
-          <span>SFX: <span id="sfx-status">ONLINE</span></span>
-        </button>
+<header class="card rounded-3xl p-5 mb-6 flex justify-between items-center">
+  <div>
+    <h1 class="text-2xl sm:text-3xl font-black">GANI CAFE</h1>
+    <p class="text-[10px] text-slate-500 tracking-[.25em] uppercase">
+      Customer Ordering
+    </p>
+  </div>
 
-        <!-- Table Selector Pill -->
-        <div class="flex items-center gap-3 glass-card px-4 py-2 rounded-xl">
-          <span class="text-xs font-bold text-slate-400 uppercase font-mono">Terminal Table</span>
-          <div class="relative">
-            <input type="number" id="table-num" value="1" min="1" max="20" onchange="handleTableChange()" 
-                   class="w-16 bg-elite-950 text-amber-400 font-black text-center py-1.5 rounded-lg border border-slate-700 focus:border-amber-500 focus:outline-none font-mono">
-          </div>
-        </div>
-      </div>
-    </header>
+  <div class="text-right">
+    <div class="text-[9px] text-slate-500 uppercase">Table</div>
+    <div id="tableDisplay" class="text-xl font-black text-amber-400">—</div>
+  </div>
+</header>
 
-    <!-- Operational Banner -->
-    <div class="glass-card rounded-xl p-4 mb-8 border-l-4 border-amber-500 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-          <i data-lucide="shield-check" class="w-5 h-5"></i>
-        </div>
-        <p class="text-xs sm:text-sm text-slate-300 font-medium">
-          Verified merchant UPI terminal active: <strong class="text-amber-400 font-mono">Q227869939@ybl</strong>. Zero payment parsing errors.
+<div id="toast"
+class="fixed top-5 right-5 z-50 hidden card rounded-xl px-4 py-3 text-sm">
+</div>
+
+<div class="grid lg:grid-cols-3 gap-5">
+
+<!-- MENU -->
+<section class="lg:col-span-2">
+
+<div class="mb-4">
+  <h2 class="text-xl font-black">Menu</h2>
+  <p class="text-xs text-slate-500">
+    Select your items and send your order to the kitchen.
+  </p>
+</div>
+
+<div id="menu" class="grid sm:grid-cols-2 gap-4"></div>
+
+</section>
+
+<!-- CART -->
+<aside>
+
+<div class="card rounded-3xl p-5 sticky top-4">
+
+<div class="flex justify-between items-center mb-4">
+  <h2 class="font-black">Your Order</h2>
+  <span id="cartCount"
+  class="text-xs bg-amber-500 text-black px-2 py-1 rounded-lg font-black">
+  0
+  </span>
+</div>
+
+<div id="cart" class="space-y-2 max-h-80 overflow-auto"></div>
+
+<div class="border-t border-slate-800 mt-4 pt-4 flex justify-between">
+  <span class="text-xs text-slate-500">TOTAL</span>
+  <strong class="text-xl text-amber-400">
+    ₹<span id="cartTotal">0</span>
+  </strong>
+</div>
+
+<select id="paymentMode"
+class="w-full mt-4 bg-slate-950 border border-slate-700 rounded-xl px-3 py-3 text-sm">
+<option value="Cash">Cash</option>
+<option value="UPI">UPI</option>
+</select>
+
+<button
+onclick="placeOrder()"
+class="w-full mt-3 py-3.5 rounded-xl bg-amber-500 text-black font-black uppercase">
+SEND ORDER
+</button>
+
+</div>
+
+<!-- LIVE STATUS -->
+<div class="card rounded-3xl p-5 mt-5">
+
+<h2 class="font-black mb-1">Live Order Status</h2>
+
+<p class="text-[10px] text-slate-500 mb-4">
+Your order remains visible until the bill is cleared.
+</p>
+
+<div id="orders" class="space-y-3">
+<p class="text-xs text-slate-600">No active orders.</p>
+</div>
+
+</div>
+
+</aside>
+
+</div>
+</div>
+
+<script>
+
+const firebaseConfig={
+ apiKey:"AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
+ authDomain:"gani-cafe-52066.firebaseapp.com",
+ databaseURL:"https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
+ projectId:"gani-cafe-52066",
+ storageBucket:"gani-cafe-52066.firebasestorage.app",
+ messagingSenderId:"292009300507",
+ appId:"1:292009300507:web:cf524330c2ff4ef4e39ebe",
+ measurementId:"G-F7TXYZBYKY"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth=firebase.auth();
+const db=firebase.database();
+
+let uid=null;
+let menuItems={};
+let cart={};
+let orders={};
+
+/* TABLE FROM QR
+   Example:
+   index.html?table=5
+*/
+const params=new URLSearchParams(location.search);
+
+let table=Number(params.get("table"));
+
+if(!Number.isInteger(table)||table<1){
+  table=1;
+}
+
+document.getElementById("tableDisplay").textContent=table;
+
+const DEFAULT_MENU=[
+ {
+  id:"tea",
+  name:"Irani Tea",
+  price:25,
+  img:"https://images.unsplash.com/photo-1571934811356-5cc061b6821f?w=600"
+ },
+ {
+  id:"coffee",
+  name:"Hot Coffee",
+  price:40,
+  img:"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600"
+ },
+ {
+  id:"sandwich",
+  name:"Veg Sandwich",
+  price:80,
+  img:"https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600"
+ },
+ {
+  id:"burger",
+  name:"Cafe Burger",
+  price:120,
+  img:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600"
+ }
+];
+
+function esc(v){
+ return String(v??"").replace(/[&<>"']/g,c=>({
+  "&":"&amp;",
+  "<":"&lt;",
+  ">":"&gt;",
+  '"':"&quot;",
+  "'":"&#39;"
+ }[c]));
+}
+
+function money(v){
+ return "₹"+Number(v||0).toLocaleString("en-IN");
+}
+
+function toast(message,success=true){
+
+ const el=document.getElementById("toast");
+
+ el.textContent=message;
+
+ el.className=
+ "fixed top-5 right-5 z-50 card rounded-xl px-4 py-3 text-sm "+
+ (success?"text-emerald-300":"text-rose-300");
+
+ el.classList.remove("hidden");
+
+ setTimeout(()=>{
+  el.classList.add("hidden");
+ },3000);
+}
+
+function statusStyle(status){
+
+ const styles={
+  Pending:"text-rose-300 border-rose-500/40 bg-rose-500/10",
+  Accepted:"text-sky-300 border-sky-500/40 bg-sky-500/10",
+  Preparing:"text-amber-300 border-amber-500/40 bg-amber-500/10",
+  Ready:"text-emerald-300 border-emerald-500/40 bg-emerald-500/10",
+  Served:"text-violet-300 border-violet-500/40 bg-violet-500/10",
+  Completed:"text-slate-300 border-slate-500/40 bg-slate-500/10"
+ };
+
+ return styles[status]||"text-slate-300 border-slate-700";
+}
+
+function renderMenu(){
+
+ const list=Object.values(menuItems)
+ .filter(x=>x&&x.inStock!==false);
+
+ document.getElementById("menu").innerHTML=list.map(item=>{
+
+  const qty=cart[item.id]||0;
+
+  return `
+  <article class="item rounded-2xl p-4">
+
+    <div class="flex gap-3 mb-4">
+
+      <img
+      src="${esc(item.img||"")}"
+      class="w-20 h-20 rounded-xl object-cover bg-slate-900"
+      onerror="this.style.display='none'">
+
+      <div class="min-w-0">
+        <h3 class="font-black truncate">${esc(item.name)}</h3>
+        <p class="text-amber-400 font-bold mt-1">
+          ${money(item.price)}
         </p>
       </div>
-      <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-800 text-emerald-400 border border-emerald-500/30">Verified VPA</span>
+
     </div>
 
-    <!-- Layout Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      
-      <!-- Catalog Column (8 Cols) -->
-      <div class="lg:col-span-8 space-y-6">
-        <div class="flex justify-between items-center">
-          <h2 class="text-lg font-bold tracking-tight text-slate-200 flex items-center gap-2">
-            <i data-lucide="utensils" class="w-5 h-5 text-amber-500"></i>
-            Catalog Matrix
-          </h2>
-          <div id="catalog-count" class="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
-            Loading items...
-          </div>
-        </div>
+    ${
+      qty>0
+      ?
+      `
+      <div class="flex items-center justify-between bg-slate-950 rounded-xl p-1">
 
-        <div id="menu-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Dynamic Catalog Cards -->
-        </div>
-      </div>
-
-      <!-- Checkout & Telemetry Column (4 Cols) -->
-      <div class="lg:col-span-4 space-y-6">
-        
-        <!-- Cart & Payment Module -->
-        <div class="glass-panel rounded-2xl p-6 relative">
-          <div class="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
-            <span id="cart-item-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-black shadow-lg shadow-amber-500/30 hidden">0 Items</span>
-          </div>
-
-          <h3 class="text-base font-bold text-slate-200 mb-4 flex items-center gap-2">
-            <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-500"></i>
-            Active Cart Queue
-          </h3>
-
-          <ul id="cart-list" class="space-y-3 mb-6 max-h-64 overflow-y-auto pr-1">
-            <li class="text-sm text-slate-500 text-center py-6 font-mono">Cart is empty. Select items from the catalog.</li>
-          </ul>
-
-          <div class="pt-4 border-t border-slate-800 space-y-4">
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-mono uppercase text-slate-400">Total Valuation</span>
-              <span class="text-xl font-black font-mono text-amber-400">₹<span id="cart-total">0</span></span>
-            </div>
-
-            <!-- Merchant VPA Field -->
-            <div>
-              <label class="block text-[10px] font-mono uppercase text-slate-400 mb-1">Receiver UPI VPA</label>
-              <input type="text" id="merchant-upi-id" value="Q227869939@ybl" onchange="updateCartUI()" 
-                     placeholder="Q227869939@ybl" 
-                     class="w-full bg-elite-950 text-amber-400 font-mono text-xs font-bold py-2 px-3 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none mb-3">
-            </div>
-
-            <div>
-              <label class="block text-xs font-mono uppercase text-slate-400 mb-2">Settlement Channel</label>
-              <select id="payment-mode" onchange="togglePaymentUI()" class="w-full bg-elite-950 text-slate-200 text-sm font-medium py-2.5 px-3 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none">
-                <option value="UPI">UPI / Dynamic QR Gateway</option>
-                <option value="Cash">Physical Counter Settlement</option>
-              </select>
-            </div>
-
-            <!-- Verified QR Container -->
-            <div id="qr-container" class="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div class="bg-white p-2.5 rounded-xl shadow-2xl mb-2">
-                <img id="upi-qr-img" src="" alt="Dynamic UPI QR" class="w-40 h-40 object-contain">
-              </div>
-              <span class="text-[11px] font-mono font-bold text-amber-400">Scan via PhonePe / GPay / Paytm</span>
-              <span id="qr-status-note" class="text-[9px] font-mono text-slate-400 mt-1">Direct VPA: Q227869939@ybl</span>
-            </div>
-
-            <button onclick="placeOrder()" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
-              <i data-lucide="rocket" class="w-4 h-4"></i>
-              Dispatch Order
-            </button>
-          </div>
-        </div>
-
-        <!-- Telemetry Tracker Module -->
-        <div class="glass-panel rounded-2xl p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
-              <i data-lucide="activity" class="w-4 h-4 text-amber-500"></i>
-              Telemetry Tracker (Table <span id="display-table" class="text-amber-400">1</span>)
-            </h3>
-          </div>
-          <p class="text-[11px] text-slate-400 mb-4 leading-relaxed font-mono">
-            Orders persist until kitchen finalization and table clearance.
-          </p>
-
-          <div id="customer-orders-container" class="space-y-3 max-h-72 overflow-y-auto pr-1">
-            <p class="text-xs text-slate-500 text-center font-mono py-4">No active telemetry found.</p>
-          </div>
-
-          <button onclick="openCustomerBillModal()" class="w-full mt-4 py-3 px-4 rounded-xl glass-card text-xs font-bold text-cyan-400 hover:bg-cyan-950/30 transition flex items-center justify-center gap-2 border border-cyan-500/20">
-            <i data-lucide="file-text" class="w-4 h-4"></i>
-            Generate Complete Invoice PDF
-          </button>
-        </div>
-
-        <!-- Feedback Module -->
-        <div class="glass-panel rounded-2xl p-6">
-          <h3 class="text-base font-bold text-slate-200 mb-2 flex items-center gap-2">
-            <i data-lucide="message-square-plus" class="w-4 h-4 text-amber-500"></i>
-            Node Feedback
-          </h3>
-          <p class="text-[11px] text-slate-400 mb-4 font-mono">Contribute telemetry feedback regarding your session.</p>
-          
-          <div class="space-y-3">
-            <input type="text" id="feedback-name" placeholder="Operator Nickname" class="w-full bg-elite-950 text-sm text-slate-200 px-3 py-2 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none">
-            <select id="feedback-rating" class="w-full bg-elite-950 text-sm text-slate-200 px-3 py-2 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none font-medium">
-              <option value="5">⭐⭐⭐⭐⭐ (5/5 - Subliminal Experience)</option>
-              <option value="4">⭐⭐⭐⭐ (4/5 - Optimal)</option>
-              <option value="3">⭐⭐⭐ (3/5 - Standard)</option>
-              <option value="2">⭐⭐ (2/5 - Sub-optimal)</option>
-              <option value="1">⭐ (1/5 - Faulty)</option>
-            </select>
-            <textarea id="feedback-comment" placeholder="Detailed diagnostic report..." rows="2" class="w-full bg-elite-950 text-sm text-slate-200 px-3 py-2 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none resize-none"></textarea>
-            <button onclick="submitFeedback()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-bold uppercase transition border border-slate-700 flex items-center justify-center gap-2">
-              <i data-lucide="send" class="w-3.5 h-3.5 text-amber-400"></i>
-              Transmit Feedback
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- Digital Invoice Modal Overlay -->
-  <div id="customer-bill-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden justify-center items-center z-50 p-4">
-    <div class="glass-panel rounded-2xl w-full max-w-md p-6 bg-white text-slate-900 font-mono relative shadow-2xl">
-      <div class="text-center border-b-2 border-dashed border-slate-300 pb-4 mb-4">
-        <h2 class="text-xl font-black tracking-tight text-slate-900 font-sans">GANI CAFE</h2>
-        <p class="text-[11px] text-slate-500 uppercase tracking-widest mt-1">Certified Digital Invoice</p>
-      </div>
-      
-      <div class="flex justify-between text-xs text-slate-600 mb-4 font-sans">
-        <span id="customer-bill-modal-table" class="font-bold">Table: 1</span>
-        <span id="customer-bill-modal-time">Date: --</span>
-      </div>
-
-      <table class="w-full text-xs mb-4">
-        <thead>
-          <tr class="border-b border-slate-300 text-slate-500">
-            <th class="py-2 text-left uppercase">Item Description</th>
-            <th class="py-2 text-right uppercase">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody id="customer-bill-modal-items-tbody" class="divide-y divide-slate-100">
-          <!-- Populated dynamically -->
-        </tbody>
-      </table>
-
-      <div class="border-t-2 border-slate-900 pt-3 flex justify-between items-center text-base font-black font-sans mb-6">
-        <span>GRAND TOTAL:</span>
-        <span id="customer-bill-modal-grand-total" class="text-amber-600">₹0</span>
-      </div>
-
-      <div class="text-center text-[10px] text-slate-500 border-t border-dashed border-slate-300 pt-3 mb-6 font-sans">
-        <p class="font-bold">Thank you for dining at Gani Cafe! 🌟</p>
-        <p class="mt-0.5">Autonomous Telemetry Verification Complete</p>
-      </div>
-
-      <div class="flex gap-3 no-print">
-        <button onclick="window.print()" class="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20">
-          <i data-lucide="printer" class="w-4 h-4"></i> Print / PDF
+        <button
+        onclick="changeQty('${esc(item.id)}',-1)"
+        class="w-10 h-10 rounded-lg bg-slate-800">
+        −
         </button>
-        <button onclick="closeCustomerBillModal()" class="flex-1 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider">
-          Close
+
+        <strong>${qty}</strong>
+
+        <button
+        onclick="changeQty('${esc(item.id)}',1)"
+        class="w-10 h-10 rounded-lg bg-slate-800">
+        +
         </button>
+
       </div>
-    </div>
+      `
+      :
+      `
+      <button
+      onclick="changeQty('${esc(item.id)}',1)"
+      class="w-full py-3 rounded-xl bg-slate-800 hover:bg-amber-500 hover:text-black font-bold">
+      ADD TO ORDER
+      </button>
+      `
+    }
+
+  </article>
+  `;
+
+ }).join("");
+
+}
+
+function changeQty(id,amount){
+
+ cart[id]=Math.max(0,(cart[id]||0)+amount);
+
+ if(cart[id]===0){
+  delete cart[id];
+ }
+
+ renderMenu();
+ renderCart();
+}
+
+function renderCart(){
+
+ let total=0;
+ let count=0;
+
+ const html=Object.entries(cart).map(([id,qty])=>{
+
+  const item=menuItems[id];
+
+  if(!item)return "";
+
+  const subtotal=Number(item.price)*qty;
+
+  total+=subtotal;
+  count+=qty;
+
+  return `
+  <div class="flex justify-between bg-slate-950/70 rounded-xl p-3">
+
+    <span class="text-xs">
+      ${esc(item.name)} × ${qty}
+    </span>
+
+    <strong class="text-xs text-amber-400">
+      ${money(subtotal)}
+    </strong>
+
   </div>
+  `;
 
-  <!-- Sound FX Engine -->
-  <script>
-    let audioCtx = null;
-    let sfxEnabled = true;
+ }).join("");
 
-    function initAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-    }
+ document.getElementById("cart").innerHTML=
+ html||
+ `<p class="text-xs text-slate-600 text-center py-6">
+ Cart is empty.
+ </p>`;
 
-    function playSynthBeep(type = 'success') {
-      if (!sfxEnabled) return;
-      try {
-        initAudioContext();
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+ document.getElementById("cartTotal").textContent=
+ total.toLocaleString("en-IN");
 
-        const now = audioCtx.currentTime;
+ document.getElementById("cartCount").textContent=count;
+}
 
-        if (type === 'click') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(600, now);
-          osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
-          gain.gain.setValueAtTime(0.05, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-          osc.start(now);
-          osc.stop(now + 0.05);
-        } else if (type === 'success') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(440, now);
-          osc.frequency.setValueAtTime(554.37, now + 0.08);
-          osc.frequency.setValueAtTime(659.25, now + 0.16);
-          gain.gain.setValueAtTime(0.08, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-          osc.start(now);
-          osc.stop(now + 0.3);
-        } else if (type === 'status') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(880, now);
-          osc.frequency.exponentialRampToValueAtTime(440, now + 0.2);
-          gain.gain.setValueAtTime(0.06, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-          osc.start(now);
-          osc.stop(now + 0.2);
-        }
-      } catch (e) {
-        console.log("Audio Context Error:", e);
-      }
-    }
+function getCartPayload(){
 
-    function toggleAudioEngine() {
-      sfxEnabled = !sfxEnabled;
-      const statusEl = document.getElementById('sfx-status');
-      statusEl.innerText = sfxEnabled ? "ONLINE" : "MUTED";
-      statusEl.className = sfxEnabled ? "text-amber-400" : "text-slate-500";
-      playSynthBeep('click');
-    }
-  </script>
+ let items=[];
+ let total=0;
 
-  <!-- Core Firebase & Application Logic -->
-  <script>
-    const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
+ Object.entries(cart).forEach(([id,qty])=>{
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
-      authDomain: "gani-cafe-52066.firebaseapp.com",
-      databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "gani-cafe-52066",
-      storageBucket: "gani-cafe-52066.firebasestorage.app",
-      messagingSenderId: "292009300507",
-      appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
-      measurementId: "G-F7TXYZBYKY"
-    };
+  const item=menuItems[id];
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.database();
-    
-    let cart = {};
-    let menuItems = {};
-    let allOrdersData = {};
-    let previousTableStatuses = {};
+  if(!item||qty<1)return;
 
-    function formatDateTime(timestamp) {
-      if (!timestamp) return 'N/A';
-      let d = new Date(timestamp);
-      let dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-      let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      return `${dateStr} • ${timeStr}`;
-    }
+  const price=Number(item.price)||0;
 
-    function logBillToGoogleSheet(productName, paymentMode) {
-      const data = {
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString(),
-        product: productName,
-        payment_mode: paymentMode
-      };
+  items.push({
+   id:item.id,
+   name:item.name,
+   qty:qty,
+   unitPrice:price,
+   subtotal:price*qty
+  });
 
-      fetch(GOOGLE_SHEET_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      })
-      .then(() => console.log("Google Sheet logged successfully for:", productName))
-      .catch(error => console.error("Error logging to Google Sheet:", error));
-    }
+  total+=price*qty;
 
-    function renderMenu() {
-      let container = document.getElementById('menu-container');
-      container.innerHTML = '';
-      let count = 0;
+ });
 
-      Object.keys(menuItems).forEach(id => {
-        let item = menuItems[id];
-        if (item.inStock !== false) {
-          count++;
-          let qty = cart[id] || 0;
-          let parsedPrice = Number(item.price) || 0;
-          let actionHtml = qty === 0 
-            ? `<button onclick="addToCart('${id}')" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-amber-500 hover:text-black font-mono text-xs font-bold text-slate-200 transition border border-slate-700 flex items-center justify-center gap-1.5">
-                 <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add to Cart
-               </button>`
-            : `<div class="flex items-center justify-between bg-elite-950 p-1.5 rounded-xl border border-amber-500/30">
-                 <button onclick="decreaseQuantity('${id}')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold flex items-center justify-center transition">-</button>
-                 <span class="font-mono font-black text-sm text-amber-400 px-3">${qty}</span>
-                 <button onclick="increaseQuantity('${id}')" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold flex items-center justify-center transition">+</button>
-               </div>`;
+ return {items,total};
+}
 
-          container.innerHTML += `
-            <div class="glass-card rounded-2xl p-4 flex flex-col justify-between group">
-              <div class="flex items-center gap-4 mb-3">
-                <img src="${item.img}" alt="${item.name}" class="w-16 h-16 rounded-xl object-cover border border-slate-700 group-hover:scale-105 transition duration-300">
-                <div class="flex-1 min-w-0">
-                  <h4 class="font-bold text-sm text-slate-200 truncate">${item.name}</h4>
-                  <p class="font-mono text-amber-400 font-bold text-sm mt-0.5">₹${parsedPrice}</p>
-                </div>
-              </div>
-              <div>${actionHtml}</div>
-            </div>`;
-        }
-      });
+async function placeOrder(){
 
-      document.getElementById('catalog-count').innerText = `${count} Items Active`;
-      lucide.createIcons();
-    }
+ if(!uid){
+  toast("Connecting to cafe system...",false);
+  return;
+ }
 
-    db.ref('menu').on('value', snap => {
-      menuItems = snap.val() || {};
-      renderMenu();
-    });
+ const payload=getCartPayload();
 
-    db.ref('orders').on('value', snap => {
-      let oldOrders = allOrdersData;
-      allOrdersData = snap.val() || {};
-      let currentTable = document.getElementById('table-num').value;
-      
-      Object.keys(allOrdersData).forEach(id => {
-        let order = allOrdersData[id];
-        let oldOrder = oldOrders[id];
+ if(payload.items.length===0){
+  toast("Your cart is empty.",false);
+  return;
+ }
 
-        if (order && order.items) {
-          let wasClearedOrPaid = oldOrder && (oldOrder.status === 'Completed' || oldOrder.paymentStatus === 'Paid');
-          let isClearedOrPaidNow = order.status === 'Completed' || order.paymentStatus === 'Paid' || order.status === 'Cleared';
-          
-          if (!wasClearedOrPaid && isClearedOrPaidNow) {
-            order.items.forEach(itemStr => {
-              logBillToGoogleSheet(itemStr, order.paymentMode || 'UPI');
-            });
-          }
-        }
+ const orderRef=db.ref("orders").push();
 
-        if (String(order.table) === String(currentTable)) {
-          if (previousTableStatuses[id] && previousTableStatuses[id] !== order.status) {
-            if (order.status === 'Completed' || order.status === 'Preparing') {
-              playSynthBeep('status');
-            }
-          }
-          previousTableStatuses[id] = order.status;
-        }
-      });
+ const order={
+  orderId:orderRef.key,
+  table:table,
+  items:payload.items,
+  total:payload.total,
 
-      filterCustomerOrders();
-    });
+  status:"Pending",
 
-    function togglePaymentUI() {
-      let mode = document.getElementById('payment-mode').value;
-      let qrContainer = document.getElementById('qr-container');
-      qrContainer.style.display = (mode === 'UPI') ? 'flex' : 'none';
-      playSynthBeep('click');
-    }
+  paymentStatus:"Pending",
 
-    function addToCart(id) {
-      cart[id] = (cart[id] || 0) + 1;
-      playSynthBeep('click');
-      renderMenu();
-      updateCartUI();
-    }
+  paymentMode:
+   document.getElementById("paymentMode").value,
 
-    function increaseQuantity(id) {
-      cart[id] = (cart[id] || 0) + 1;
-      playSynthBeep('click');
-      renderMenu();
-      updateCartUI();
-    }
+  createdAt:
+   firebase.database.ServerValue.TIMESTAMP,
 
-    function decreaseQuantity(id) {
-      if (cart[id] > 1) {
-        cart[id]--;
-      } else {
-        delete cart[id];
-      }
-      playSynthBeep('click');
-      renderMenu();
-      updateCartUI();
-    }
+  createdBy:uid,
 
-    /* ZERO ERROR UPI QR GENERATOR */
-    function updateCartUI() {
-      let list = document.getElementById('cart-list');
-      let totalEl = document.getElementById('cart-total');
-      let badgeEl = document.getElementById('cart-item-badge');
-      let qrImg = document.getElementById('upi-qr-img');
-      let vpaInput = document.getElementById('merchant-upi-id');
-      
-      list.innerHTML = '';
-      let total = 0;
-      let totalItemsCount = 0;
-      let hasItems = false;
+  lastUpdatedAt:
+   firebase.database.ServerValue.TIMESTAMP,
 
-      Object.keys(cart).forEach(id => {
-        let qty = Number(cart[id]) || 0;
-        let item = menuItems[id];
-        if (item && qty > 0) {
-          hasItems = true;
-          totalItemsCount += qty;
-          let unitPrice = Number(item.price) || 0;
-          let subtotal = unitPrice * qty;
-          total += subtotal;
+  clearance:{
+   cleared:false
+  }
+ };
 
-          list.innerHTML += `
-            <li class="flex items-center justify-between bg-elite-950/60 p-2.5 rounded-xl border border-slate-800">
-              <span class="text-xs font-semibold text-slate-200 truncate max-w-[120px]">${item.name}</span>
-              <div class="flex items-center gap-2">
-                <span class="font-mono text-xs text-slate-400">x${qty}</span>
-                <span class="font-mono font-bold text-xs text-amber-400 min-w-[45px] text-right">₹${subtotal}</span>
-              </div>
-            </li>`;
-        }
-      });
+ try{
 
-      if (!hasItems) {
-        list.innerHTML = `<li class="text-xs text-slate-500 text-center py-6 font-mono">Cart is empty. Select items from the catalog.</li>`;
-        badgeEl.classList.add('hidden');
-      } else {
-        badgeEl.innerText = `${totalItemsCount} Items`;
-        badgeEl.classList.remove('hidden');
-      }
-      
-      totalEl.innerText = total;
+  await orderRef.set(order);
 
-      // Extract verified VPA (Default: Q227869939@ybl)
-      let vpa = vpaInput ? vpaInput.value.trim() : "Q227869939@ybl";
-      if (!vpa) vpa = "Q227869939@ybl";
-      
-      // Standard NPCI compliant UPI string structure
-      let upiString = `upi://pay?pa=${vpa}&pn=Gani%20Cafe&am=${total}&cu=INR`;
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
-    }
+  cart={};
 
-    function handleTableChange() {
-      playSynthBeep('click');
-      filterCustomerOrders();
-    }
+  renderMenu();
+  renderCart();
 
-    function placeOrder() {
-      let table = document.getElementById('table-num').value;
-      let paymentMode = document.getElementById('payment-mode').value;
-      let items = [];
-      let total = 0;
+  toast("Order sent to kitchen.");
 
-      Object.keys(cart).forEach(id => {
-        let qty = Number(cart[id]) || 0;
-        let item = menuItems[id];
-        if (item && qty > 0) {
-          let unitPrice = Number(item.price) || 0;
-          items.push(`${qty}x ${item.name}`);
-          total += unitPrice * qty;
-        }
-      });
+ }catch(error){
 
-      if (items.length === 0) { alert('Cart is empty.'); return; }
-      if (!table) { alert('Specify valid table.'); return; }
+  console.error(error);
 
-      items.forEach(itemStr => {
-        logBillToGoogleSheet(itemStr, paymentMode);
-      });
+  toast("Could not place order.",false);
+ }
+}
 
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#f59e0b', '#38bdf8', '#10b981']
-      });
+function renderOrders(){
 
-      db.ref('orders').push({
-        table: table,
-        items: items,
-        total: total,
-        status: 'Pending',
-        paymentStatus: 'Paid',
-        paymentMode: paymentMode,
-        timestamp: Date.now()
-      });
+ const mine=Object.values(orders)
+ .filter(order=>
+  order &&
+  uid &&
+  order.createdBy===uid &&
+  Number(order.table)===Number(table) &&
+  order.clearance?.cleared!==true
+ )
+ .sort((a,b)=>
+  (b.createdAt||0)-(a.createdAt||0)
+ );
 
-      playSynthBeep('success');
-      cart = {};
-      renderMenu();
-      updateCartUI();
-    }
+ if(!mine.length){
 
-    function openCustomerBillModal() {
-      let currentTable = document.getElementById('table-num').value;
-      let keys = Object.keys(allOrdersData);
-      let tableOrders = keys.filter(id => {
-        let order = allOrdersData[id];
-        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
-      });
+  document.getElementById("orders").innerHTML=
+  `<p class="text-xs text-slate-600 text-center py-6">
+  No active orders.
+  </p>`;
 
-      if (tableOrders.length === 0) {
-        alert(`No active orders found for Table ${currentTable}.`);
-        return;
-      }
+  return;
+ }
 
-      document.getElementById('customer-bill-modal-table').innerText = `Table: ${currentTable}`;
-      document.getElementById('customer-bill-modal-time').innerText = `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+ document.getElementById("orders").innerHTML=
+ mine.map(order=>`
 
-      let tbody = document.getElementById('customer-bill-modal-items-tbody');
-      tbody.innerHTML = "";
-      let grandTotal = 0;
+ <div class="item rounded-2xl p-4">
 
-      tableOrders.forEach(orderId => {
-        let order = allOrdersData[orderId];
-        let orderTotal = Number(order.total) || 0;
-        grandTotal += orderTotal;
-        if (order.items) {
-          order.items.forEach(itemStr => {
-            tbody.innerHTML += `
-              <tr>
-                <td class="py-2">${itemStr}</td>
-                <td class="py-2 text-right font-bold">₹${orderTotal}</td>
-              </tr>`;
-          });
-        }
-      });
+   <div class="flex justify-between gap-3">
 
-      document.getElementById('customer-bill-modal-grand-total').innerText = `₹${grandTotal}`;
-      document.getElementById('customer-bill-modal').style.display = 'flex';
-      playSynthBeep('click');
-    }
+     <div>
+       <b class="font-mono text-xs">
+       #${esc(order.orderId.slice(-6))}
+       </b>
 
-    function closeCustomerBillModal() {
-      document.getElementById('customer-bill-modal').style.display = 'none';
-      playSynthBeep('click');
-    }
+       <p class="text-[10px] text-slate-500">
+       Table ${esc(order.table)}
+       </p>
+     </div>
 
-    function submitFeedback() {
-      let table = document.getElementById('table-num').value;
-      let name = document.getElementById('feedback-name').value.trim();
-      let rating = document.getElementById('feedback-rating').value;
-      let comment = document.getElementById('feedback-comment').value.trim();
+     <span class="status ${statusStyle(order.status)}">
+       ${esc(order.status)}
+     </span>
 
-      if (!name) { alert('Enter operator name.'); return; }
-      if (!comment) { alert('Enter diagnostic comments.'); return; }
+   </div>
 
-      db.ref('feedback').push({
-        table: table,
-        name: name,
-        rating: rating,
-        comment: comment,
-        timestamp: Date.now()
-      });
+   <div class="mt-3 space-y-1">
 
-      playSynthBeep('success');
-      alert('Feedback successfully transmitted to telemetry.');
-      document.getElementById('feedback-name').value = '';
-      document.getElementById('feedback-comment').value = '';
-    }
+   ${order.items.map(item=>`
 
-    function filterCustomerOrders() {
-      let currentTable = document.getElementById('table-num').value;
-      let displayTableEl = document.getElementById('display-table');
-      if (displayTableEl) displayTableEl.innerText = currentTable;
-      
-      let container = document.getElementById('customer-orders-container');
-      if (!container) return;
-      container.innerHTML = '';
+     <div class="flex justify-between text-xs">
+       <span>
+       ${esc(item.name)} × ${item.qty}
+       </span>
 
-      let keys = Object.keys(allOrdersData);
-      let tableOrders = keys.filter(id => {
-        let order = allOrdersData[id];
-        return order && String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
-      });
+       <span>
+       ${money(item.subtotal)}
+       </span>
+     </div>
 
-      if (tableOrders.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 text-center font-mono py-4">No active telemetry found.</p>`;
-        return;
-      }
+   `).join("")}
 
-      tableOrders.reverse().forEach(id => {
-        let order = allOrdersData[id];
-        let prepColor = order.status === 'Pending' ? 'text-rose-400 bg-rose-950/40 border-rose-500/30' : (order.status === 'Completed' ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-amber-400 bg-amber-950/40 border-amber-500/30');
-        let payColor = order.paymentStatus && order.paymentStatus.includes('Paid') ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-rose-400 bg-rose-950/40 border-rose-500/30';
-        let itemsHtml = order.items ? order.items.map(i => `<li class="text-xs text-slate-300 font-mono">• ${i}</li>`).join('') : '';
-        let formattedTime = formatDateTime(order.timestamp);
-        let orderTotal = Number(order.total) || 0;
+   </div>
 
-        container.innerHTML += `
-          <div class="glass-card p-3.5 rounded-xl space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="font-mono text-xs font-bold text-slate-200">#${id.slice(-5)}</span>
-                <span class="text-[10px] text-slate-400 font-mono block mt-0.5">${formattedTime}</span>
-              </div>
-              <div class="flex gap-1.5">
-                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${prepColor}">${order.status || 'Pending'}</span>
-                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${payColor}">${order.paymentStatus || 'Unpaid'}</span>
-              </div>
-            </div>
-            <ul class="space-y-1 my-2">
-              ${itemsHtml}
-            </ul>
-            <div class="flex justify-between items-center border-t border-slate-800/80 pt-2 text-xs font-mono">
-              <span class="text-slate-400">Total Amount</span>
-              <span class="text-amber-400 font-bold">₹${orderTotal}</span>
-            </div>
-          </div>`;
-      });
-    }
+   <div class="border-t border-slate-800 mt-3 pt-3 flex justify-between">
 
-    // Auto-run UI engine on page initialization
-    window.addEventListener('DOMContentLoaded', () => {
-      updateCartUI();
-    });
-  </script>
+     <span class="text-xs text-slate-500">
+     BILL
+     </span>
+
+     <strong class="text-amber-400">
+     ${money(order.total)}
+     </strong>
+
+   </div>
+
+   <div class="mt-3 text-[10px] text-slate-500">
+
+   Payment:
+   <span class="${
+    order.paymentStatus==="Paid"
+    ?"text-emerald-400"
+    :"text-cyan-400"
+   }">
+   ${esc(order.paymentStatus)}
+   </span>
+
+   </div>
+
+   <div class="mt-3 text-[10px] text-slate-600">
+   Bill remains active until staff clears it.
+   </div>
+
+ </div>
+
+ `).join("");
+}
+
+/* CUSTOMER LOGIN */
+
+auth.signInAnonymously()
+.catch(error=>{
+ console.error(error);
+});
+
+/* AUTH STATE */
+
+auth.onAuthStateChanged(user=>{
+
+ uid=user?user.uid:null;
+
+ renderOrders();
+
+});
+
+/* MENU */
+
+db.ref("menu").on("value",snapshot=>{
+
+ const data=snapshot.val();
+
+ if(data && Object.keys(data).length){
+  menuItems=data;
+ }else{
+
+  menuItems={};
+
+  DEFAULT_MENU.forEach(item=>{
+   menuItems[item.id]=item;
+  });
+
+ }
+
+ renderMenu();
+ renderCart();
+
+});
+
+/* ORDERS */
+
+db.ref("orders").on("value",snapshot=>{
+
+ orders=snapshot.val()||{};
+
+ renderOrders();
+
+});
+
+renderCart();
+
+</script>
+
 </body>
 </html>
