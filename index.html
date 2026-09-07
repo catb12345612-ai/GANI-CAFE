@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Kitchen & Billing Control KDS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gani Cafe - Digital Menu & Table Ordering</title>
   <!-- Firebase SDKs (Compat v8) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -13,7 +13,6 @@
       --gold-light: #fbbf24;
       --bg: #07090e; 
       --card-bg: rgba(13, 17, 28, 0.95); 
-      --glass-bg: rgba(255, 255, 255, 0.03);
       --text: #f8fafc; 
       --text-muted: #94a3b8; 
       --green: #10b981; 
@@ -21,80 +20,141 @@
       --orange: #f97316; 
       --blue: #0ea5e9; 
       --yellow: #eab308;
+      --phonepe: #5f259f;
       --accent-gradient: linear-gradient(135deg, #d97706 0%, #fbbf24 50%, #f59e0b 100%);
+      --phonepe-gradient: linear-gradient(135deg, #5f259f 0%, #7b3fe4 100%);
       --luxury-border: 1px solid rgba(217, 119, 6, 0.25);
     }
     
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; padding-bottom: 90px; }
 
-    header { background: rgba(13, 17, 28, 0.95); backdrop-filter: blur(20px); padding: 18px 24px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    header h1 { margin: 0; font-size: 20px; font-weight: 900; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; text-transform: uppercase; }
-
-    .kds-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    header { background: rgba(13, 17, 28, 0.95); backdrop-filter: blur(20px); padding: 16px 20px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    header h1 { margin: 0; font-size: 16px; font-weight: 900; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; letter-spacing: -0.5px; }
     
-    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    .table-badge { background: rgba(217,119,6,0.15); border: 1px solid rgba(217,119,6,0.3); color: var(--gold-light); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 900; }
 
-    .order-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 15px 40px rgba(0,0,0,0.6); backdrop-filter: blur(16px); position: relative; overflow: hidden; animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    .order-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent-gradient); }
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; }
 
-    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .table-tag { font-size: 13px; font-weight: 900; color: var(--gold-light); background: rgba(217,119,6,0.1); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(217,119,6,0.2); }
+    /* Category & Menu Styles */
+    .section-title { font-size: 15px; font-weight: 900; color: var(--gold-light); margin: 20px 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    .status-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
-    .status-Pending { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .status-Preparing { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
-    .status-Ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .status-Billed { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.3); }
-    .status-Cleared { background: rgba(14, 165, 233, 0.15); color: var(--blue); border: 1px solid rgba(14, 165, 233, 0.3); }
+    .menu-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .menu-item-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 18px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+    .menu-item-info { flex: 1; padding-right: 12px; }
+    .menu-item-name { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .menu-item-price { font-size: 14px; font-weight: 900; color: var(--gold-light); }
+    .menu-item-stock { font-size: 10px; font-weight: 800; color: var(--red); margin-top: 4px; text-transform: uppercase; }
 
-    .items-list { margin: 10px 0 16px 0; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
-    .item-row { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+    .add-btn { background: var(--accent-gradient); color: #000; border: none; padding: 10px 18px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(217,119,6,0.3); transition: transform 0.1s; }
+    .add-btn:active { transform: scale(0.95); }
+    .add-btn:disabled { background: #334155; color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
 
-    .order-footer { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
-    
-    .action-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .btn { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; transition: all 0.2s; text-align: center; }
-    .btn:active { transform: scale(0.96); }
-    
-    .btn-accept { background: rgba(14, 165, 233, 0.15); color: var(--blue); border-color: rgba(14, 165, 233, 0.4); }
-    .btn-prep { background: rgba(249, 115, 22, 0.15); color: var(--orange); border-color: rgba(249, 115, 22, 0.4); }
-    .btn-ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border-color: rgba(16, 185, 129, 0.4); }
-    .btn-billed { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border-color: rgba(234, 179, 8, 0.4); }
-    .btn-clear { background: var(--green); color: #000; border-color: var(--green); grid-column: span 2; font-size: 11px; padding: 12px; font-weight: 900; }
-    .btn-clear:hover { filter: brightness(1.1); }
+    /* Floating Cart Bar */
+    .cart-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(13, 17, 28, 0.98); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 200; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .cart-bar.visible { transform: translateY(0); }
+    .cart-total-text { font-size: 12px; color: var(--text-muted); font-weight: 700; }
+    .cart-total-amount { font-size: 18px; font-weight: 900; color: #fff; }
+    .view-cart-btn { background: var(--accent-gradient); color: #000; border: none; padding: 12px 24px; border-radius: 14px; font-weight: 900; font-size: 13px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 6px 20px rgba(217,119,6,0.4); }
 
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 15px; font-weight: 600; grid-column: 1 / -1; }
+    /* Cart Modal / Checkout Screen */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 300; display: none; justify-content: center; align-items: flex-end; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: var(--card-bg); border-top: 2px solid var(--gold); width: 100%; max-width: 600px; max-height: 90vh; border-radius: 24px 24px 0 0; padding: 24px; overflow-y: auto; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
-    .toast { position: fixed; top: 90px; left: 50%; transform: translateX(-50%) translateY(-30px); background: var(--green); color: #000; padding: 12px 24px; border-radius: 30px; font-weight: 900; font-size: 13px; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 400; pointer-events: none; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; font-weight: 700; }
+    .qty-controls { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+    .qty-btn { background: none; border: none; color: #fff; font-size: 16px; font-weight: 900; cursor: pointer; padding: 0 4px; }
+
+    /* Payment Option Cards */
+    .payment-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    .payment-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; text-align: center; cursor: pointer; font-weight: 800; font-size: 12px; color: var(--text-muted); transition: all 0.2s; }
+    .payment-card.selected { background: rgba(95, 37, 159, 0.25); border-color: #7b3fe4; color: #fff; box-shadow: 0 4px 15px rgba(95,37,159,0.3); }
+    .payment-card.phonepe-opt { border-color: rgba(95, 37, 159, 0.5); }
+
+    .checkout-btn { width: 100%; background: var(--phonepe-gradient); color: #fff; border: none; padding: 16px; border-radius: 16px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; box-shadow: 0 10px 25px rgba(95,37,159,0.5); margin-top: 10px; }
+
+    /* Live Order Tracker Screen */
+    .tracker-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 24px; padding: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.6); margin-top: 20px; text-align: center; }
+    .status-pill { display: inline-block; padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    .status-Pending { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .status-Accepted { background: rgba(14, 165, 233, 0.15); color: var(--blue); border: 1px solid rgba(14, 165, 233, 0.4); }
+    .status-Preparing { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.4); }
+    .status-Ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-Billed { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.4); }
+    .status-Cleared { background: rgba(16, 185, 129, 0.25); color: var(--green); border: 1px solid var(--green); }
+    .status-Issue { background: rgba(239, 68, 68, 0.25); color: var(--red); border: 1px solid var(--red); }
+
+    .phonepe-pay-box { background: rgba(95, 37, 159, 0.15); border: 1px solid rgba(95, 37, 159, 0.4); border-radius: 16px; padding: 16px; margin: 16px 0; text-align: left; }
+    .phonepe-btn { display: block; width: 100%; background: #5f259f; color: #fff; text-decoration: none; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 13px; text-align: center; margin-top: 12px; box-shadow: 0 4px 15px rgba(95,37,159,0.4); }
+
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-30px); background: var(--green); color: #000; padding: 12px 24px; border-radius: 30px; font-weight: 900; font-size: 13px; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 400; pointer-events: none; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; font-weight: 700; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🔥 GANI CAFE - KDS & CLEARANCE DESK</h1>
-    <div style="font-size: 12px; font-weight: 800; color: var(--gold-light);" id="live-clock">--:--:--</div>
+    <h1>🔥 Gani Cafe</h1>
+    <div class="table-badge" id="table-display">Table #1</div>
   </header>
 
-  <div class="kds-container">
-    <div class="orders-grid" id="orders-grid">
-      <div class="empty-state">Connecting to Live Kitchen Stream...</div>
+  <div class="container" id="main-view-container">
+    <!-- Dynamic Content: Menu or Active Order Tracker -->
+    <div id="menu-view">
+      <div class="section-title">Explore Menu & Specialties</div>
+      <div class="menu-grid" id="customer-menu-grid">
+        <div class="empty-state">Loading delicious menu items...</div>
+      </div>
+    </div>
+
+    <div id="tracker-view" style="display: none;">
+      <div class="tracker-card" id="tracker-card-content">
+        <!-- Live status populated via JS -->
+      </div>
     </div>
   </div>
 
-  <div class="toast" id="toast-notification">Action executed successfully!</div>
+  <!-- FLOATING CART BAR -->
+  <div class="cart-bar" id="cart-bar" onclick="openCartModal()">
+    <div>
+      <div class="cart-total-text" id="cart-item-count">0 items selected</div>
+      <div class="cart-total-amount" id="cart-total-price">₹0</div>
+    </div>
+    <button class="view-cart-btn">View Cart & Pay</button>
+  </div>
+
+  <!-- CART & CHECKOUT MODAL -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; font-size: 18px; color: var(--gold-light);">Your Order Summary</h3>
+        <button onclick="closeCartModal()" style="background:none; border:none; color:var(--text-muted); font-size:18px; font-weight:900; cursor:pointer;">✕</button>
+      </div>
+      
+      <div id="cart-items-list" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px;"></div>
+
+      <div style="font-size: 13px; font-weight: 800; color: var(--text-muted); margin-bottom: 8px;">Select Payment Mode</div>
+      <div class="payment-options">
+        <div class="payment-card phonepe-opt selected" id="pay-phonepe" onclick="selectPayment('PhonePe UPI')">
+          📱 PhonePe / UPI
+        </div>
+        <div class="payment-card" id="pay-cash" onclick="selectPayment('Cash at Counter')">
+          💵 Cash at Table
+        </div>
+      </div>
+
+      <button class="checkout-btn" onclick="placeOrder()">Place Order & Pay via PhonePe</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-notification">Item added to cart!</div>
 
   <script>
-    // --- GOOGLE APPS SCRIPT URL ---
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
-
-    // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -105,166 +165,237 @@
       appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe"
     };
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
 
-    // Clock ticker
-    setInterval(() => {
-      document.getElementById('live-clock').innerText = new Date().toLocaleTimeString();
-    }, 1000);
+    // Get Table from URL or default to 1
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableNumber = urlParams.get('table') || '1';
+    document.getElementById('table-display').innerText = `Table #${tableNumber}`;
 
-    // --- BULLETPROOF ITEM PARSER (FIXES [object Object] BUG PERMANENTLY) ---
-    function parseOrderItem(item) {
-      if (!item) return 'Custom Item';
-      if (typeof item === 'string') return item;
-      if (typeof item === 'object') {
-        const qty = item.qty || item.quantity || 1;
-        const name = item.name || item.title || item.itemName || 'Custom Item';
-        return `${qty}x ${name}`;
-      }
-      return String(item);
-    }
+    let menuCatalog = {};
+    let cart = {};
+    let selectedPaymentMode = 'PhonePe UPI';
+    let activeOrderId = localStorage.getItem('gani_active_order_id');
 
-    // --- REAL-TIME LISTENERS FOR KITCHEN & BILLING ---
     window.addEventListener('DOMContentLoaded', () => {
-      db.ref('orders').on('value', (snapshot) => {
-        const data = snapshot.val();
-        const grid = document.getElementById('orders-grid');
+      if (activeOrderId) {
+        monitorActiveOrder(activeOrderId);
+      } else {
+        loadMenu();
+      }
+    });
 
+    // --- LOAD MENU FROM FIREBASE ---
+    function loadMenu() {
+      db.ref('menu').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const grid = document.getElementById('customer-menu-grid');
         if (!data) {
-          grid.innerHTML = `<div class="empty-state">No active kitchen orders right now. Waiting for customer requests...</div>`;
+          grid.innerHTML = `<div class="empty-state">Menu is currently updating. Please check back shortly.</div>`;
           return;
         }
 
-        let ordersHtml = '';
-        const orderIds = Object.keys(data).reverse(); // Newest first
-
-        orderIds.forEach(id => {
-          const order = data[id];
-          if (!order) return;
-
-          // Skip archived/cleared orders from active KDS view
-          if (order.status === 'Cleared' && order._archived) return;
-
-          const statusClass = `status-${order.status || 'Pending'}`;
+        menuCatalog = data;
+        let html = '';
+        Object.keys(data).forEach(itemId => {
+          const item = data[itemId];
+          const inStock = item.inStock !== false;
           
-          // Handle items whether stored as array or object/string
-          let itemsArray = [];
-          if (Array.isArray(order.items)) {
-            itemsArray = order.items;
-          } else if (typeof order.items === 'object' && order.items !== null) {
-            itemsArray = Object.values(order.items);
-          } else if (typeof order.items === 'string') {
-            itemsArray = [order.items];
-          }
-          
-          let itemsListHtml = itemsArray.map(item => {
-            const formattedText = parseOrderItem(item);
-            return `<div class="item-row"><span>${escapeHtml(formattedText)}</span></div>`;
-          }).join('');
-
-          let totalAmount = order.total || 0;
-          let paymentMode = order.paymentMode || 'QR Code';
-          let orderStatus = order.status || 'Pending';
-
-          ordersHtml += `
-            <div class="order-card" id="card-${id}">
-              <div>
-                <div class="order-header">
-                  <span class="table-tag">Table #${escapeHtml(String(order.table || '1'))}</span>
-                  <span class="status-badge ${statusClass}">${escapeHtml(orderStatus)}</span>
-                </div>
-                <div style="font-size: 11px; color: var(--text-muted); font-weight: 800; margin-bottom: 6px;">Order #${id.slice(-6).toUpperCase()} • Mode: ${escapeHtml(paymentMode)}</div>
-                
-                <div class="items-list">
-                  ${itemsListHtml}
-                </div>
+          html += `
+            <div class="menu-item-card">
+              <div class="menu-item-info">
+                <div class="menu-item-name">${escapeHtml(item.name)}</div>
+                <div class="menu-item-price">₹${item.price || 0}</div>
+                ${!inStock ? '<div class="menu-item-stock">Out of Stock</div>' : ''}
               </div>
-
-              <div class="order-footer">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 900;">
-                  <span>Total Bill:</span>
-                  <span style="color: var(--green);">₹${totalAmount}</span>
-                </div>
-
-                <div class="action-buttons">
-                  <button class="btn btn-accept" onclick="updateOrderStatus('${id}', 'Accepted')">Accept</button>
-                  <button class="btn btn-prep" onclick="updateOrderStatus('${id}', 'Preparing')">Prep</button>
-                  <button class="btn btn-ready" onclick="updateOrderStatus('${id}', 'Ready')">Ready</button>
-                  <button class="btn btn-billed" onclick="updateOrderStatus('${id}', 'Billed')">Mark Billed</button>
-                  <button class="btn btn-clear" onclick="clearAndArchiveOrder('${id}')">🔒 Verify Bill & Clear Order</button>
-                </div>
-              </div>
+              <button class="add-btn" ${!inStock ? 'disabled' : ''} onclick="addToCart('${itemId}')">
+                ${inStock ? '+ ADD' : 'UNAVAILABLE'}
+              </button>
             </div>
           `;
         });
-
-        grid.innerHTML = ordersHtml || `<div class="empty-state">All orders cleared successfully!</div>`;
-      });
-    });
-
-    // --- UPDATE ORDER STATUS IN FIREBASE ---
-    function updateOrderStatus(orderId, newStatus) {
-      db.ref(`orders/${orderId}`).update({ status: newStatus }).then(() => {
-        showToast(`Order status updated to ${newStatus}`);
-      }).catch(err => {
-        console.error("Status update error:", err);
-        alert("Failed to update order status.");
+        grid.innerHTML = html;
       });
     }
 
-    // --- BILL CLEARANCE & GOOGLE SHEETS SYNC ---
-    function clearAndArchiveOrder(orderId) {
-      db.ref(`orders/${orderId}`).once('value', (snapshot) => {
-        const orderData = snapshot.val();
-        if (!orderData) return;
+    // --- CART MANAGEMENT ---
+    function addToCart(itemId) {
+      const item = menuCatalog[itemId];
+      if (!item) return;
 
-        // Parse items cleanly into string for Google Sheets
-        let rawItems = orderData.items;
-        let itemsString = '';
-        if (Array.isArray(rawItems)) {
-          itemsString = rawItems.map(i => parseOrderItem(i)).join(', ');
-        } else if (typeof rawItems === 'object' && rawItems !== null) {
-          itemsString = Object.values(rawItems).map(i => parseOrderItem(i)).join(', ');
-        } else {
-          itemsString = String(rawItems || '');
+      if (!cart[itemId]) {
+        cart[itemId] = { name: item.name, price: item.price, qty: 1 };
+      } else {
+        cart[itemId].qty++;
+      }
+
+      updateCartUI();
+      showToast(`Added ${item.name} to cart`);
+    }
+
+    function changeQty(itemId, delta) {
+      if (!cart[itemId]) return;
+      cart[itemId].qty += delta;
+      if (cart[itemId].qty <= 0) {
+        delete cart[itemId];
+      }
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      let totalQty = 0;
+      let totalPrice = 0;
+      let cartHtml = '';
+
+      Object.keys(cart).forEach(itemId => {
+        const item = cart[itemId];
+        totalQty += item.qty;
+        totalPrice += (item.price * item.qty);
+
+        cartHtml += `
+          <div class="cart-item-row">
+            <div>
+              <div>${escapeHtml(item.name)}</div>
+              <div style="font-size: 11px; color: var(--gold-light); margin-top: 2px;">₹${item.price * item.qty}</div>
+            </div>
+            <div class="qty-controls">
+              <button class="qty-btn" onclick="changeQty('${itemId}', -1)">-</button>
+              <span>${item.qty}</span>
+              <button class="qty-btn" onclick="changeQty('${itemId}', 1)">+</button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('cart-items-list').innerHTML = cartHtml || `<div class="empty-state">Your cart is empty. Add items from the menu!</div>`;
+      document.getElementById('cart-item-count').innerText = `${totalQty} item${totalQty === 1 ? '' : 's'} selected`;
+      document.getElementById('cart-total-price').innerText = `₹${totalPrice}`;
+
+      const cartBar = document.getElementById('cart-bar');
+      if (totalQty > 0) {
+        cartBar.classList.add('visible');
+      } else {
+        cartBar.classList.remove('visible');
+        closeCartModal();
+      }
+    }
+
+    function openCartModal() {
+      document.getElementById('cartModal').classList.add('active');
+    }
+
+    function closeCartModal() {
+      document.getElementById('cartModal').classList.remove('active');
+    }
+
+    function selectPayment(mode) {
+      selectedPaymentMode = mode;
+      document.getElementById('pay-phonepe').classList.toggle('selected', mode === 'PhonePe UPI');
+      document.getElementById('pay-cash').classList.toggle('selected', mode === 'Cash at Counter');
+      
+      const btn = document.querySelector('.checkout-btn');
+      if (mode === 'PhonePe UPI') {
+        btn.style.background = 'var(--phonepe-gradient)';
+        btn.innerText = 'Place Order & Pay via PhonePe';
+      } else {
+        btn.style.background = 'var(--accent-gradient)';
+        btn.innerText = 'Place Order (Pay Cash)';
+        btn.style.color = '#000';
+      }
+    }
+
+    // --- PLACE ORDER & SYNC WITH KDS ---
+    function placeOrder() {
+      let itemsArray = [];
+      let totalAmount = 0;
+
+      Object.values(cart).forEach(item => {
+        itemsArray.push({ name: item.name, price: item.price, qty: item.qty });
+        totalAmount += (item.price * item.qty);
+      });
+
+      if (itemsArray.length === 0) return;
+
+      const orderData = {
+        table: tableNumber,
+        items: itemsArray,
+        total: totalAmount,
+        paymentMode: selectedPaymentMode,
+        status: 'Pending',
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      const newOrderRef = db.ref('orders').push();
+      newOrderRef.set(orderData).then(() => {
+        activeOrderId = newOrderRef.key;
+        localStorage.setItem('gani_active_order_id', activeOrderId);
+        cart = {};
+        updateCartUI();
+        closeCartModal();
+        monitorActiveOrder(activeOrderId);
+        showToast("Order placed successfully! Sent to kitchen.");
+      });
+    }
+
+    // --- LIVE ORDER TRACKING SCREEN ---
+    function monitorActiveOrder(orderId) {
+      document.getElementById('menu-view').style.display = 'none';
+      document.getElementById('cart-bar').classList.remove('visible');
+      const trackerContainer = document.getElementById('tracker-view');
+      trackerContainer.style.display = 'block';
+
+      db.ref(`orders/${orderId}`).on('value', (snapshot) => {
+        const order = snapshot.val();
+        if (!order || order.status === 'Cleared') {
+          if (order && order.status === 'Cleared') {
+            localStorage.removeItem('gani_active_order_id');
+            showToast("Bill settled & order completed! Thank you.");
+          }
+          trackerContainer.innerHTML = `
+            <div class="tracker-card">
+              <h3 style="color: var(--gold-light);">Order Completed</h3>
+              <p style="color: var(--text-muted); font-size: 13px;">Thank you for dining at Gani Cafe! Scan QR again to place a new order.</p>
+              <button class="add-btn" style="margin-top: 16px; width: 100%; padding: 14px;" onclick="location.reload()">Place New Order</button>
+            </div>
+          `;
+          return;
         }
 
-        const payload = {
-          orderId: orderId,
-          table: orderData.table || '1',
-          items: itemsString,
-          total: orderData.total || 0,
-          paymentMode: orderData.paymentMode || 'QR Code',
-          status: 'Cleared',
-          timestamp: new Date().toISOString()
-        };
+        let itemsArray = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+        let itemsHtml = itemsArray.map(i => `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; font-weight:700;"><span>${i.qty}x ${escapeHtml(i.name)}</span><span>₹${i.price * i.qty}</span></div>`).join('');
 
-        // 1. Send data to Google Apps Script storage
-        fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }).then(() => {
-          console.log("Logged successfully to Google Sheet.");
-        }).catch(err => {
-          console.error("Google Sheet sync error:", err);
-        });
+        let statusClass = `status-${order.status || 'Pending'}`;
+        let statusText = order.status || 'Pending';
+        let issueNotice = order.issueReported ? `<div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); padding:10px; border-radius:10px; color:#fca5a5; font-size:12px; margin-top:12px; font-weight:700;">⚠️ Notice: ${escapeHtml(order.issueReported)}</div>` : '';
 
-        // 2. Update Firebase status to Cleared and archive
-        db.ref(`orders/${orderId}`).update({ 
-          status: 'Cleared', 
-          _archived: true,
-          clearedAt: firebase.database.ServerValue.TIMESTAMP 
-        }).then(() => {
-          showToast("Bill cleared & archived successfully! ✓");
-        }).catch(err => {
-          console.error("Clearance error:", err);
-          alert("Failed to clear bill in database. Please check connection.");
-        });
+        let paymentWidget = '';
+        if (order.paymentMode && order.paymentMode.toLowerCase().includes('phonepe') && (order.status === 'Billed' || order.status === 'Ready' || order.status === 'Preparing')) {
+          let upiLink = `upi://pay?pa=Q227869939@ybl&pn=GaniCafe&am=${order.total}&cu=INR`;
+          paymentWidget = `
+            <div class="phonepe-pay-box">
+              <div style="font-size: 13px; font-weight: 900; color: #b794f4;">📱 PhonePe Fast Checkout</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Tap below to pay securely via your PhonePe app.</div>
+              <a href="${upiLink}" class="phonepe-btn">Pay ₹${order.total} via PhonePe Now</a>
+            </div>
+          `;
+        }
+
+        document.getElementById('tracker-card-content').innerHTML = `
+          <div style="font-size: 11px; color: var(--text-muted); font-weight: 800; margin-bottom: 6px;">ORDER #${orderId.slice(-6).toUpperCase()} • TABLE #${order.table || '1'}</div>
+          <div class="status-pill ${statusClass}">${statusText}</div>
+          ${issueNotice}
+          <div style="margin: 16px 0; text-align: left;">
+            <div style="font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 8px;">Ordered Items:</div>
+            ${itemsHtml}
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 900; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; margin-top: 12px;">
+            <span>Total Amount:</span>
+            <span style="color: var(--green);">₹${order.total || 0}</span>
+          </div>
+          ${paymentWidget}
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 16px;">This live tracker updates automatically as the kitchen prepares your order.</div>
+        `;
       });
     }
 
@@ -272,17 +403,11 @@
       const toast = document.getElementById('toast-notification');
       toast.innerText = msg;
       toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2500);
+      setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
     function escapeHtml(str) {
-      return String(str).replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;")
-                        .replace(/"/g, "&quot;")
-                        .replace(/'/g, "&#039;");
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
   </script>
 </body>
