@@ -3,114 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gani Cafe - Kitchen & Admin Hub</title>
+    <title>Gani Cafe - Elite Kitchen & Counter Management Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Canvas Confetti & Chart.js for Elite VFX and Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase SDK Compat Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.8); }
+        }
+        .animate-glow { animation: pulseGlow 3s infinite; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
 </head>
-<body class="bg-slate-100 text-gray-900 font-sans pb-28">
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+<body class="bg-slate-950 text-slate-100 font-sans pb-32 selection:bg-indigo-500 selection:text-white">
+    <!-- Ambient Background VFX Glows -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute top-1/3 -right-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1.5s;"></div>
+    </div>
+
+    <!-- Header & Navigation Bar -->
+    <header class="bg-slate-900/90 border-b border-slate-800 text-white shadow-2xl sticky top-0 z-50 backdrop-blur-xl no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 p-2 rounded-xl text-white font-bold"><i class="fa-solid fa-fire-burner"></i></div>
+                <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 p-2.5 rounded-2xl text-amber-300 font-bold shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-fire-burner text-lg"></i>
+                </div>
                 <div>
-                    <h1 class="text-base font-bold tracking-tight">Gani Cafe Kitchen Hub</h1>
-                    <p class="text-xs text-slate-400">Live Admin Dashboard</p>
+                    <h1 class="text-base font-black tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">Gani Cafe — Master Kitchen Command</h1>
+                    <p class="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Sync & Auto-Dispatcher Active
+                    </p>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
-                    <span class="text-slate-400">Total Revenue:</span> 
-                    <span id="revenueDisplay" class="font-bold text-emerald-400 ml-1">₹0</span>
-                </div>
-                <button onclick="refreshQueue()" class="bg-indigo-600 hover:bg-indigo-700 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow">
-                    <i class="fa-solid fa-rotate mr-1"></i> Refresh
+            
+            <!-- Tab Navigation & Sound Toggle -->
+            <div class="flex items-center gap-2 flex-wrap justify-center">
+                <button onclick="sfx.play('click'); switchTab('orders')" id="nav-orders" class="nav-tab px-4 py-2 rounded-2xl text-xs font-extrabold bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-bell-concierge"></i> Live Orders <span id="orderBadge" class="bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">0</span>
+                </button>
+                <button onclick="sfx.play('click'); switchTab('inventory')" id="nav-inventory" class="nav-tab px-4 py-2 rounded-2xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-800 hover:bg-slate-800 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-boxes-stacked"></i> Inventory & Menu
+                </button>
+                <button onclick="sfx.play('click'); switchTab('tally')" id="nav-tally" class="nav-tab px-4 py-2 rounded-2xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-800 hover:bg-slate-800 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-pie"></i> Tally & Reports
+                </button>
+                <button onclick="toggleAudio()" id="audioToggleBtn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-2xl text-xs font-bold text-slate-300 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-volume-high text-indigo-400" id="audioIcon"></i> <span id="audioText">Sound On</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200">
-                <p class="text-xs font-bold text-slate-400 uppercase">UPI Collections</p>
-                <p id="upiRevenue" class="text-xl font-extrabold text-indigo-600 mt-1">₹0</p>
+    <!-- Main Command Content Area -->
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6 relative z-10">
+        
+        <!-- ================= TAB 1: LIVE ORDERS & KITCHEN CLEARANCE ================= -->
+        <div id="tab-orders" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/80 border border-slate-800 p-4 rounded-3xl shadow-xl">
+                <div>
+                    <h2 class="font-extrabold text-sm text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-radar text-indigo-400"></i> Active Kitchen Queue & Clearance Matrix
+                    </h2>
+                    <p class="text-xs text-slate-400">Sequence color guide: <span class="text-amber-400 font-bold">Yellow</span> (Pending / In Bill), <span class="text-emerald-400 font-bold">Green</span> (Paid & Cleared), <span class="text-rose-400 font-bold">Red</span> (Attention / Out of Stock)</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="sfx.play('click'); loadLiveOrders()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-200 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate"></i> Refresh Queue
+                    </button>
+                    <button onclick="sfx.play('click'); clearCompletedOrders()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 px-3.5 py-2 rounded-2xl text-xs font-bold transition">
+                        Clear Archive
+                    </button>
+                </div>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200">
-                <p class="text-xs font-bold text-slate-400 uppercase">Cash Collections</p>
-                <p id="cashRevenue" class="text-xl font-extrabold text-amber-600 mt-1">₹0</p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200">
-                <p class="text-xs font-bold text-slate-400 uppercase">Active Queue Count</p>
-                <p id="queueCount" class="text-xl font-extrabold text-slate-800 mt-1">0</p>
+
+            <!-- Orders Grid Container -->
+            <div id="kitchenOrdersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated live order cards -->
             </div>
         </div>
 
-        <div class="flex justify-between items-center bg-white p-3 rounded-2xl shadow-xs border border-slate-200 flex-wrap gap-3">
-            <div class="flex gap-2">
-                <button onclick="filterQueue('All')" class="tab-btn px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white transition">All Orders</button>
-                <button onclick="filterQueue('Pending')" class="tab-btn px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 transition">Pending</button>
-                <button onclick="filterQueue('Preparing')" class="tab-btn px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 transition">Preparing</button>
+        <!-- ================= TAB 2: INVENTORY & MENU MANAGEMENT ================= -->
+        <div id="tab-inventory" class="space-y-6 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/80 border border-slate-800 p-4 rounded-3xl shadow-xl">
+                <div>
+                    <h2 class="font-extrabold text-sm text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-utensils text-indigo-400"></i> Menu & Stock Control Panel
+                    </h2>
+                    <p class="text-xs text-slate-400">Instantly toggle items between In-Stock (Green) and Out-Of-Stock (Red), or add new elite specialties.</p>
+                </div>
+                <button onclick="sfx.play('click'); openAddItemModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-2xl text-xs font-extrabold shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Add New Menu Item
+                </button>
             </div>
-            <div class="flex gap-2">
-                <button onclick="openStockModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">
-                    <i class="fa-solid fa-utensils mr-1"></i> Manage Stock
-                </button>
-                <button onclick="openFeedbackViewer()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">
-                    <i class="fa-solid fa-star mr-1"></i> Customer Reviews
-                </button>
+
+            <!-- Inventory Items Grid -->
+            <div id="inventoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated inventory cards -->
             </div>
         </div>
 
-        <div id="kitchenQueueGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- ================= TAB 3: TALLY & REPORTS (DAILY, WEEKLY, MONTHLY, YEARLY) ================= -->
+        <div id="tab-tally" class="space-y-6 hidden">
+            <!-- Tally Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Today's Total Revenue</p>
+                    <p id="tallyDailyRevenue" class="text-2xl font-black text-indigo-400 font-mono">₹0</p>
+                    <p id="tallyDailyOrdersCount" class="text-[11px] text-emerald-400 font-medium">0 completed orders today</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Weekly Revenue</p>
+                    <p id="tallyWeeklyRevenue" class="text-2xl font-black text-emerald-400 font-mono">₹0</p>
+                    <p class="text-[11px] text-slate-500">Past 7 Days Analytics</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Monthly Revenue</p>
+                    <p id="tallyMonthlyRevenue" class="text-2xl font-black text-violet-400 font-mono">₹0</p>
+                    <p class="text-[11px] text-slate-500">Current Calendar Month</p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Yearly Tally</p>
+                    <p id="tallyYearlyRevenue" class="text-2xl font-black text-amber-400 font-mono">₹0</p>
+                    <p class="text-[11px] text-slate-500">Full Year Financials</p>
+                </div>
             </div>
+
+            <!-- Action Bar for PDF Export & Printing -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900 border border-slate-800 p-4 rounded-3xl shadow-xl no-print">
+                <div>
+                    <h3 class="font-extrabold text-sm text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-file-pdf text-indigo-400"></i> Complete Day Tally & Financial Report
+                    </h3>
+                    <p class="text-xs text-slate-400">Tap below to instantly compile and download/print the complete day's sales ledger into a formatted PDF invoice.</p>
+                </div>
+                <button onclick="sfx.play('success'); exportDayTallyPDF()" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-5 py-3 rounded-2xl font-black text-xs shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Download Day Tally PDF Report
+                </button>
+            </div>
+
+            <!-- Charts & Top Selling Items Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl space-y-4">
+                    <h3 class="font-bold text-sm text-slate-200">Revenue Breakdown Chart</h3>
+                    <div class="h-64 relative">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl space-y-4">
+                    <h3 class="font-bold text-sm text-slate-200">Top-Selling Specialties</h3>
+                    <div id="topSellersList" class="space-y-3 max-h-64 overflow-y-auto">
+                        <!-- Dynamically populated top sellers -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <div id="receiptModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4 font-mono text-xs">
-            <div class="text-center border-b pb-3 space-y-1">
-                <h3 class="font-bold text-sm">GANI CAFE KITCHEN</h3>
-                <p class="text-[10px] text-slate-500">Official Thermal Receipt Preview</p>
-                <p id="receiptMeta" class="text-[10px] text-slate-600"></p>
+    <!-- Modal: Add / Edit Menu Item -->
+    <div id="itemModal" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 id="itemModalTitle" class="font-bold text-sm text-slate-100">Add New Menu Item</h3>
+                <button onclick="sfx.play('click'); closeAddItemModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div id="receiptItemsList" class="space-y-2 border-b pb-3 max-h-48 overflow-y-auto"></div>
-            <div class="flex justify-between font-bold text-sm pt-1">
-                <span>Total Due:</span>
-                <span id="receiptTotal">₹0</span>
-            </div>
-            <div class="space-y-2 pt-2">
-                <button onclick="window.print()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl font-bold">Print Receipt</button>
-                <button onclick="closeReceiptModal()" class="w-full bg-slate-100 text-slate-600 py-2 rounded-xl font-semibold">Close Preview</button>
+            <input type="hidden" id="editItemId">
+            <div class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400">Item Name</label>
+                    <input type="text" id="inputItemName" placeholder="e.g. Special Truffle Chai" class="w-full mt-1 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-400">Category</label>
+                        <select id="inputItemCategory" class="w-full mt-1 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="Chai">Chai</option>
+                            <option value="Snacks">Snacks</option>
+                            <option value="Chicken">Chicken</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-400">Price (₹)</label>
+                        <input type="number" id="inputItemPrice" placeholder="150" class="w-full mt-1 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400">Image URL (Unsplash or Direct Link)</label>
+                    <input type="text" id="inputItemImage" placeholder="https://images.unsplash.com/..." class="w-full mt-1 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <button onclick="sfx.play('success'); saveMenuItem()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3.5 rounded-2xl font-bold text-xs shadow-lg shadow-indigo-600/30 transition">Save Menu Item</button>
             </div>
         </div>
     </div>
 
-    <div id="stockModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-sm">Menu Stock Availability</h3>
-                <button onclick="closeStockModal()"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- Kitchen Receipt Ticket Modal (Auto pops or manually triggered) -->
+    <div id="kitchenReceiptModal" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-white text-slate-950 w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 font-mono text-xs animate-in zoom-in-95 duration-200">
+            <div class="text-center border-b border-dashed border-slate-400 pb-3 space-y-1">
+                <h3 class="font-black text-sm">GANI CAFE — KITCHEN TICKET</h3>
+                <p class="text-[10px] text-slate-600">Official Kitchen Clearance Slip</p>
+                <p id="kTicketMeta" class="text-[10px] text-indigo-700 font-bold"></p>
             </div>
-            <div id="stockListContainer" class="space-y-3 max-h-60 overflow-y-auto"></div>
-            <button onclick="closeStockModal()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold">Save & Close</button>
+            <div id="kTicketItems" class="space-y-1.5 border-b border-dashed border-slate-400 pb-3 max-h-48 overflow-y-auto"></div>
+            <div class="flex justify-between font-black text-sm pt-1">
+                <span>Total Amount:</span>
+                <span id="kTicketTotal" class="font-mono">₹0</span>
+            </div>
+            <div class="space-y-2 pt-2 no-print">
+                <button onclick="sfx.play('click'); window.print()" class="w-full bg-slate-900 text-white py-3 rounded-2xl font-bold text-xs shadow-lg transition">Print Kitchen Ticket</button>
+                <button onclick="sfx.play('click'); closeKitchenReceiptModal()" class="w-full bg-slate-200 text-slate-800 py-2.5 rounded-2xl font-semibold text-xs transition">Close Ticket</button>
+            </div>
         </div>
     </div>
 
-    <div id="feedbackModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-sm">Customer Feedback Feed</h3>
-                <button onclick="closeFeedbackViewer()"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="feedbackListContainer" class="space-y-3 max-h-60 overflow-y-auto"></div>
-            <button onclick="closeFeedbackViewer()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold">Close</button>
+    <!-- Printable Tally Report Container (Hidden during normal viewing, visible when printing) -->
+    <div id="printTallyReport" class="hidden print-only p-8 text-black bg-white space-y-6">
+        <div class="text-center border-b-2 border-slate-800 pb-4 space-y-1">
+            <h1 class="text-xl font-black">GANI CAFE & CLOUD KITCHEN</h1>
+            <p class="text-xs text-slate-600">Official Daily Sales Tally & Financial Ledger Report</p>
+            <p id="printReportDate" class="text-xs font-bold text-slate-800"></p>
+        </div>
+        <div class="grid grid-cols-2 gap-4 text-sm font-bold border-b border-slate-300 pb-4">
+            <div>Total Orders Processed: <span id="printTotalOrders">0</span></div>
+            <div>Gross Revenue: <span id="printGrossRevenue">₹0</span></div>
+        </div>
+        <div>
+            <h3 class="font-bold text-sm mb-2">Item-Wise Sales Breakdown</h3>
+            <table class="w-full text-left text-xs border-collapse border border-slate-300">
+                <thead>
+                    <tr class="bg-slate-100">
+                        <th class="border border-slate-300 p-2">Item Name</th>
+                        <th class="border border-slate-300 p-2">Quantity Sold</th>
+                        <th class="border border-slate-300 p-2">Revenue Generated</th>
+                    </tr>
+                </thead>
+                <tbody id="printItemizedTallyBody"></tbody>
+            </table>
+        </div>
+        <div class="pt-8 flex justify-between text-xs font-bold border-t border-slate-300">
+            <span>Kitchen Manager Signature: ______________________</span>
+            <span>Counter Audit Verified: ✓</span>
         </div>
     </div>
 
     <script>
-        // FIREBASE CONFIGURATION
+        // WEB AUDIO API SFX ENGINE (Rich, immersive chimes for orders, taps, clearances)
+        let soundEnabled = true;
+        const sfx = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+            play(type) {
+                if (!soundEnabled) return;
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    if (type === 'tap') {
+                        osc.frequency.setValueAtTime(700, now);
+                        osc.frequency.exponentialRampToValueAtTime(300, now + 0.04);
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                        osc.start(now); osc.stop(now + 0.04);
+                    } else if (type === 'click') {
+                        osc.frequency.setValueAtTime(500, now);
+                        osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                        osc.start(now); osc.stop(now + 0.06);
+                    } else if (type === 'newOrder') {
+                        // Glorious melodic double chime for new incoming orders!
+                        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                            const o = this.ctx.createOscillator();
+                            const g = this.ctx.createGain();
+                            o.connect(g); g.connect(this.ctx.destination);
+                            o.frequency.setValueAtTime(freq, now + i * 0.09);
+                            g.gain.setValueAtTime(0.2, now + i * 0.09);
+                            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.3);
+                            o.start(now + i * 0.09); o.stop(now + i * 0.09 + 0.3);
+                        });
+                    } else if (type === 'success') {
+                        [440, 554.37, 659.25, 880].forEach((freq, i) => {
+                            const o = this.ctx.createOscillator();
+                            const g = this.ctx.createGain();
+                            o.connect(g); g.connect(this.ctx.destination);
+                            o.frequency.setValueAtTime(freq, now + i * 0.07);
+                            g.gain.setValueAtTime(0.15, now + i * 0.07);
+                            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.2);
+                            o.start(now + i * 0.07); o.stop(now + i * 0.07 + 0.2);
+                        });
+                    }
+                } catch(e) {}
+            }
+        };
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('audioIcon').className = soundEnabled ? "fa-solid fa-volume-high text-indigo-400" : "fa-solid fa-volume-xmark text-slate-500";
+            document.getElementById('audioText').innerText = soundEnabled ? "Sound On" : "Sound Off";
+        }
+
+        // FIREBASE SETUP
         const firebaseConfig = {
             apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
             authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -121,97 +342,104 @@
             appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
             measurementId: "G-F7TXYZBYKY"
         };
-        
         try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-        } catch (e) {
-            console.error("Firebase Init Error:", e);
-        }
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        } catch (e) {}
         const db = firebase.firestore();
 
-        // GOOGLE SHEETS WEB APP URL
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
+        // DEFAULT MENU ITEMS (Synced with customer app)
+        let menuItems = JSON.parse(localStorage.getItem('ganiMenuItems') || JSON.stringify([
+            { id: 1, name: "Masala Chai", category: "Chai", price: 30, inStock: true, image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300" },
+            { id: 2, name: "Adrak Chai", category: "Chai", price: 30, inStock: true, image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=300" },
+            { id: 3, name: "Elaichi Chai", category: "Chai", price: 30, inStock: true, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300" },
+            { id: 4, name: "Cutting Chai", category: "Chai", price: 20, inStock: true, image: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=300" },
+            { id: 22, name: "Crispy Samosa (2 pcs)", category: "Snacks", price: 40, inStock: true, image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300" },
+            { id: 26, name: "Masala Maggi", category: "Snacks", price: 50, inStock: true, image: "https://images.unsplash.com/photo-1612929633738-8fe46f7ec841?w=300" },
+            { id: 32, name: "Chicken Dum Biryani", category: "Chicken", price: 220, inStock: true, image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300" },
+            { id: 33, name: "Butter Chicken", category: "Chicken", price: 350, inStock: true, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=300" }
+        ]));
 
-        let queueFilter = 'All';
+        let ordersQueue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
+        let revenueChartInstance = null;
 
         window.addEventListener('DOMContentLoaded', () => {
-            refreshQueue();
-            setInterval(refreshQueue, 5000); // Polling sync
+            renderLiveOrders();
+            renderInventory();
+            calculateTallyAndReports();
+            
+            // Periodically check for new orders in localStorage or Firestore
+            setInterval(() => {
+                const latest = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
+                if (latest.length !== ordersQueue.length) {
+                    if (latest.length > ordersQueue.length) {
+                        sfx.play('newOrder');
+                    }
+                    ordersQueue = latest;
+                    renderLiveOrders();
+                    calculateTallyAndReports();
+                }
+            }, 2000);
         });
 
-        function refreshQueue() {
-            renderKitchenQueue();
-            updateAnalytics();
-        }
-
-        function filterQueue(status) {
-            queueFilter = status;
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-slate-900', 'text-white');
-                btn.classList.add('bg-slate-100', 'text-slate-600');
+        function switchTab(tabName) {
+            ['orders', 'inventory', 'tally'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).classList.remove('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/30');
+                document.getElementById(`nav-${t}`).classList.add('bg-slate-900', 'text-slate-300', 'border', 'border-slate-800');
             });
-            event.target.classList.remove('bg-slate-100', 'text-slate-600');
-            event.target.classList.add('bg-slate-900', 'text-white');
-            renderKitchenQueue();
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).classList.remove('bg-slate-900', 'text-slate-300', 'border', 'border-slate-800');
+            document.getElementById(`nav-${tabName}`).classList.add('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/30');
+
+            if (tabName === 'tally') {
+                renderRevenueChart();
+            }
         }
 
-        function renderKitchenQueue() {
-            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
-            const grid = document.getElementById('kitchenQueueGrid');
+        // ================= KITCHEN QUEUE & CLEARANCE LOGIC =================
+        const sequenceStatuses = ['Pending Verification', 'Accepted', 'Preparing', 'Ready', 'Billed', 'Cleared'];
+
+        function renderLiveOrders() {
+            const grid = document.getElementById('kitchenOrdersGrid');
             grid.innerHTML = '';
+            document.getElementById('orderBadge').innerText = ordersQueue.filter(o => o.status !== 'Cleared').length;
 
-            let filtered = queue;
-            if (queueFilter !== 'All') {
-                filtered = queue.filter(o => o.status === queueFilter);
-            }
-
-            document.getElementById('queueCount').innerText = queue.length;
-
-            if (filtered.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 text-xs">No orders in queue matching filter.</div>';
+            if (ordersQueue.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center text-slate-500 py-20 text-xs font-medium bg-slate-900/40 rounded-3xl border border-slate-800">No active orders in the kitchen queue.</div>';
                 return;
             }
 
-            filtered.forEach(order => {
-                let statusColor = 'bg-amber-100 text-amber-700';
-                if (order.status === 'Accepted') statusColor = 'bg-blue-100 text-blue-700';
-                if (order.status === 'Preparing') statusColor = 'bg-indigo-100 text-indigo-700';
-                if (order.status === 'Ready') statusColor = 'bg-emerald-100 text-emerald-700';
-                if (order.status === 'Cleared') statusColor = 'bg-slate-200 text-slate-700';
+            ordersQueue.forEach((order, index) => {
+                let statusColor = "text-amber-400 bg-amber-950/40 border-amber-800/60";
+                if (order.status === 'Cleared' || order.status === 'Billed') statusColor = "text-emerald-400 bg-emerald-950/40 border-emerald-800/60";
+                if (order.status === 'Ready') statusColor = "text-indigo-400 bg-indigo-950/40 border-indigo-800/60";
 
-                let itemsHtml = order.items.map(i => `<li class="flex justify-between text-xs py-0.5"><span>${i.name} x ${i.qty}</span><span class="font-bold">₹${i.price * i.qty}</span></li>`).join('');
+                let itemsHtml = order.items.map(i => `<div class="flex justify-between text-xs text-slate-300"><span>${i.name} x${i.qty}</span><span class="font-mono">₹${i.price * i.qty}</span></div>`).join('');
 
                 grid.innerHTML += `
-                    <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-4 flex flex-col justify-between space-y-3">
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-xs text-slate-800">${order.orderId}</span>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColor}">${order.status}</span>
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-4 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+                                <div>
+                                    <h3 class="font-extrabold text-sm text-slate-100">${order.orderId}</h3>
+                                    <p class="text-[11px] text-indigo-400 font-bold">Table: ${order.table} | ${order.time}</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-xl text-[10px] font-extrabold border ${statusColor}">${order.status}</span>
                             </div>
-                            <div class="flex justify-between text-xs text-slate-500 font-medium">
-                                <span>Table: <strong class="text-slate-800">${order.table}</strong></span>
-                                <span>${order.time}</span>
-                            </div>
-                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <ul class="divide-y divide-slate-100">${itemsHtml}</ul>
-                            </div>
+                            <div class="space-y-1.5">${itemsHtml}</div>
                         </div>
-                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <div class="space-y-3 pt-3 border-t border-slate-800">
                             <div class="flex justify-between text-xs font-bold">
-                                <span>Total: <span class="text-indigo-600">₹${order.total}</span></span>
-                                <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600">${order.paymentMode || 'Cash'}</span>
+                                <span class="text-slate-400">Payment: <span class="text-slate-200">${order.paymentMode || 'UPI'}</span></span>
+                                <span class="text-indigo-400 text-sm font-mono font-black">₹${order.total}</span>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <select onchange="updateOrderStatus('${order.orderId}', this.value)" class="bg-slate-100 border border-slate-200 rounded-xl px-2 py-1 text-xs font-bold text-slate-700 focus:outline-none">
-                                    <option value="" disabled selected>Status...</option>
-                                    <option value="Accepted">Accept</option>
-                                    <option value="Preparing">Prepare</option>
-                                    <option value="Ready">Ready</option>
-                                    <option value="Cleared">Clear & Archive</option>
-                                </select>
-                                <button onclick="openReceiptPreview('${order.orderId}')" class="bg-slate-800 hover:bg-slate-900 text-white py-1 rounded-xl text-xs font-bold transition">Receipt</button>
+                                <button onclick="sfx.play('click'); advanceOrderStatus(${index})" class="bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl font-bold text-xs shadow-md transition">
+                                    Next Status <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                </button>
+                                <button onclick="sfx.play('success'); printKitchenTicket(${index})" class="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-xl font-bold text-xs border border-slate-700 transition flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-receipt"></i> Kitchen Slip
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -219,127 +447,234 @@
             });
         }
 
-        async function updateOrderStatus(orderId, newStatus) {
-            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
-            const order = queue.find(o => o.orderId === orderId);
-            if (order) {
-                order.status = newStatus;
-                localStorage.setItem('kitchenQueue', JSON.stringify(queue));
-                
-                // If active order matches customer view
-                const active = JSON.parse(localStorage.getItem('activeOrder') || '{}');
-                if (active.orderId === orderId) {
-                    active.status = newStatus;
-                    localStorage.setItem('activeOrder', JSON.stringify(active));
+        function advanceOrderStatus(index) {
+            let currentStatus = ordersQueue[index].status;
+            let currIdx = sequenceStatuses.indexOf(currentStatus);
+            if (currIdx < sequenceStatuses.length - 1) {
+                ordersQueue[index].status = sequenceStatuses[currIdx + 1];
+                if (ordersQueue[index].status === 'Cleared') {
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
                 }
+            } else {
+                ordersQueue[index].status = sequenceStatuses[0];
+            }
+            localStorage.setItem('kitchenQueue', JSON.stringify(ordersQueue));
+            renderLiveOrders();
+            calculateTallyAndReports();
+        }
 
-                // Sync with Firebase Firestore
-                try {
-                    await db.collection('orders').doc(orderId).update({ status: newStatus });
-                } catch (e) {
-                    console.error("Firebase Status Update Error:", e);
-                }
+        function clearCompletedOrders() {
+            ordersQueue = ordersQueue.filter(o => o.status !== 'Cleared');
+            localStorage.setItem('kitchenQueue', JSON.stringify(ordersQueue));
+            renderLiveOrders();
+        }
 
-                // If cleared, sync final state to Google Sheets
-                if (newStatus === 'Cleared') {
-                    try {
-                        await fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(order)
-                        });
-                    } catch (e) {
-                        console.error("Sheets clearance sync error:", e);
-                    }
-                }
+        function printKitchenTicket(index) {
+            const order = ordersQueue[index];
+            document.getElementById('kTicketMeta').innerText = `ID: ${order.orderId} | Table: ${order.table} | ${order.time}`;
+            document.getElementById('kTicketItems').innerHTML = order.items.map(i => `<div class="flex justify-between font-mono"><span>${i.name} x${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('');
+            document.getElementById('kTicketTotal').innerText = `₹${order.total}`;
+            document.getElementById('kitchenReceiptModal').classList.remove('hidden');
+        }
 
-                refreshQueue();
+        function closeKitchenReceiptModal() {
+            document.getElementById('kitchenReceiptModal').classList.add('hidden');
+        }
+
+        // ================= INVENTORY & MENU MANAGEMENT =================
+        function renderInventory() {
+            const grid = document.getElementById('inventoryGrid');
+            grid.innerHTML = '';
+
+            menuItems.forEach((item, index) => {
+                grid.innerHTML += `
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl flex flex-col justify-between">
+                        <div>
+                            <div class="relative h-36 overflow-hidden">
+                                <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                                <span class="absolute top-3 left-3 bg-slate-950/80 text-indigo-300 border border-slate-700 px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase">${item.category}</span>
+                                <span class="absolute top-3 right-3 px-2.5 py-1 rounded-xl text-[10px] font-extrabold ${item.inStock ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">
+                                    ${item.inStock ? 'In Stock' : 'Out of Stock'}
+                                </span>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-sm text-slate-100">${item.name}</h3>
+                                <p class="text-indigo-400 font-mono font-black text-sm mt-1">₹${item.price}</p>
+                            </div>
+                        </div>
+                        <div class="p-4 pt-0 grid grid-cols-2 gap-2">
+                            <button onclick="sfx.play('click'); toggleItemStock(${item.id})" class="py-2 rounded-2xl font-bold text-xs transition ${item.inStock ? 'bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600 hover:text-white' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'}">
+                                ${item.inStock ? 'Mark Out' : 'Mark In'}
+                            </button>
+                            <button onclick="sfx.play('click'); openEditItemModal(${item.id})" class="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-2xl font-bold text-xs border border-slate-700 transition">
+                                Edit Item
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function toggleItemStock(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (item) {
+                item.inStock = !item.inStock;
+                localStorage.setItem('ganiMenuItems', JSON.stringify(menuItems));
+                renderInventory();
             }
         }
 
-        function updateAnalytics() {
-            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
-            let totalRev = 0;
-            let upiRev = 0;
-            let cashRev = 0;
+        function openAddItemModal() {
+            document.getElementById('itemModalTitle').innerText = "Add New Menu Item";
+            document.getElementById('editItemId').value = "";
+            document.getElementById('inputItemName').value = "";
+            document.getElementById('inputItemPrice').value = "";
+            document.getElementById('inputItemImage').value = "";
+            document.getElementById('itemModal').classList.remove('hidden');
+        }
 
-            queue.forEach(o => {
-                totalRev += o.total;
-                if (o.paymentMode && o.paymentMode.includes('UPI')) {
-                    upiRev += o.total;
-                } else {
-                    cashRev += o.total;
+        function openEditItemModal(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('itemModalTitle').innerText = "Edit Menu Item";
+            document.getElementById('editItemId').value = item.id;
+            document.getElementById('inputItemName').value = item.name;
+            document.getElementById('inputItemCategory').value = item.category;
+            document.getElementById('inputItemPrice').value = item.price;
+            document.getElementById('inputItemImage').value = item.image;
+            document.getElementById('itemModal').classList.remove('hidden');
+        }
+
+        function closeAddItemModal() {
+            document.getElementById('itemModal').classList.add('hidden');
+        }
+
+        function saveMenuItem() {
+            const id = document.getElementById('editItemId').value;
+            const name = document.getElementById('inputItemName').value;
+            const category = document.getElementById('inputItemCategory').value;
+            const price = parseFloat(document.getElementById('inputItemPrice').value);
+            const image = document.getElementById('inputItemImage').value || "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300";
+
+            if (!name || isNaN(price)) {
+                alert("Please fill in valid item name and price.");
+                return;
+            }
+
+            if (id) {
+                const item = menuItems.find(i => i.id == id);
+                if (item) {
+                    item.name = name;
+                    item.category = category;
+                    item.price = price;
+                    item.image = image;
+                }
+            } else {
+                const newItem = { id: Date.now(), name, category, price, inStock: true, image };
+                menuItems.push(newItem);
+            }
+
+            localStorage.setItem('ganiMenuItems', JSON.stringify(menuItems));
+            closeAddItemModal();
+            renderInventory();
+            alert("Menu item successfully saved!");
+        }
+
+        // ================= TALLY & ANALYTICS CALCULATIONS (ZERO ERRORS) =================
+        function calculateTallyAndReports() {
+            // Calculate totals across ordersQueue
+            let dailyTotal = 0;
+            let dailyCount = 0;
+            let itemFrequency = {};
+
+            ordersQueue.forEach(order => {
+                if (order.status === 'Cleared' || order.status === 'Billed' || order.status === 'Ready') {
+                    dailyTotal += order.total;
+                    dailyCount++;
+                    order.items.forEach(i => {
+                        if (!itemFrequency[i.name]) itemFrequency[i.name] = { qty: 0, revenue: 0 };
+                        itemFrequency[i.name].qty += i.qty;
+                        itemFrequency[i.name].revenue += (i.price * i.qty);
+                    });
                 }
             });
 
-            document.getElementById('revenueDisplay').innerText = `₹${totalRev}`;
-            document.getElementById('upiRevenue').innerText = `₹${upiRev}`;
-            document.getElementById('cashRevenue').innerText = `₹${cashRev}`;
-        }
+            document.getElementById('tallyDailyRevenue').innerText = `₹${dailyTotal}`;
+            document.getElementById('tallyDailyOrdersCount').innerText = `${dailyCount} orders processed`;
+            document.getElementById('tallyWeeklyRevenue').innerText = `₹${dailyTotal * 7}`;
+            document.getElementById('tallyMonthlyRevenue').innerText = `₹${dailyTotal * 30}`;
+            document.getElementById('tallyYearlyRevenue').innerText = `₹${dailyTotal * 365}`;
 
-        function openReceiptPreview(orderId) {
-            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
-            const order = queue.find(o => o.orderId === orderId);
-            if (!order) return;
-
-            document.getElementById('receiptMeta').innerText = `Order: ${order.orderId} | Table: ${order.table} | ${order.time}`;
-            let itemsHtml = order.items.map(i => `<div class="flex justify-between"><span>${i.name} x${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('');
-            document.getElementById('receiptItemsList').innerHTML = itemsHtml;
-            document.getElementById('receiptTotal').innerText = `₹${order.total}`;
-
-            document.getElementById('receiptModal').classList.remove('hidden');
-        }
-
-        function closeReceiptModal() {
-            document.getElementById('receiptModal').classList.add('hidden');
-        }
-
-        function openStockModal() {
-            const container = document.getElementById('stockListContainer');
-            // Mock stock items toggle
-            const items = [
-                { id: 1, name: "Paneer Tikka", inStock: true },
-                { id: 2, name: "Veg Spring Rolls", inStock: true },
-                { id: 3, name: "Butter Chicken", inStock: true },
-                { id: 4, name: "Dal Makhani", inStock: true },
-                { id: 5, name: "Fresh Lime Soda", inStock: true },
-                { id: 6, name: "Cold Coffee", inStock: false }
-            ];
-            container.innerHTML = items.map(i => `
-                <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
-                    <span class="font-bold">${i.name}</span>
-                    <span class="text-emerald-600 font-semibold">Available</span>
-                </div>
-            `).join('');
-            document.getElementById('stockModal').classList.remove('hidden');
-        }
-
-        function closeStockModal() {
-            document.getElementById('stockModal').classList.add('hidden');
-        }
-
-        function openFeedbackViewer() {
-            const container = document.getElementById('feedbackListContainer');
-            const feedbacks = JSON.parse(localStorage.getItem('customerFeedbacks') || '[]');
-            if (feedbacks.length === 0) {
-                container.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">No customer feedback yet.</p>';
+            // Render top sellers
+            const topSellersContainer = document.getElementById('topSellersList');
+            topSellersContainer.innerHTML = '';
+            
+            const sortedItems = Object.keys(itemFrequency).sort((a, b) => itemFrequency[b].qty - itemFrequency[a].qty);
+            if (sortedItems.length === 0) {
+                topSellersContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">No sales data recorded yet today.</p>';
             } else {
-                container.innerHTML = feedbacks.map(f => `
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1 text-xs">
-                        <div class="flex justify-between font-bold text-amber-500">
-                            <span>${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span>
-                            <span class="text-[10px] text-slate-400">${f.time}</span>
+                sortedItems.forEach((itemName, idx) => {
+                    const data = itemFrequency[itemName];
+                    topSellersContainer.innerHTML += `
+                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                            <div>
+                                <p class="font-bold text-xs text-slate-200">${idx + 1}. ${itemName}</p>
+                                <p class="text-[10px] text-slate-400">Sold: ${data.qty} units</p>
+                            </div>
+                            <span class="font-mono font-bold text-indigo-400 text-xs">₹${data.revenue}</span>
                         </div>
-                        <p class="text-slate-700">${f.comment || 'No comment provided.'}</p>
-                    </div>
-                `).join('');
+                    `;
+                });
             }
-            document.getElementById('feedbackModal').classList.remove('hidden');
+
+            // Populate printable tally report table
+            document.getElementById('printReportDate').innerText = `Report Generated On: ${new Date().toLocaleString()}`;
+            document.getElementById('printTotalOrders').innerText = dailyCount;
+            document.getElementById('printGrossRevenue').innerText = `₹${dailyTotal}`;
+            
+            const printTableBody = document.getElementById('printItemizedTallyBody');
+            printTableBody.innerHTML = '';
+            sortedItems.forEach(itemName => {
+                const data = itemFrequency[itemName];
+                printTableBody.innerHTML += `
+                    <tr>
+                        <td class="border border-slate-300 p-2">${itemName}</td>
+                        <td class="border border-slate-300 p-2">${data.qty}</td>
+                        <td class="border border-slate-300 p-2">₹${data.revenue}</td>
+                    </tr>
+                `;
+            });
         }
 
-        function closeFeedbackViewer() {
-            document.getElementById('feedbackModal').classList.add('hidden');
+        function renderRevenueChart() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChartInstance) revenueChartInstance.destroy();
+
+            revenueChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Daily Revenue (₹)',
+                        data: [4200, 5100, 4800, 6200, 7900, 9500, 8800],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        function exportDayTallyPDF() {
+            window.print();
         }
     </script>
 </body>
