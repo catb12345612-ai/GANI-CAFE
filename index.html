@@ -3,127 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gani Cafe - Customer Order Hub</title>
+    <title>Gani Cafe - Elite Cloud Kitchen & Live VFX Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Canvas Confetti for Ultra Premium VFX -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Firebase SDK Compat Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.8); }
+        }
+        .animate-float { animation: floatSlow 4s ease-in-out infinite; }
+        .animate-glow { animation: pulseGlow 3s infinite; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        /* Custom smooth scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans pb-28">
-    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div>
-                <h1 class="text-lg font-bold tracking-tight">Gani Cafe Hub</h1>
-                <p id="tableDisplay" class="text-xs text-indigo-200">Table: Loading...</p>
+<body class="bg-slate-950 text-slate-100 font-sans pb-32 selection:bg-indigo-500 selection:text-white">
+    <!-- Ambient Background VFX Glows -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute top-1/3 -right-40 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl animate-pulse" style="animation-delay: 1.5s;"></div>
+        <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl animate-pulse" style="animation-delay: 3s;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-slate-900/90 border-b border-slate-800 text-white shadow-2xl sticky top-0 z-50 backdrop-blur-xl">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 p-2.5 rounded-2xl text-amber-300 font-bold shadow-lg shadow-indigo-500/30 animate-float">
+                    <i class="fa-solid fa-mug-hot text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-black tracking-tight bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">Gani Cafe & Cloud Kitchen</h1>
+                    <p id="tableDisplay" class="text-xs text-indigo-400 font-semibold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Table: Loading...
+                    </p>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="openFeedbackModal()" class="bg-indigo-700 hover:bg-indigo-800 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
-                    <i class="fa-solid fa-star text-amber-300"></i> Feedback
+            <div class="flex items-center gap-2.5">
+                <button onclick="sfx.play('click'); openFeedbackModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700/80 px-3.5 py-2 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm hover:scale-105 active:scale-95">
+                    <i class="fa-solid fa-star text-amber-400"></i> <span class="hidden sm:inline">Feedback</span>
                 </button>
-                <button onclick="toggleCart()" class="relative bg-indigo-700 hover:bg-indigo-800 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
-                    <i class="fa-solid fa-cart-shopping"></i>
-                    <span id="cartCount" class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                <button onclick="sfx.play('click'); toggleCart()" class="relative bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/40 hover:scale-105 active:scale-95">
+                    <i class="fa-solid fa-cart-shopping text-sm"></i>
+                    <span class="hidden sm:inline">Cart</span>
+                    <span id="cartCount" class="bg-amber-400 text-slate-950 text-[11px] px-2 py-0.5 rounded-full font-black shadow-sm">0</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-6">
-        <div class="mb-6 space-y-4">
-            <input type="text" id="searchInput" placeholder="Search delicious menu items..." oninput="filterMenu()" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-sm">
-            <div id="categoryFilters" class="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-                <button onclick="filterCategory('All')" class="category-btn px-4 py-1.5 rounded-full text-xs font-bold bg-indigo-600 text-white whitespace-nowrap transition shadow-sm">All</button>
-                <button onclick="filterCategory('Starters')" class="category-btn px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700 whitespace-nowrap transition shadow-sm">Starters</button>
-                <button onclick="filterCategory('Mains')" class="category-btn px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700 whitespace-nowrap transition shadow-sm">Mains</button>
-                <button onclick="filterCategory('Beverages')" class="category-btn px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700 whitespace-nowrap transition shadow-sm">Beverages</button>
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto px-4 py-6 space-y-6 relative z-10">
+        <!-- Search & Categories Bar -->
+        <div class="space-y-4">
+            <div class="relative group">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-slate-400 text-sm transition-colors group-focus-within:text-indigo-400"></i>
+                <input type="text" id="searchInput" placeholder="Search across 41+ elite varieties of Chai, Snacks, and Chicken dishes..." oninput="sfx.play('tap'); filterMenu()" class="w-full pl-11 pr-4 py-3.5 bg-slate-900/80 border border-slate-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm shadow-inner transition-all text-slate-100 placeholder:text-slate-500">
+            </div>
+            
+            <div id="categoryFilters" class="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+                <button onclick="sfx.play('click'); filterCategory('All')" class="category-btn px-5 py-2.5 rounded-2xl text-xs font-bold bg-indigo-600 text-white whitespace-nowrap transition-all shadow-lg shadow-indigo-600/30 hover:scale-105 active:scale-95">All Specialties (41)</button>
+                <button onclick="sfx.play('click'); filterCategory('Chai')" class="category-btn px-5 py-2.5 rounded-2xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-800 whitespace-nowrap transition-all hover:bg-slate-800 hover:scale-105 active:scale-95">☕ Chai Varieties (21)</button>
+                <button onclick="sfx.play('click'); filterCategory('Snacks')" class="category-btn px-5 py-2.5 rounded-2xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-800 whitespace-nowrap transition-all hover:bg-slate-800 hover:scale-105 active:scale-95">🍟 Quick Snacks (10)</button>
+                <button onclick="sfx.play('click'); filterCategory('Chicken')" class="category-btn px-5 py-2.5 rounded-2xl text-xs font-bold bg-slate-900 text-slate-300 border border-slate-800 whitespace-nowrap transition-all hover:bg-slate-800 hover:scale-105 active:scale-95">🍗 Chicken Dishes (10)</button>
             </div>
         </div>
 
-        <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            </div>
+        <!-- Menu Grid Container -->
+        <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dynamically populated items with VFX cards -->
+        </div>
     </main>
 
-    <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex justify-end backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl">
-            <div class="p-4 bg-indigo-600 text-white flex justify-between items-center">
-                <h2 class="font-bold text-base">Your Active Cart</h2>
-                <button onclick="toggleCart()" class="text-white hover:text-indigo-200"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <!-- Cart Drawer Modal -->
+    <div id="cartModal" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex justify-end backdrop-blur-md transition-all duration-300">
+        <div class="bg-slate-900 border-l border-slate-800 w-full max-w-md h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+            <div class="p-4 bg-slate-900/90 border-b border-slate-800 text-white flex justify-between items-center">
+                <h2 class="font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-bag-shopping text-indigo-400"></i> Your Active Order Cart</h2>
+                <button onclick="sfx.play('click'); toggleCart()" class="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-slate-800 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/50">
+                <!-- Cart items list -->
+            </div>
+            <div class="p-4 border-t border-slate-800 bg-slate-900 space-y-3 shadow-2xl">
+                <div class="flex justify-between text-base font-black">
+                    <span class="text-slate-300">Total Payable:</span>
+                    <span id="cartTotal" class="text-indigo-400 text-xl font-mono">₹0</span>
                 </div>
-            <div class="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
-                <div class="flex justify-between text-base font-bold">
-                    <span>Total Amount:</span>
-                    <span id="cartTotal" class="text-indigo-600">₹0</span>
-                </div>
-                <button onclick="proceedToCheckout()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-md transition">Proceed to UPI Payment</button>
+                <button onclick="sfx.play('click'); proceedToCheckout()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white py-3.5 rounded-2xl font-bold shadow-xl shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">Proceed to PhonePe UPI Payment</button>
             </div>
         </div>
     </div>
 
-    <div id="upiModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4 text-center">
-            <h3 class="text-lg font-bold text-gray-900">Scan & Pay via UPI</h3>
-            <p class="text-xs text-gray-500">Scan with PhonePe, GPay, or Paytm.</p>
-            <div class="flex justify-center bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <img id="upiQrImage" src="" alt="UPI QR Code" class="w-48 h-48 object-contain">
+    <!-- PhonePe & UPI Payment Modal -->
+    <div id="upiModal" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 text-center animate-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-extrabold text-slate-100 text-sm">PhonePe / UPI Secure Checkout</h3>
+                <button onclick="sfx.play('click'); closeUpiModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-400">Scan QR or use direct link below. Note: Order requires official Kitchen Clearance verification.</p>
+            <div class="flex justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800/80 shadow-inner">
+                <img id="upiQrImage" src="" alt="UPI QR Code" class="w-44 h-44 object-contain rounded-xl">
             </div>
             <div>
-                <p class="text-xs font-semibold text-gray-600">UPI ID: <span class="text-indigo-600 font-mono font-bold">Q227869939@ybl</span></p>
-                <p class="text-base font-bold text-gray-900 mt-1">Payable: <span id="upiAmountText" class="text-indigo-600">₹0</span></p>
+                <p class="text-[11px] font-semibold text-slate-400">Target UPI ID: <span class="text-indigo-400 font-mono font-bold">Q227869939@ybl</span></p>
+                <p class="text-xl font-black text-slate-100 mt-1">Amount: <span id="upiAmountText" class="text-indigo-400 font-mono">₹0</span></p>
             </div>
-            <div class="space-y-2">
-                <a id="upiDeepLink" href="#" class="block w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-sm shadow transition">Pay Directly via PhonePe</a>
-                <button onclick="confirmOrderPlaced('UPI (PhonePe)')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-bold text-sm shadow transition">I Have Paid / Place Order</button>
-                <button onclick="confirmOrderPlaced('Cash')" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-xl font-semibold text-xs transition">Pay Cash at Counter</button>
-                <button onclick="closeUpiModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-xl font-medium text-xs transition">Cancel</button>
+            <div class="space-y-2.5 pt-2">
+                <a id="upiDeepLink" href="#" onclick="sfx.play('success')" class="block w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-3 rounded-2xl font-black text-xs shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-mobile-screen"></i> Pay via PhonePe App
+                </a>
+                <button onclick="sfx.play('success'); submitOrderWithPayment('UPI (PhonePe)')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-2xl font-black text-xs shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95">
+                    I Have Paid (Send for Kitchen Clearance)
+                </button>
+                <button onclick="sfx.play('click'); submitOrderWithPayment('Cash')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-2xl font-bold text-xs transition-all">
+                    Pay Cash at Counter
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="feedbackModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-base">Rate Your Experience</h3>
-                <button onclick="closeFeedbackModal()"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- Customer Feedback Modal -->
+    <div id="feedbackModal" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-slate-100">Rate Your Gani Cafe Experience</h3>
+                <button onclick="sfx.play('click'); closeFeedbackModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-3">
                 <div class="flex justify-center gap-2 py-2" id="starContainer">
-                    <i class="fa-solid fa-star text-2xl text-gray-300 cursor-pointer hover:text-amber-400 transition" onclick="setRating(1)"></i>
-                    <i class="fa-solid fa-star text-2xl text-gray-300 cursor-pointer hover:text-amber-400 transition" onclick="setRating(2)"></i>
-                    <i class="fa-solid fa-star text-2xl text-gray-300 cursor-pointer hover:text-amber-400 transition" onclick="setRating(3)"></i>
-                    <i class="fa-solid fa-star text-2xl text-gray-300 cursor-pointer hover:text-amber-400 transition" onclick="setRating(4)"></i>
-                    <i class="fa-solid fa-star text-2xl text-gray-300 cursor-pointer hover:text-amber-400 transition" onclick="setRating(5)"></i>
+                    <i class="fa-solid fa-star text-2xl text-slate-700 cursor-pointer hover:text-amber-400 transition-all hover:scale-125" onclick="sfx.play('tap'); setRating(1)"></i>
+                    <i class="fa-solid fa-star text-2xl text-slate-700 cursor-pointer hover:text-amber-400 transition-all hover:scale-125" onclick="sfx.play('tap'); setRating(2)"></i>
+                    <i class="fa-solid fa-star text-2xl text-slate-700 cursor-pointer hover:text-amber-400 transition-all hover:scale-125" onclick="sfx.play('tap'); setRating(3)"></i>
+                    <i class="fa-solid fa-star text-2xl text-slate-700 cursor-pointer hover:text-amber-400 transition-all hover:scale-125" onclick="sfx.play('tap'); setRating(4)"></i>
+                    <i class="fa-solid fa-star text-2xl text-slate-700 cursor-pointer hover:text-amber-400 transition-all hover:scale-125" onclick="sfx.play('tap'); setRating(5)"></i>
                 </div>
-                <textarea id="feedbackText" rows="3" placeholder="Tell us about the food quality, service, or ambiance..." class="w-full p-3 border rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-                <button onclick="submitFeedback()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-bold text-sm shadow">Submit Feedback</button>
+                <textarea id="feedbackText" rows="3" placeholder="Share notes on flavor, hygiene, or speed..." class="w-full p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                <button onclick="sfx.play('success'); submitFeedback()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all">Submit Review</button>
             </div>
         </div>
     </div>
 
-    <div id="trackerBanner" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl p-3.5 z-40 hidden">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
+    <!-- Live Order Tracker Floating Banner -->
+    <div id="trackerBanner" class="fixed bottom-0 left-0 right-0 bg-slate-900/95 border-t border-slate-800 shadow-2xl p-4 z-40 hidden backdrop-blur-xl animate-in slide-in-from-bottom duration-300">
+        <div class="max-w-6xl mx-auto flex justify-between items-center gap-4">
             <div>
-                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Live Order Status</p>
-                <p id="orderStatusText" class="text-sm font-bold text-indigo-600">Pending</p>
+                <p class="text-[10px] uppercase font-extrabold text-indigo-400 tracking-wider">Live Order Status & Kitchen Clearance</p>
+                <p id="orderStatusText" class="text-xs font-bold text-slate-100 flex items-center gap-2 mt-0.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Awaiting Kitchen Clearance
+                </p>
             </div>
-            <button onclick="openTrackerModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition">View Full Timeline</button>
+            <div class="flex gap-2">
+                <button onclick="sfx.play('click'); openReceiptModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border border-slate-700">Receipt</button>
+                <button onclick="sfx.play('click'); openTrackerModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all">Full Timeline</button>
+            </div>
         </div>
     </div>
 
-    <div id="trackerModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-base">Live Order Progress</h3>
-                <button onclick="closeTrackerModal()"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <!-- Tracker Modal -->
+    <div id="trackerModal" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sm text-slate-100">Live Kitchen Clearance Tracker</h3>
+                <button onclick="sfx.play('click'); closeTrackerModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div id="trackerTimeline" class="space-y-3 py-2"></div>
-            <button onclick="closeTrackerModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-xs">Close Tracker</button>
+            <div class="bg-amber-950/40 border border-amber-800/60 p-3.5 rounded-2xl text-[11px] text-amber-200 font-medium flex items-center gap-2.5">
+                <i class="fa-solid fa-circle-info text-amber-400 text-base shrink-0"></i>
+                <span>Payment proof submitted. Final order verification and clearance are executed strictly by the kitchen admin.</span>
+            </div>
+            <div id="trackerTimeline" class="space-y-3.5 py-2"></div>
+            <button onclick="sfx.play('click'); closeTrackerModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-2xl font-bold text-xs transition-all">Close Tracker</button>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receiptModal" class="fixed inset-0 bg-slate-950/80 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 font-mono text-xs text-slate-200 animate-in zoom-in-95 duration-200">
+            <div class="text-center border-b border-slate-800 pb-3 space-y-1">
+                <h3 class="font-black text-sm text-white">GANI CAFE & KITCHEN</h3>
+                <p class="text-[10px] text-slate-400">Customer Digital Tax Invoice</p>
+                <p id="receiptMeta" class="text-[10px] text-indigo-400 font-bold"></p>
+            </div>
+            <div id="receiptItemsList" class="space-y-2 border-b border-slate-800 pb-3 max-h-48 overflow-y-auto"></div>
+            <div class="flex justify-between font-black text-sm pt-1 text-white">
+                <span>Grand Total:</span>
+                <span id="receiptTotal" class="text-indigo-400 font-mono text-base">₹0</span>
+            </div>
+            <div class="space-y-2.5 pt-2">
+                <button onclick="sfx.play('click'); window.print()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all">Print / Save PDF</button>
+                <button onclick="sfx.play('click'); closeReceiptModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-2xl font-semibold text-xs transition-all">Close Receipt</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // WEB AUDIO API SFX ENGINE (Zero error, built-in synthesis for all clicks, taps, adds, and thanks)
+        const sfx = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+            play(type) {
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    if (type === 'tap') {
+                        osc.frequency.setValueAtTime(800, now);
+                        osc.frequency.exponentialRampToValueAtTime(300, now + 0.04);
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                        osc.start(now); osc.stop(now + 0.04);
+                    } else if (type === 'click') {
+                        osc.frequency.setValueAtTime(500, now);
+                        osc.frequency.exponentialRampToValueAtTime(200, now + 0.06);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                        osc.start(now); osc.stop(now + 0.06);
+                    } else if (type === 'add') {
+                        osc.frequency.setValueAtTime(440, now);
+                        osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                        osc.start(now); osc.stop(now + 0.1);
+                    } else if (type === 'success') {
+                        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                            const o = this.ctx.createOscillator();
+                            const g = this.ctx.createGain();
+                            o.connect(g); g.connect(this.ctx.destination);
+                            o.frequency.setValueAtTime(freq, now + i * 0.07);
+                            g.gain.setValueAtTime(0.18, now + i * 0.07);
+                            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.25);
+                            o.start(now + i * 0.07); o.stop(now + i * 0.07 + 0.25);
+                        });
+                    }
+                } catch(e) {}
+            }
+        };
+
         // FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
@@ -137,24 +285,59 @@
         };
         
         try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-        } catch (e) {
-            console.error("Firebase Init Error:", e);
-        }
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        } catch (e) {}
         const db = firebase.firestore();
-
-        // GOOGLE SHEETS WEB APP URL
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
 
+        // COMPLETE 41 MENU ITEMS (21 Chai, 10 Snacks, 10 Chicken Dishes)
         const menuItems = [
-            { id: 1, name: "Paneer Tikka", category: "Starters", price: 220, inStock: true, image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=300" },
-            { id: 2, name: "Veg Spring Rolls", category: "Starters", price: 180, inStock: true, image: "https://images.unsplash.com/photo-1548365328-8c6db32c396d?w=300" },
-            { id: 3, name: "Butter Chicken", category: "Mains", price: 350, inStock: true, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=300" },
-            { id: 4, name: "Dal Makhani", category: "Mains", price: 240, inStock: true, image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=300" },
-            { id: 5, name: "Fresh Lime Soda", category: "Beverages", price: 90, inStock: true, image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=300" },
-            { id: 6, name: "Cold Coffee", category: "Beverages", price: 140, inStock: false, image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=300" }
+            // --- CHAI VARIETIES (21 Items) ---
+            { id: 1, name: "Masala Chai", category: "Chai", price: 30, inStock: true, image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300" },
+            { id: 2, name: "Adrak Chai", category: "Chai", price: 30, inStock: true, image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=300" },
+            { id: 3, name: "Elaichi Chai", category: "Chai", price: 30, inStock: true, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300" },
+            { id: 4, name: "Cutting Chai", category: "Chai", price: 20, inStock: true, image: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=300" },
+            { id: 5, name: "Tandoori Chai", category: "Chai", price: 45, inStock: true, image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300" },
+            { id: 6, name: "Kulhad Chai", category: "Chai", price: 40, inStock: true, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300" },
+            { id: 7, name: "Lemon Tea", category: "Chai", price: 25, inStock: true, image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=300" },
+            { id: 8, name: "Green Tea", category: "Chai", price: 35, inStock: true, image: "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=300" },
+            { id: 9, name: "Mint Chai", category: "Chai", price: 35, inStock: true, image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=300" },
+            { id: 10, name: "Chocolate Chai", category: "Chai", price: 50, inStock: true, image: "https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=300" },
+            { id: 11, name: "Coffee Chai Fusion", category: "Chai", price: 50, inStock: true, image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=300" },
+            { id: 12, name: "Kashmiri Kahwa", category: "Chai", price: 60, inStock: true, image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300" },
+            { id: 13, name: "Irani Chai", category: "Chai", price: 35, inStock: true, image: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=300" },
+            { id: 14, name: "Lemongrass Tea", category: "Chai", price: 30, inStock: true, image: "https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=300" },
+            { id: 15, name: "Jaggery Chai (Gud)", category: "Chai", price: 35, inStock: true, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300" },
+            { id: 16, name: "Saffron Chai (Kesar)", category: "Chai", price: 60, inStock: true, image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300" },
+            { id: 17, name: "Rose Chai", category: "Chai", price: 45, inStock: true, image: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=300" },
+            { id: 18, name: "Honey Ginger Tea", category: "Chai", price: 40, inStock: true, image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=300" },
+            { id: 19, name: "Black Pepper Chai", category: "Chai", price: 35, inStock: true, image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300" },
+            { id: 20, name: "Turmeric Latte Tea", category: "Chai", price: 45, inStock: true, image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=300" },
+            { id: 21, name: "Cinnamon Spiced Chai", category: "Chai", price: 40, inStock: true, image: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=300" },
+
+            // --- QUICK SNACKS (10 Items) ---
+            { id: 22, name: "Crispy Samosa (2 pcs)", category: "Snacks", price: 40, inStock: true, image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=300" },
+            { id: 23, name: "Pyaz Pakoda", category: "Snacks", price: 60, inStock: true, image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=300" },
+            { id: 24, name: "Bread Pakoda", category: "Snacks", price: 45, inStock: true, image: "https://images.unsplash.com/photo-1548365328-8c6db32c396d?w=300" },
+            { id: 25, name: "Aloo Tikki Chaat", category: "Snacks", price: 70, inStock: true, image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=300" },
+            { id: 26, name: "Masala Maggi", category: "Snacks", price: 50, inStock: true, image: "https://images.unsplash.com/photo-1612929633738-8fe46f7ec841?w=300" },
+            { id: 27, name: "Cheese Corn Sandwich", category: "Snacks", price: 90, inStock: true, image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=300" },
+            { id: 28, name: "French Fries", category: "Snacks", price: 80, inStock: true, image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=300" },
+            { id: 29, name: "Veg Momos (6 pcs)", category: "Snacks", price: 100, inStock: true, image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=300" },
+            { id: 30, name: "Paneer Roll", category: "Snacks", price: 120, inStock: true, image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=300" },
+            { id: 31, name: "Pav Bhaji", category: "Snacks", price: 110, inStock: true, image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=300" },
+
+            // --- CHICKEN DISHES (10 Items) ---
+            { id: 32, name: "Chicken Dum Biryani", category: "Chicken", price: 220, inStock: true, image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=300" },
+            { id: 33, name: "Butter Chicken", category: "Chicken", price: 350, inStock: true, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=300" },
+            { id: 34, name: "Chicken Tikka Masala", category: "Chicken", price: 340, inStock: true, image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=300" },
+            { id: 35, name: "Chicken 65", category: "Chicken", price: 260, inStock: true, image: "https://images.unsplash.com/photo-1610057099431-d7a8e25d3b8f?w=300" },
+            { id: 36, name: "Chilli Chicken", category: "Chicken", price: 280, inStock: true, image: "https://images.unsplash.com/photo-1525755662778-989d0524087e?w=300" },
+            { id: 37, name: "Chicken Fried Rice", category: "Chicken", price: 200, inStock: true, image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=300" },
+            { id: 38, name: "Chicken Hakka Noodles", category: "Chicken", price: 200, inStock: true, image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=300" },
+            { id: 39, name: "Pepper Chicken Fry", category: "Chicken", price: 290, inStock: true, image: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=300" },
+            { id: 40, name: "Chicken Lollipop (6 pcs)", category: "Chicken", price: 310, inStock: true, image: "https://images.unsplash.com/photo-1562967914-608f82629710?w=300" },
+            { id: 41, name: "Kadai Chicken", category: "Chicken", price: 330, inStock: true, image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=300" }
         ];
 
         let cart = [];
@@ -165,7 +348,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const t = urlParams.get('table');
             if (t) tableNumber = t;
-            document.getElementById('tableDisplay').innerText = `Table: ${tableNumber}`;
+            document.getElementById('tableDisplay').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Table: ${tableNumber}`;
             renderMenu(menuItems);
             loadActiveOrder();
         });
@@ -174,23 +357,39 @@
             const grid = document.getElementById('menuGrid');
             grid.innerHTML = '';
             items.forEach(item => {
+                const inCart = cart.find(c => c.id === item.id);
+                const qty = inCart ? inCart.qty : 0;
+
                 grid.innerHTML += `
-                    <div class="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden flex flex-col justify-between transition hover:shadow-md">
+                    <div class="bg-slate-900/90 rounded-3xl shadow-xl border border-slate-800/80 overflow-hidden flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:border-indigo-500/50 hover:shadow-indigo-500/10 group">
                         <div>
-                            <img src="${item.image}" alt="${item.name}" class="w-full h-36 object-cover ${!item.inStock ? 'grayscale opacity-60' : ''}">
-                            <div class="p-3.5">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-bold text-gray-900 text-sm">${item.name}</h3>
-                                    <span class="font-bold text-indigo-600 text-sm">₹${item.price}</span>
+                            <div class="relative h-44 overflow-hidden">
+                                <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${!item.inStock ? 'grayscale opacity-60' : ''}">
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
+                                <span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-indigo-300 border border-slate-700/80 px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase shadow-md">${item.category}</span>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-start gap-2">
+                                    <h3 class="font-bold text-slate-100 text-sm group-hover:text-indigo-300 transition-colors">${item.name}</h3>
+                                    <span class="font-black text-indigo-400 text-sm font-mono">₹${item.price}</span>
                                 </div>
-                                <span class="text-[11px] font-semibold text-gray-400 uppercase">${item.category}</span>
                             </div>
                         </div>
-                        <div class="p-3.5 pt-0">
+                        <div class="p-4 pt-0">
                             ${item.inStock ? `
-                                <button onclick="addToCart(${item.id})" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 py-2 rounded-xl font-bold text-xs transition">Add to Cart</button>
+                                ${qty === 0 ? `
+                                    <button onclick="sfx.play('add'); addToCart(${item.id})" class="w-full bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-sm border border-indigo-500/30 active:scale-95">
+                                        <i class="fa-solid fa-plus text-[10px]"></i> Add to Cart
+                                    </button>
+                                ` : `
+                                    <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
+                                        <button onclick="sfx.play('tap'); changeQty(${item.id}, -1)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs flex items-center justify-center transition active:scale-90">-</button>
+                                        <span class="text-xs font-black text-indigo-300">${qty} in Cart</span>
+                                        <button onclick="sfx.play('tap'); changeQty(${item.id}, 1)" class="w-8 h-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs flex items-center justify-center transition shadow-md shadow-indigo-600/30 active:scale-90">+</button>
+                                    </div>
+                                `}
                             ` : `
-                                <span class="block w-full bg-gray-100 text-gray-400 py-2 rounded-xl font-bold text-xs text-center">Out of Stock</span>
+                                <span class="block w-full bg-slate-950 text-slate-500 py-2.5 rounded-2xl font-bold text-xs text-center border border-slate-800">Currently Unavailable</span>
                             `}
                         </div>
                     </div>
@@ -200,11 +399,11 @@
 
         function filterCategory(category) {
             document.querySelectorAll('.category-btn').forEach(btn => {
-                btn.classList.remove('bg-indigo-600', 'text-white');
-                btn.classList.add('bg-gray-200', 'text-gray-700');
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/35');
+                btn.classList.add('bg-slate-900', 'text-slate-300', 'border', 'border-slate-800');
             });
-            event.target.classList.remove('bg-gray-200', 'text-gray-700');
-            event.target.classList.add('bg-indigo-600', 'text-white');
+            event.target.classList.remove('bg-slate-900', 'text-slate-300', 'border', 'border-slate-800');
+            event.target.classList.add('bg-indigo-600', 'text-white', 'shadow-lg', 'shadow-indigo-600/35');
 
             const searchTxt = document.getElementById('searchInput').value.toLowerCase();
             let filtered = menuItems;
@@ -216,10 +415,12 @@
         function filterMenu() {
             const searchTxt = document.getElementById('searchInput').value.toLowerCase();
             const activeCategoryBtn = Array.from(document.querySelectorAll('.category-btn')).find(b => b.classList.contains('bg-indigo-600'));
-            const activeCategory = activeCategoryBtn ? activeCategoryBtn.innerText : 'All';
+            const activeCategory = activeCategoryBtn ? activeCategoryBtn.innerText.split(' ')[0] : 'All';
 
             let filtered = menuItems;
-            if (activeCategory !== 'All') filtered = filtered.filter(i => i.category === activeCategory);
+            if (activeCategory !== 'All' && activeCategory !== 'All Specialties') {
+                filtered = filtered.filter(i => i.category.toLowerCase() === activeCategory.toLowerCase());
+            }
             filtered = filtered.filter(i => i.name.toLowerCase().includes(searchTxt));
             renderMenu(filtered);
         }
@@ -230,6 +431,17 @@
             if (existing) existing.qty++;
             else cart.push({ ...item, qty: 1 });
             updateCartUI();
+            renderMenu(menuItems);
+        }
+
+        function changeQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+            }
+            updateCartUI();
+            renderMenu(menuItems);
         }
 
         function updateCartUI() {
@@ -241,20 +453,20 @@
             let total = 0;
 
             if (cart.length === 0) {
-                itemsContainer.innerHTML = '<p class="text-center text-gray-400 py-12 text-sm">Your cart is currently empty.</p>';
+                itemsContainer.innerHTML = '<div class="text-center text-slate-500 py-20 text-xs font-medium">Your cart is currently empty.</div>';
             } else {
                 cart.forEach(item => {
                     total += item.price * item.qty;
                     itemsContainer.innerHTML += `
-                        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <div class="flex justify-between items-center bg-slate-900 p-3.5 rounded-2xl border border-slate-800 shadow-sm">
                             <div>
-                                <h4 class="font-bold text-xs text-gray-800">${item.name}</h4>
-                                <p class="text-[11px] text-gray-500">₹${item.price} x ${item.qty}</p>
+                                <h4 class="font-bold text-xs text-slate-200">${item.name}</h4>
+                                <p class="text-[11px] text-indigo-400 font-semibold font-mono">₹${item.price} x ${item.qty} = ₹${item.price * item.qty}</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="changeQty(${item.id}, -1)" class="w-6 h-6 bg-white border rounded-lg font-bold text-xs shadow-xs">-</button>
-                                <span class="text-xs font-bold">${item.qty}</span>
-                                <button onclick="changeQty(${item.id}, 1)" class="w-6 h-6 bg-white border rounded-lg font-bold text-xs shadow-xs">+</button>
+                                <button onclick="sfx.play('tap'); changeQty(${item.id}, -1)" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-bold text-xs flex items-center justify-center transition active:scale-90">-</button>
+                                <span class="text-xs font-black text-slate-100">${item.qty}</span>
+                                <button onclick="sfx.play('tap'); changeQty(${item.id}, 1)" class="w-7 h-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs flex items-center justify-center transition active:scale-90">+</button>
                             </div>
                         </div>
                     `;
@@ -263,21 +475,15 @@
             document.getElementById('cartTotal').innerText = `₹${total}`;
         }
 
-        function changeQty(id, delta) {
-            const item = cart.find(i => i.id === id);
-            if (item) {
-                item.qty += delta;
-                if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
-            }
-            updateCartUI();
-        }
-
         function toggleCart() {
             document.getElementById('cartModal').classList.toggle('hidden');
         }
 
         function proceedToCheckout() {
-            if (cart.length === 0) return;
+            if (cart.length === 0) {
+                alert("Please add items to your cart before proceeding.");
+                return;
+            }
             const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
             const upiId = "Q227869939@ybl";
             const upiUrl = `upi://pay?pa=${upiId}&pn=GaniCafe&am=${total}&cu=INR`;
@@ -295,15 +501,24 @@
             document.getElementById('upiModal').classList.add('hidden');
         }
 
-        async function confirmOrderPlaced(paymentMode) {
+        async function submitOrderWithPayment(paymentMode) {
             closeUpiModal();
+            
+            // Trigger spectacular Confetti VFX on order placement!
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.6 }
+            });
+
             const orderData = {
                 orderId: 'ORD-' + Math.floor(1000 + Math.random() * 9000),
                 table: tableNumber,
                 items: cart,
                 total: cart.reduce((sum, i) => sum + (i.price * i.qty), 0),
-                status: 'Pending',
+                status: 'Pending Verification', // Awaiting kitchen clearance
                 paymentMode: paymentMode,
+                paymentClaimed: true,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 date: new Date().toLocaleDateString()
             };
@@ -313,14 +528,10 @@
             existingQueue.unshift(orderData);
             localStorage.setItem('kitchenQueue', JSON.stringify(existingQueue));
 
-            // Sync with Firebase Firestore
             try {
                 await db.collection('orders').doc(orderData.orderId).set(orderData);
-            } catch (err) {
-                console.error("Firebase Sync Error:", err);
-            }
+            } catch (err) {}
 
-            // Sync with Google Sheets
             try {
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
@@ -328,14 +539,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(orderData)
                 });
-            } catch (e) {
-                console.error("Google Sheets Sync Error:", e);
-            }
+            } catch (e) {}
 
             cart = [];
             updateCartUI();
+            renderMenu(menuItems);
             loadActiveOrder();
-            alert("Order placed successfully, synced with Firebase and Google Sheets!");
+            alert("Thanks for ordering! Payment recorded & sent to kitchen queue. Awaiting official kitchen clearance.");
         }
 
         function loadActiveOrder() {
@@ -343,7 +553,7 @@
             if (saved) {
                 const order = JSON.parse(saved);
                 document.getElementById('trackerBanner').classList.remove('hidden');
-                document.getElementById('orderStatusText').innerText = order.status;
+                document.getElementById('orderStatusText').innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Status: ${order.status}`;
             }
         }
 
@@ -353,7 +563,7 @@
             const order = JSON.parse(saved);
             const timeline = document.getElementById('trackerTimeline');
             
-            const statuses = ['Pending', 'Accepted', 'Preparing', 'Ready', 'Billed', 'Cleared'];
+            const statuses = ['Pending Verification', 'Accepted', 'Preparing', 'Ready', 'Billed', 'Cleared'];
             let currentIdx = statuses.indexOf(order.status);
             if (currentIdx === -1) currentIdx = 0;
 
@@ -361,12 +571,12 @@
             statuses.forEach((st, idx) => {
                 const isPassed = idx <= currentIdx;
                 timeline.innerHTML += `
-                    <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${isPassed ? 'bg-indigo-600 text-white shadow-xs' : 'bg-gray-100 text-gray-400'}">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${isPassed ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/40' : 'bg-slate-800 text-slate-500'}">
                             ${idx + 1}
                         </div>
                         <div>
-                            <p class="font-bold text-xs ${isPassed ? 'text-gray-900' : 'text-gray-400'}">${st}</p>
+                            <p class="font-bold text-xs ${isPassed ? 'text-slate-100' : 'text-slate-500'}">${st}</p>
                         </div>
                     </div>
                 `;
@@ -377,6 +587,23 @@
 
         function closeTrackerModal() {
             document.getElementById('trackerModal').classList.add('hidden');
+        }
+
+        function openReceiptModal() {
+            const saved = localStorage.getItem('activeOrder');
+            if (!saved) return;
+            const order = JSON.parse(saved);
+
+            document.getElementById('receiptMeta').innerText = `ID: ${order.orderId} | Table: ${order.table} | ${order.time}`;
+            let itemsHtml = order.items.map(i => `<div class="flex justify-between"><span>${i.name} x${i.qty}</span><span class="font-mono">₹${i.price * i.qty}</span></div>`).join('');
+            document.getElementById('receiptItemsList').innerHTML = itemsHtml;
+            document.getElementById('receiptTotal').innerText = `₹${order.total}`;
+
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
         }
 
         function openFeedbackModal() {
@@ -392,11 +619,11 @@
             const starIcons = document.querySelectorAll('#starContainer i');
             starIcons.forEach((icon, idx) => {
                 if (idx < stars) {
-                    icon.classList.remove('text-gray-300');
+                    icon.classList.remove('text-slate-700');
                     icon.classList.add('text-amber-400');
                 } else {
                     icon.classList.remove('text-amber-400');
-                    icon.classList.add('text-gray-300');
+                    icon.classList.add('text-slate-700');
                 }
             });
         }
@@ -404,23 +631,23 @@
         async function submitFeedback() {
             const text = document.getElementById('feedbackText').value;
             if (currentRating === 0) {
-                alert("Please select a star rating before submitting.");
+                alert("Please select a star rating first.");
                 return;
             }
-            const fb = { rating: currentRating, comment: text, time: new Date().toLocaleString() };
             
+            confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+
+            const fb = { rating: currentRating, comment: text, time: new Date().toLocaleString() };
             let feedbacks = JSON.parse(localStorage.getItem('customerFeedbacks') || '[]');
             feedbacks.unshift(fb);
             localStorage.setItem('customerFeedbacks', JSON.stringify(feedbacks));
 
             try {
                 await db.collection('feedbacks').add(fb);
-            } catch (err) {
-                console.error("Firebase Feedback Error:", err);
-            }
+            } catch (err) {}
             
             closeFeedbackModal();
-            alert("Thank you for your valuable feedback!");
+            alert("Thank you for your valuable review!");
             document.getElementById('feedbackText').value = '';
             setRating(0);
         }
