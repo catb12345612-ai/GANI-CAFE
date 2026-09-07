@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Master Kitchen & Stock Display</title>
-  <!-- Firebase SDKs -->
+  <title>Gani Cafe - Live Kitchen Display System (KDS)</title>
+  <!-- Firebase SDKs (Compat v8) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     :root { 
       --gold: #d97706; 
       --bg: #0b0f19; 
-      --card-bg: rgba(17, 24, 39, 0.9); 
+      --card-bg: rgba(17, 24, 39, 0.95); 
       --text: #f8fafc; 
       --text-muted: #94a3b8; 
       --green: #10b981; 
@@ -19,10 +19,10 @@
       --orange: #f97316; 
       --yellow: #eab308;
       --blue: #0ea5e9; 
-      --purple: #8b5cf6;
     }
     
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 25px; min-height: 100vh; box-sizing: border-box; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 25px; min-height: 100vh; }
     
     header { background: var(--card-bg); padding: 20px 30px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); flex-wrap: wrap; gap: 15px; }
     header h1 { margin: 0; font-size: 24px; font-weight: 800; background: linear-gradient(to right, var(--orange), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -30,59 +30,40 @@
     .metrics-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .metric-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05); padding: 18px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     .metric-card span:first-child { font-size: 12px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
-    .metric-card span:last-child { font-size: 24px; font-weight: 900; color: var(--green); }
+    .metric-card span:last-child { font-size: 24px; font-weight: 900; }
 
-    .layout-grid { display: grid; grid-template-columns: 3fr 1fr; gap: 20px; align-items: start; }
-    @media(max-width: 1024px) { .layout-grid { grid-template-columns: 1fr; } }
-
-    .kanban-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+    .kanban-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; }
     
-    .kanban-column { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 18px; min-height: 70vh; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .kanban-column h3 { margin: 0 0 10px 0; font-size: 15px; display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .kanban-column { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; min-height: 70vh; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .kanban-column h3 { margin: 0 0 10px 0; font-size: 16px; display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
-    /* VFX Pulse Animation for New Orders */
-    @keyframes pulse-glow {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-    }
-    .order-ticket { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-    .ticket-pending { border-left: 5px solid var(--red); animation: pulse-glow 2s infinite; }
+    .order-ticket { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); position: relative; overflow: hidden; }
+    .ticket-pending { border-left: 5px solid var(--red); }
     .ticket-preparing { border-left: 5px solid var(--orange); }
     .ticket-completed { border-left: 5px solid var(--green); }
 
     .ticket-header { display: flex; justify-content: space-between; align-items: center; }
-    .table-badge { font-size: 14px; font-weight: 800; color: #fff; background: rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 6px; }
+    .table-badge { font-size: 15px; font-weight: 800; color: #fff; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 8px; }
     
-    .badge { padding: 4px 10px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; }
-    .badge-paid { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid var(--green); }
-    .badge-unpaid { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid var(--red); }
-    .badge-inbill { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+    .ticket-items { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: #f1f5f9; }
+    .ticket-items li { margin-bottom: 4px; font-weight: 500; }
 
-    .ticket-items { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5; color: #f1f5f9; }
-    .ticket-items li { margin-bottom: 3px; font-weight: 500; }
+    .btn { background: var(--gold); color: #000; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; font-size: 11px; letter-spacing: 0.5px; }
+    .btn:hover { filter: brightness(1.2); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
 
-    .btn { background: var(--gold); color: #000; border: none; padding: 7px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; font-size: 10px; letter-spacing: 0.5px; }
-    .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
-
-    .ticket-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; font-size: 10px; color: var(--text-muted); }
-
-    /* Side Panel for Quick Menu Stock Toggle */
-    .sidebar-panel { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .sidebar-panel::-webkit-scrollbar { width: 5px; }
-    .sidebar-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    .ticket-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; font-size: 11px; color: var(--text-muted); }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🍳 GANI CAFE - KITCHEN & STOCK KDS</h1>
+    <h1>🍳 GANI CAFE - LIVE KITCHEN DISPLAY</h1>
     <div style="display: flex; gap: 10px;">
       <a href="admin.html" target="_blank" class="btn" style="background: var(--blue); color: #fff; text-decoration: none; padding: 10px 18px;">Master Dashboard ➔</a>
     </div>
   </header>
 
-  <!-- Metrics Bar -->
+  <!-- Live Status Metrics Bar -->
   <div class="metrics-bar">
     <div class="metric-card">
       <span>Pending Orders</span>
@@ -98,52 +79,36 @@
     </div>
   </div>
 
-  <div class="layout-grid">
+  <!-- Kanban Board Columns -->
+  <div class="kanban-board">
     
-    <!-- Kanban Workflow Columns -->
-    <div class="kanban-board">
-      
-      <!-- Column 1: Pending -->
-      <div class="kanban-column">
-        <h3 style="color: var(--red);">🔴 New Orders <span id="count-pending" class="table-badge" style="font-size:12px;">0</span></h3>
-        <div id="column-pending" style="display: flex; flex-direction: column; gap: 12px;">
-          <p style="color: var(--text-muted); font-size: 13px;">Waiting for orders...</p>
-        </div>
+    <!-- Column 1: New / Pending -->
+    <div class="kanban-column">
+      <h3 style="color: var(--red);">🔴 New Orders <span id="count-pending" class="table-badge" style="font-size:12px;">0</span></h3>
+      <div id="column-pending" style="display: flex; flex-direction: column; gap: 12px;">
+        <p style="color: var(--text-muted); font-size: 13px;">Waiting for orders...</p>
       </div>
-
-      <!-- Column 2: Preparing -->
-      <div class="kanban-column">
-        <h3 style="color: var(--orange);">🟠 Preparing <span id="count-preparing" class="table-badge" style="font-size:12px;">0</span></h3>
-        <div id="column-preparing" style="display: flex; flex-direction: column; gap: 12px;">
-          <p style="color: var(--text-muted); font-size: 13px;">No orders currently cooking.</p>
-        </div>
-      </div>
-
-      <!-- Column 3: Completed -->
-      <div class="kanban-column">
-        <h3 style="color: var(--green);">🟢 Ready to Serve <span id="count-completed" class="table-badge" style="font-size:12px;">0</span></h3>
-        <div id="column-completed" style="display: flex; flex-direction: column; gap: 12px;">
-          <p style="color: var(--text-muted); font-size: 13px;">No completed orders ready.</p>
-        </div>
-      </div>
-
     </div>
 
-    <!-- Sidebar: Instant Menu Stock Toggle (In/Out Stock Control) -->
-    <div class="sidebar-panel">
-      <h3 style="margin-top:0; font-size:16px; color: var(--blue); margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
-        🍔 Instant Menu Stock
-      </h3>
-      <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Tap items to immediately flag them In Stock or Sold Out across customer menus.</p>
-      
-      <div id="kitchen-menu-stock-container" style="display: flex; flex-direction: column; gap: 8px;">
-        <p style="color: var(--text-muted); font-size: 12px;">Loading menu status...</p>
+    <!-- Column 2: Preparing / Cooking -->
+    <div class="kanban-column">
+      <h3 style="color: var(--orange);">🟠 Preparing <span id="count-preparing" class="table-badge" style="font-size:12px;">0</span></h3>
+      <div id="column-preparing" style="display: flex; flex-direction: column; gap: 12px;">
+        <p style="color: var(--text-muted); font-size: 13px;">No orders currently cooking.</p>
+      </div>
+    </div>
+
+    <!-- Column 3: Completed / Ready -->
+    <div class="kanban-column">
+      <h3 style="color: var(--green);">🟢 Ready to Serve <span id="count-completed" class="table-badge" style="font-size:12px;">0</span></h3>
+      <div id="column-completed" style="display: flex; flex-direction: column; gap: 12px;">
+        <p style="color: var(--text-muted); font-size: 13px;">No completed orders ready.</p>
       </div>
     </div>
 
   </div>
 
-  <!-- Audio Alert (SFX) -->
+  <!-- Audio Alert System -->
   <audio id="kitchen-alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
   <script>
@@ -164,77 +129,88 @@
     const db = firebase.database();
 
     let previousPendingCount = 0;
-    let menuItems = {};
+    let isInitialLoad = true;
 
     function playSound() {
-      let audio = document.getElementById('kitchen-alert-sound');
+      const audio = document.getElementById('kitchen-alert-sound');
       if (audio) {
         audio.currentTime = 0;
-        audio.play().catch(e => console.log("Audio block prevented SFX:", e));
+        audio.play().catch(e => console.log("Audio autoplay restricted until user interaction:", e));
       }
     }
 
     function formatTime(timestamp) {
       if (!timestamp) return 'N/A';
-      let d = new Date(timestamp);
-      return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const d = new Date(timestamp);
+      return isNaN(d.getTime()) ? 'N/A' : d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     }
 
-    // --- REALTIME LISTENERS ---
-    db.ref('orders').on('value', snap => {
-      let orders = snap.val() || {};
-      let keys = Object.keys(orders);
+    // --- REALTIME LISTENER FOR ORDERS ---
+    db.ref('orders').on('value', (snap) => {
+      const orders = snap.val() || {};
+      const keys = Object.keys(orders);
 
-      let pendingContainer = document.getElementById('column-pending');
-      let preparingContainer = document.getElementById('column-preparing');
-      let completedContainer = document.getElementById('column-completed');
+      const pendingContainer = document.getElementById('column-pending');
+      const preparingContainer = document.getElementById('column-preparing');
+      const completedContainer = document.getElementById('column-completed');
 
-      pendingContainer.innerHTML = '';
-      preparingContainer.innerHTML = '';
-      completedContainer.innerHTML = '';
-
-      let pendingList = [];
-      let preparingList = [];
-      let completedList = [];
+      const pendingList = [];
+      const preparingList = [];
+      const completedList = [];
 
       keys.forEach(id => {
-        let order = orders[id];
-        if (order.status === 'Cleared') return;
+        const order = orders[id];
+        if (!order || order.status === 'Cleared') return;
 
-        let payStatus = order.paymentStatus || 'Unpaid';
-        let badgeClass = payStatus === 'Paid' ? 'badge-paid' : (payStatus === 'In Bill' ? 'badge-inbill' : 'badge-unpaid');
+        const statusClass = (order.status || 'Pending').toLowerCase();
+        const tableNum = order.table ? escapeHtml(String(order.table)) : 'N/A';
+        const shortId = id.slice(-5);
 
-        let ticketHTML = `
-          <div class="order-ticket ticket-${(order.status || 'Pending').toLowerCase()}">
+        const itemsHtml = Array.isArray(order.items) && order.items.length > 0
+          ? order.items.map(i => `<li>${escapeHtml(String(i))}</li>`).join('')
+          : '<li>No items specified</li>';
+
+        let actionButton = '';
+        if (order.status === 'Pending') {
+          actionButton = `<button class="btn" style="background: var(--orange);" onclick="updateOrderStatus('${id}', 'Preparing')">Start Cooking ➔</button>`;
+        } else if (order.status === 'Preparing') {
+          actionButton = `<button class="btn" style="background: var(--green); color:#fff;" onclick="updateOrderStatus('${id}', 'Completed')">Mark Ready ✓</button>`;
+        } else if (order.status === 'Completed') {
+          actionButton = `<button class="btn" style="background: rgba(255,255,255,0.1); color: var(--text-muted);" onclick="archiveOrder('${id}')">Archive ✕</button>`;
+        }
+
+        const ticketHTML = `
+          <div class="order-ticket ticket-${statusClass}">
             <div class="ticket-header">
-              <span class="table-badge">Table ${order.table}</span>
-              <span class="badge ${badgeClass}">${payStatus}</span>
+              <span class="table-badge">Table ${tableNum}</span>
+              <span style="font-size: 11px; color: var(--text-muted);">#${shortId}</span>
             </div>
             <ul class="ticket-items">
-              ${order.items ? order.items.map(i => `<li>${i}</li>`).join('') : '<li>No items specified</li>'}
+              ${itemsHtml}
             </ul>
             <div class="ticket-footer">
               <span>⏰ ${formatTime(order.timestamp)}</span>
-              <div style="display: flex; gap: 4px;">
-                ${order.status === 'Pending' ? `<button class="btn" style="background: var(--orange);" onclick="updateOrderStatus('${id}', 'Preparing')">Cook ➔</button>` : ''}
-                ${order.status === 'Preparing' ? `<button class="btn" style="background: var(--green); color:#fff;" onclick="updateOrderStatus('${id}', 'Completed')">Ready ✓</button>` : ''}
-                ${order.status === 'Completed' ? `<button class="btn" style="background: rgba(255,255,255,0.1); color: var(--text-muted);" onclick="archiveOrder('${id}')">Clear ✕</button>` : ''}
-              </div>
+              <div>${actionButton}</div>
             </div>
           </div>`;
 
-        if (order.status === 'Pending') pendingList.push(ticketHTML);
-        else if (order.status === 'Preparing') preparingList.push(ticketHTML);
-        else if (order.status === 'Completed') completedList.push(ticketHTML);
+        if (order.status === 'Pending') {
+          pendingList.push({ html: ticketHTML });
+        } else if (order.status === 'Preparing') {
+          preparingList.push({ html: ticketHTML });
+        } else if (order.status === 'Completed') {
+          completedList.push({ html: ticketHTML });
+        }
       });
 
-      // SFX Audio alert trigger on new orders
-      if (pendingList.length > previousPendingCount) {
+      // Sound alert check when new pending orders appear (skipping initial baseline load)
+      if (!isInitialLoad && pendingList.length > previousPendingCount) {
         playSound();
       }
+      isInitialLoad = false;
       previousPendingCount = pendingList.length;
 
-      // Metrics updates
+      // Update Metrics Count
       document.getElementById('metric-pending').innerText = pendingList.length;
       document.getElementById('metric-preparing').innerText = preparingList.length;
       document.getElementById('metric-completed').innerText = completedList.length;
@@ -243,53 +219,35 @@
       document.getElementById('count-preparing').innerText = preparingList.length;
       document.getElementById('count-completed').innerText = completedList.length;
 
-      pendingContainer.innerHTML = pendingList.length ? pendingList.join('') : '<p style="color: var(--text-muted); font-size: 13px;">Waiting for orders...</p>';
-      preparingContainer.innerHTML = preparingList.length ? preparingList.join('') : '<p style="color: var(--text-muted); font-size: 13px;">No orders currently cooking.</p>';
-      completedContainer.innerHTML = completedList.length ? completedList.join('') : '<p style="color: var(--text-muted); font-size: 13px;">No completed orders ready.</p>';
+      // Render Columns safely
+      pendingContainer.innerHTML = pendingList.length ? pendingList.map(t => t.html).join('') : '<p style="color: var(--text-muted); font-size: 13px;">Waiting for orders...</p>';
+      preparingContainer.innerHTML = preparingList.length ? preparingList.map(t => t.html).join('') : '<p style="color: var(--text-muted); font-size: 13px;">No orders currently cooking.</p>';
+      completedContainer.innerHTML = completedList.length ? completedList.map(t => t.html).join('') : '<p style="color: var(--text-muted); font-size: 13px;">No completed orders ready.</p>';
+    }, (error) => {
+      console.error("Firebase read error:", error);
     });
 
-    db.ref('menu').on('value', snap => {
-      menuItems = snap.val() || {};
-      renderKitchenMenuStock();
-    });
-
-    // --- ACTIONS ---
-    function updateOrderStatus(id, newStatus) {
-      db.ref(`orders/${id}`).update({ status: newStatus });
+    // --- UTILITY SAFETY FUNCTION ---
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(>g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
     }
 
-    function archiveOrder(id) {
-      db.ref(`orders/${id}`).update({ status: 'Cleared' });
-    }
+    // --- ORDER ACTION HANDLERS ---
+    window.updateOrderStatus = function(id, newStatus) {
+      db.ref(`orders/${id}`).update({ status: newStatus }).catch(err => {
+        console.error("Failed to update status:", err);
+      });
+    };
 
-    function renderKitchenMenuStock() {
-      let container = document.getElementById('kitchen-menu-stock-container');
-      let keys = Object.keys(menuItems);
-
-      if (keys.length === 0) {
-        container.innerHTML = `<p style="color: var(--text-muted); font-size: 12px;">No menu items listed.</p>`;
-        return;
-      }
-
-      container.innerHTML = keys.map(id => {
-        let item = menuItems[id];
-        let inStock = item.inStock !== false;
-        return `
-          <div style="display:flex; justify-content:space-between; align-items:center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02);">
-            <div>
-              <span style="font-weight:600; font-size:12px; display:block;">${item.name}</span>
-              <span style="font-size:10px; color:var(--text-muted);">₹${item.price}</span>
-            </div>
-            <button class="btn" style="background: ${inStock ? 'var(--green)' : 'var(--red)'}; color: #fff; padding: 5px 8px; font-size:9px;" onclick="toggleMenuStock('${id}', ${inStock})">
-              ${inStock ? 'In Stock ✓' : 'Sold Out ✕'}
-            </button>
-          </div>`;
-      }).join('');
-    }
-
-    function toggleMenuStock(id, currentStatus) {
-      db.ref(`menu/${id}`).update({ inStock: !currentStatus });
-    }
+    window.archiveOrder = function(id) {
+      db.ref(`orders/${id}`).update({ status: 'Cleared' }).catch(err => {
+        console.error("Failed to archive order:", err);
+      });
+    };
   </script>
 </body>
 </html>
