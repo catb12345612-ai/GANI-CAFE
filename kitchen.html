@@ -1,811 +1,535 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#030712">
-<title>GANI CAFE — Kitchen</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-<style>
-*{box-sizing:border-box}
-
-body{
- margin:0;
- background:#030712;
- color:#e5e7eb;
- font-family:Inter,system-ui,sans-serif
-}
-
-.card{
- background:rgba(17,24,39,.75);
- border:1px solid rgba(255,255,255,.08);
- box-shadow:0 20px 60px rgba(0,0,0,.25)
-}
-
-.order{
- background:rgba(31,41,55,.42);
- border:1px solid rgba(255,255,255,.08)
-}
-
-.status{
- display:inline-block;
- padding:5px 9px;
- border-radius:8px;
- font-size:10px;
- font-weight:900;
- border:1px solid rgba(255,255,255,.12)
-}
-
-.kpi{
- background:linear-gradient(
-  135deg,
-  rgba(245,158,11,.12),
-  rgba(17,24,39,.65)
- )
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gani Cafe | Kitchen, Cashier & Analytics Console</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #0b0f19; color: #f3f4f6; }
+        .glass { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-card { background: rgba(31, 41, 55, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .printable-bill { background: white !important; color: black !important; border: none !important; box-shadow: none !important; width: 100% !important; position: absolute; top: 0; left: 0; }
+        }
+    </style>
 </head>
-
-<body>
-
-<div class="max-w-7xl mx-auto p-4 sm:p-6">
-
-<!-- HEADER -->
-
-<header class="card rounded-3xl p-5 mb-6 flex flex-col sm:flex-row justify-between gap-4">
-
- <div>
-
-  <h1 class="text-2xl sm:text-3xl font-black">
-  GANI CAFE
-  </h1>
-
-  <p class="text-[10px] text-slate-500 tracking-[.25em] uppercase">
-  Kitchen & Cashier Console
-  </p>
-
- </div>
-
- <div id="connection"
- class="text-xs text-slate-500 self-center">
- CONNECTING...
- </div>
-
-</header>
-
-<!-- LOGIN -->
-
-<section id="loginPanel"
-class="max-w-md mx-auto card rounded-3xl p-6">
-
- <h2 class="text-xl font-black mb-1">
- Staff Login
- </h2>
-
- <p class="text-xs text-slate-500 mb-5">
- Authorized Firebase staff account required.
- </p>
-
- <input
- id="email"
- type="email"
- autocomplete="username"
- placeholder="Staff email"
- class="w-full mb-3 bg-slate-950 border border-slate-700 rounded-xl px-3 py-3">
-
- <input
- id="password"
- type="password"
- autocomplete="current-password"
- placeholder="Password"
- class="w-full mb-3 bg-slate-950 border border-slate-700 rounded-xl px-3 py-3">
-
- <button
- onclick="login()"
- class="w-full py-3 rounded-xl bg-amber-500 text-black font-black">
- SIGN IN
- </button>
-
- <p id="loginError"
- class="text-xs text-rose-400 mt-3">
- </p>
-
-</section>
-
-<!-- STAFF -->
-
-<section id="staffPanel" class="hidden">
-
-<!-- KPIs -->
-
-<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
-
- <div class="kpi rounded-2xl p-4">
-  <p class="text-[9px] text-slate-500">ACTIVE</p>
-  <b id="activeCount" class="text-2xl">0</b>
- </div>
-
- <div class="kpi rounded-2xl p-4">
-  <p class="text-[9px] text-slate-500">PENDING</p>
-  <b id="pendingCount" class="text-2xl text-rose-400">0</b>
- </div>
-
- <div class="kpi rounded-2xl p-4">
-  <p class="text-[9px] text-slate-500">PREPARING</p>
-  <b id="preparingCount" class="text-2xl text-amber-400">0</b>
- </div>
-
- <div class="kpi rounded-2xl p-4">
-  <p class="text-[9px] text-slate-500">READY</p>
-  <b id="readyCount" class="text-2xl text-emerald-400">0</b>
- </div>
-
- <div class="kpi rounded-2xl p-4">
-  <p class="text-[9px] text-slate-500">UNPAID</p>
-  <b id="unpaidCount" class="text-2xl text-cyan-400">0</b>
- </div>
-
-</div>
-
-<!-- BOARD -->
-
-<div class="card rounded-3xl p-5">
-
- <div class="flex flex-col sm:flex-row justify-between gap-3 mb-5">
-
-  <div>
-
-   <h2 class="text-xl font-black">
-   Kitchen Orders
-   </h2>
-
-   <p class="text-xs text-slate-500">
-   Orders stay active until the bill is cleared.
-   </p>
-
-  </div>
-
-  <button
-  onclick="logout()"
-  class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-bold">
-  SIGN OUT
-  </button>
-
- </div>
-
- <div id="orders"
- class="grid xl:grid-cols-2 gap-4">
- </div>
-
-</div>
-
-</section>
-
-</div>
-
-<div id="toast"
-class="fixed top-5 right-5 z-50 hidden card rounded-xl px-4 py-3 text-sm">
-</div>
-
-<script>
-
-const firebaseConfig={
- apiKey:"AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
- authDomain:"gani-cafe-52066.firebaseapp.com",
- databaseURL:"https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
- projectId:"gani-cafe-52066",
- storageBucket:"gani-cafe-52066.firebasestorage.app",
- messagingSenderId:"292009300507",
- appId:"1:292009300507:web:cf524330c2ff4ef4e39ebe",
- measurementId:"G-F7TXYZBYKY"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth=firebase.auth();
-const db=firebase.database();
-
-let orders={};
-
-const STATUS=[
- "Pending",
- "Accepted",
- "Preparing",
- "Ready",
- "Served",
- "Completed"
-];
-
-function esc(v){
-
- return String(v??"").replace(/[&<>"']/g,c=>({
-  "&":"&amp;",
-  "<":"&lt;",
-  ">":"&gt;",
-  '"':"&quot;",
-  "'":"&#39;"
- }[c]));
-
-}
-
-function money(v){
-
- return "₹"+Number(v||0).toLocaleString("en-IN");
-
-}
-
-function toast(message,success=true){
-
- const el=document.getElementById("toast");
-
- el.textContent=message;
-
- el.className=
- "fixed top-5 right-5 z-50 card rounded-xl px-4 py-3 text-sm "+
- (success?"text-emerald-300":"text-rose-300");
-
- el.classList.remove("hidden");
-
- setTimeout(()=>{
-  el.classList.add("hidden");
- },3000);
-
-}
-
-function statusStyle(status){
-
- const styles={
-  Pending:"text-rose-300 border-rose-500/40 bg-rose-500/10",
-  Accepted:"text-sky-300 border-sky-500/40 bg-sky-500/10",
-  Preparing:"text-amber-300 border-amber-500/40 bg-amber-500/10",
-  Ready:"text-emerald-300 border-emerald-500/40 bg-emerald-500/10",
-  Served:"text-violet-300 border-violet-500/40 bg-violet-500/10",
-  Completed:"text-slate-300 border-slate-500/40 bg-slate-500/10"
- };
-
- return styles[status]||
- "text-slate-300 border-slate-700";
-
-}
-
-/* LOGIN */
-
-async function login(){
-
- const email=
- document.getElementById("email").value.trim();
-
- const password=
- document.getElementById("password").value;
-
- document.getElementById("loginError").textContent="";
-
- if(!email||!password){
-
-  document.getElementById("loginError").textContent=
-  "Enter email and password.";
-
-  return;
- }
-
- try{
-
-  await auth.signInWithEmailAndPassword(
-   email,
-   password
-  );
-
- }catch(error){
-
-  console.error(error);
-
-  document.getElementById("loginError").textContent=
-  error.message;
-
- }
-
-}
-
-/* LOGOUT */
-
-async function logout(){
-
- try{
-
-  await auth.signOut();
-
- }catch(error){
-
-  console.error(error);
-
- }
-
-}
-
-/* STAFF SECURITY CHECK */
-
-async function requireStaff(){
-
- const user=auth.currentUser;
-
- if(!user){
-
-  toast("Please sign in first.",false);
-
-  return false;
- }
-
- const snapshot=
- await db.ref("staff/"+user.uid).once("value");
-
- if(!snapshot.exists()){
-
-  toast(
-   "This account is not authorized as staff.",
-   false
-  );
-
-  await auth.signOut();
-
-  return false;
- }
-
- return true;
-}
-
-/* UPDATE ORDER */
-
-async function updateOrder(id,changes){
-
- if(!(await requireStaff()))return;
-
- changes.lastUpdatedAt=
- firebase.database.ServerValue.TIMESTAMP;
-
- try{
-
-  await db.ref("orders/"+id).update(changes);
-
-  toast("Order updated.");
-
- }catch(error){
-
-  console.error(error);
-
-  toast(
-   "Could not update order.",
-   false
-  );
-
- }
-
-}
-
-/* NEXT STATUS */
-
-async function nextStatus(id){
-
- const order=orders[id];
-
- if(!order)return;
-
- const index=
- STATUS.indexOf(order.status);
-
- if(index<0)return;
-
- if(index>=STATUS.length-1){
-
-  toast("Order is already completed.");
-
-  return;
- }
-
- const next=STATUS[index+1];
-
- await updateOrder(id,{
-  status:next
- });
-
-}
-
-/* MARK PAID */
-
-async function markPaid(id){
-
- await updateOrder(id,{
-  paymentStatus:"Paid"
- });
-
-}
-
-/* CLEAR BILL */
-
-async function clearBill(id){
-
- if(!(await requireStaff()))return;
-
- const order=orders[id];
-
- if(!order)return;
-
- if(order.paymentStatus!=="Paid"){
-
-  toast(
-   "Payment must be marked Paid first.",
-   false
-  );
-
-  return;
- }
-
- if(
-  order.status!=="Served" &&
-  order.status!=="Completed"
- ){
-
-  toast(
-   "Order must be Served or Completed first.",
-   false
-  );
-
-  return;
- }
-
- const confirmed=
- confirm(
-  "Clear and close this bill?\n\n"+
-  "Table: "+order.table+
-  "\nBill: "+money(order.total)
- );
-
- if(!confirmed)return;
-
- try{
-
-  await db.ref("orders/"+id).update({
-
-   status:"Cleared",
-
-   clearance:{
-    cleared:true,
-    clearedAt:
-     firebase.database.ServerValue.TIMESTAMP,
-    clearedBy:auth.currentUser.uid
-   },
-
-   lastUpdatedAt:
-    firebase.database.ServerValue.TIMESTAMP
-
-  });
-
-  toast("Bill cleared and table closed.");
-
- }catch(error){
-
-  console.error(error);
-
-  toast(
-   "Could not clear bill.",
-   false
-  );
-
- }
-
-}
-
-/* RENDER */
-
-function renderOrders(){
-
- const active=
- Object.values(orders)
- .filter(order=>
-  order &&
-  order.clearance?.cleared!==true
- )
- .sort((a,b)=>
-  (a.createdAt||0)-(b.createdAt||0)
- );
-
- document.getElementById("activeCount").textContent=
- active.length;
-
- document.getElementById("pendingCount").textContent=
- active.filter(x=>x.status==="Pending").length;
-
- document.getElementById("preparingCount").textContent=
- active.filter(x=>x.status==="Preparing").length;
-
- document.getElementById("readyCount").textContent=
- active.filter(x=>x.status==="Ready").length;
-
- document.getElementById("unpaidCount").textContent=
- active.filter(x=>x.paymentStatus!=="Paid").length;
-
- if(!active.length){
-
-  document.getElementById("orders").innerHTML=
-  `<p class="text-sm text-slate-600 text-center py-12 xl:col-span-2">
-   No uncleared orders.
-  </p>`;
-
-  return;
- }
-
- document.getElementById("orders").innerHTML=
- active.map(order=>{
-
-  const currentIndex=
-   STATUS.indexOf(order.status);
-
-  const next=
-   currentIndex>=0 &&
-   currentIndex<STATUS.length-1
-   ?STATUS[currentIndex+1]
-   :null;
-
-  return `
-
-  <article class="order rounded-2xl p-5">
-
-   <!-- HEADER -->
-
-   <div class="flex justify-between gap-4 mb-4">
-
-    <div>
-
-     <b class="font-mono">
-      #${esc(order.orderId.slice(-6))}
-     </b>
-
-     <p class="text-sm text-slate-400 mt-1">
-      TABLE ${esc(order.table)}
-     </p>
-
-     <p class="text-[10px] text-slate-600 mt-1">
-      ${order.createdAt
-       ?new Date(order.createdAt).toLocaleString("en-IN")
-       :""
-      }
-     </p>
-
+<body class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-black">
+
+    <!-- LOGIN SCREEN (Visible when logged out) -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-[#0b0f19] flex items-center justify-center p-4">
+        <div class="glass p-8 rounded-2xl w-full max-w-md space-y-6 shadow-2xl border border-gray-800">
+            <div class="text-center space-y-2">
+                <div class="inline-block bg-gradient-to-tr from-amber-500 to-orange-500 p-3 rounded-2xl shadow-lg shadow-amber-500/20 mb-2">
+                    <i class="fa-solid fa-utensils text-black text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Staff Console</h1>
+                <p class="text-xs text-gray-400">Authorized Firebase staff account required for kitchen operations.</p>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Staff Email</label>
+                    <input type="email" id="login-email" required placeholder="ganicafekitchen@gmail.com" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Password</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold py-3.5 rounded-xl shadow-lg shadow-amber-500/20 hover:opacity-90 transition-all">
+                    Sign In
+                </button>
+            </form>
+            <div id="auth-error" class="text-xs text-red-400 text-center hidden font-medium"></div>
+        </div>
     </div>
 
-    <div class="text-right">
+    <!-- MAIN DASHBOARD (Visible after successful staff login) -->
+    <div id="dashboard-screen" class="min-h-screen flex flex-col hidden">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-40 px-6 py-4 flex justify-between items-center border-b border-gray-800">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-amber-500 to-orange-500 p-2.5 rounded-xl shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-fire-burner text-black text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white">GANI CAFE</h1>
+                    <p class="text-xs text-amber-400 font-medium">Kitchen & Cashier Hub</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 overflow-x-auto py-1">
+                <button onclick="switchTab('orders')" id="nav-orders" class="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-black transition-all whitespace-nowrap shadow-md shadow-amber-500/20">Live Orders</button>
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-800 text-gray-300 hover:text-white transition-all whitespace-nowrap">Daily Analytics</button>
+                <button onclick="switchTab('inventory')" id="nav-inventory" class="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-800 text-gray-300 hover:text-white transition-all whitespace-nowrap">Menu Availability</button>
+                <button onclick="handleLogout()" class="p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all border border-red-500/20 text-xs font-semibold" title="Logout"><i class="fa-solid fa-power-off"></i></button>
+            </div>
+        </header>
 
-     <span class="status ${statusStyle(order.status)}">
-      ${esc(order.status)}
-     </span>
+        <!-- Main Workspace -->
+        <main class="flex-grow container mx-auto px-4 py-6 max-w-7xl space-y-6">
 
-     <p class="text-[10px] mt-2 ${
-      order.paymentStatus==="Paid"
-      ?"text-emerald-400"
-      :"text-cyan-400"
-     }">
+            <!-- TAB 1: LIVE ORDERS -->
+            <section id="sec-orders" class="space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-2xl border border-gray-800 shadow-xl">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Incoming & Active Kitchen Orders</h2>
+                        <p class="text-sm text-gray-400">Update order status in real-time. Customers see live progress instantly.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2"></span> Real-time Sync Active
+                        </span>
+                    </div>
+                </div>
 
-      PAYMENT:
-      ${esc(order.paymentStatus||"Pending")}
+                <div id="kitchen-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Populated dynamically -->
+                    <div class="text-center py-16 text-gray-500 col-span-full glass-card rounded-2xl">
+                        <i class="fa-solid fa-clipboard-check text-4xl mb-3 text-gray-600"></i>
+                        <p>No active orders in queue right now.</p>
+                    </div>
+                </div>
+            </section>
 
-     </p>
+            <!-- TAB 2: DAILY ANALYTICS -->
+            <section id="sec-analytics" class="space-y-6 hidden">
+                <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-2xl border border-gray-800 shadow-xl flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Daily Performance Metrics</h2>
+                        <p class="text-sm text-gray-400">Overview of today's sales, order volume, and revenue breakdown.</p>
+                    </div>
+                    <button onclick="loadAnalytics()" class="p-2.5 rounded-xl bg-gray-800 text-gray-300 hover:text-white border border-gray-700 text-xs font-semibold"><i class="fa-solid fa-rotate mr-2">Refresh Stats</i></button>
+                </div>
 
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800 space-y-2">
+                        <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Revenue Today</span>
+                        <div class="text-3xl font-black text-amber-400" id="stat-revenue">₹0</div>
+                        <p class="text-[11px] text-emerald-400"><i class="fa-solid fa-arrow-trend-up mr-1"></i> Calculated live from completed orders</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800 space-y-2">
+                        <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Total Orders Placed</span>
+                        <div class="text-3xl font-black text-white" id="stat-orders-count">0</div>
+                        <p class="text-[11px] text-gray-400">All statuses included</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800 space-y-2">
+                        <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Completed Bills</span>
+                        <div class="text-3xl font-black text-emerald-400" id="stat-completed">0</div>
+                        <p class="text-[11px] text-gray-400">Successfully served & billed</p>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border border-gray-800 space-y-2">
+                        <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Pending / Preparing</span>
+                        <div class="text-3xl font-black text-blue-400" id="stat-pending">0</div>
+                        <p class="text-[11px] text-gray-400">Currently active in kitchen</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: MENU AVAILABILITY (STOCK MANAGEMENT) -->
+            <section id="sec-inventory" class="space-y-6 hidden">
+                <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-2xl border border-gray-800 shadow-xl flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Menu Item Availability & Stock</h2>
+                        <p class="text-sm text-gray-400">Quickly toggle items out of stock if ingredients run out.</p>
+                    </div>
+                </div>
+
+                <div id="inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+        </main>
     </div>
 
-   </div>
-
-   <!-- ITEMS -->
-
-   <div class="space-y-2">
-
-   ${Array.isArray(order.items)
-    ?order.items.map(item=>`
-
-     <div class="flex justify-between gap-3
-     bg-slate-950/60 rounded-xl p-3">
-
-      <div>
-
-       <p class="text-sm font-semibold">
-        ${esc(item.name)}
-       </p>
-
-       <p class="text-[10px] text-slate-500">
-        ${esc(item.qty)} × ${money(item.unitPrice)}
-       </p>
-
-      </div>
-
-      <b class="text-sm text-amber-400">
-       ${money(item.subtotal)}
-      </b>
-
-     </div>
-
-    `).join("")
-    :""
-   }
-
-   </div>
-
-   <!-- TOTAL -->
-
-   <div class="border-t border-slate-800 mt-4 pt-4
-   flex justify-between">
-
-    <span class="text-xs text-slate-500">
-     BILL TOTAL
-    </span>
-
-    <strong class="text-xl text-amber-400">
-     ${money(order.total)}
-    </strong>
-
-   </div>
-
-   <!-- CONTROLS -->
-
-   <div class="grid grid-cols-2 gap-2 mt-4">
-
-    ${
-     next
-     ?
-     `
-     <button
-     onclick="nextStatus('${esc(order.orderId)}')"
-     class="py-3 rounded-xl bg-slate-800
-     hover:bg-slate-700 text-xs font-black">
-     → ${esc(next)}
-     </button>
-     `
-     :
-     `
-     <div></div>
-     `
-    }
-
-    ${
-     order.paymentStatus!=="Paid"
-     ?
-     `
-     <button
-     onclick="markPaid('${esc(order.orderId)}')"
-     class="py-3 rounded-xl
-     bg-emerald-500/10
-     border border-emerald-500/30
-     text-emerald-300 text-xs font-black">
-     MARK PAID
-     </button>
-     `
-     :
-     `
-     <button
-     onclick="clearBill('${esc(order.orderId)}')"
-     class="py-3 rounded-xl
-     bg-amber-500 hover:bg-amber-400
-     text-black text-xs font-black">
-     CLEAR BILL
-     </button>
-     `
-    }
-
-   </div>
-
-   ${
-    (
-     order.status==="Served"||
-     order.status==="Completed"
-    ) &&
-    order.paymentStatus==="Paid"
-    ?
-    `
-    <button
-    onclick="clearBill('${esc(order.orderId)}')"
-    class="w-full mt-2 py-3 rounded-xl
-    bg-amber-500 hover:bg-amber-400
-    text-black text-xs font-black">
-    CLEAR & CLOSE TABLE BILL
-    </button>
-    `
-    :""
-   }
-
-  </article>
-
-  `;
-
- }).join("");
-
-}
-
-/* AUTH */
-
-auth.onAuthStateChanged(async user=>{
-
- if(user){
-
-  document.getElementById("connection").textContent=
-  "CHECKING STAFF ACCESS...";
-
-  try{
-
-   const staffSnapshot=
-   await db.ref("staff/"+user.uid).once("value");
-
-   if(staffSnapshot.exists()){
-
-    document.getElementById("loginPanel")
-    .classList.add("hidden");
-
-    document.getElementById("staffPanel")
-    .classList.remove("hidden");
-
-    document.getElementById("connection").textContent=
-    "● STAFF CONNECTED";
-
-    renderOrders();
-
-   }else{
-
-    document.getElementById("loginPanel")
-    .classList.remove("hidden");
-
-    document.getElementById("staffPanel")
-    .classList.add("hidden");
-
-    document.getElementById("connection").textContent=
-    "UNAUTHORIZED";
-
-    await auth.signOut();
-
-    document.getElementById("loginError").textContent=
-    "This Firebase account is not registered as staff.";
-
-   }
-
-  }catch(error){
-
-   console.error(error);
-
-   document.getElementById("connection").textContent=
-   "DATABASE ERROR";
-
-  }
-
- }else{
-
-  document.getElementById("loginPanel")
-  .classList.remove("hidden");
-
-  document.getElementById("staffPanel")
-  .classList.add("hidden");
-
-  document.getElementById("connection").textContent=
-  "NOT SIGNED IN";
-
- }
-
-});
-
-/* LIVE ORDERS */
-
-db.ref("orders").on("value",snapshot=>{
-
- orders=snapshot.val()||{};
-
- if(auth.currentUser){
-
-  renderOrders();
-
- }
-
-});
-
-</script>
-
+    <!-- BILL MODAL / RECEIPT VIEW -->
+    <div id="bill-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 no-print">
+                <span class="text-xs font-semibold tracking-wider text-amber-400 uppercase">Official Tax Invoice & Bill</span>
+                <button onclick="closeBillModal()" class="text-gray-400 hover:text-white p-2 rounded-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="bill-content" class="p-6 overflow-y-auto space-y-6 printable-bill text-gray-300 text-sm">
+                <!-- Bill details generated dynamically -->
+            </div>
+            <div class="p-4 border-t border-gray-800 bg-gray-900/90 flex justify-end space-x-3 no-print">
+                <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold text-sm transition-all flex items-center space-x-2 border border-gray-700">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print / Download PDF</span>
+                </button>
+                <button onclick="closeBillModal()" class="px-5 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-sm hover:opacity-90 transition-all">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SFX Synthesizer Engine -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'beep') {
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'success') {
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+    </script>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Menu items reference for stock toggling
+        const menuCatalog = [
+            { id: 'm1', name: 'Signature Espresso', category: 'Coffee', price: 150 },
+            { id: 'm2', name: 'Caramel Macchiato', category: 'Coffee', price: 220 },
+            { id: 'm3', name: 'Cold Brew Vanilla', category: 'Coffee', price: 240 },
+            { id: 'm4', name: 'Peri Peri French Fries', category: 'Snacks', price: 180 },
+            { id: 'm5', name: 'Avocado Sourdough Toast', category: 'Snacks', price: 290 },
+            { id: 'm6', name: 'Belgian Chocolate Brownie', category: 'Desserts', price: 200 }
+        ];
+
+        let globalOrdersData = {};
+
+        // Authentication State Listener & Staff Database Check
+        onAuthStateChanged(auth, (user) => {
+            const authScreen = document.getElementById('auth-screen');
+            const dashScreen = document.getElementById('dashboard-screen');
+            const errDiv = document.getElementById('auth-error');
+
+            if (user) {
+                // Verify if UID exists under staff node in Realtime Database
+                const staffRef = ref(db, `staff/${user.uid}`);
+                onValue(staffRef, (snapshot) => {
+                    if (snapshot.exists() && snapshot.val() === true) {
+                        authScreen.classList.add('hidden');
+                        dashScreen.classList.remove('hidden');
+                        initDashboard();
+                    } else {
+                        signOut(auth);
+                        authScreen.classList.remove('hidden');
+                        dashScreen.classList.add('hidden');
+                        errDiv.innerText = "This Firebase account is not registered as staff.";
+                        errDiv.classList.remove('hidden');
+                    }
+                }, { onlyOnce: true });
+            } else {
+                authScreen.classList.remove('hidden');
+                dashScreen.classList.add('hidden');
+            }
+        });
+
+        window.handleLogin = function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            const errDiv = document.getElementById('auth-error');
+            errDiv.classList.add('hidden');
+
+            signInWithEmailAndPassword(auth, email, pass).catch((error) => {
+                errDiv.innerText = error.message;
+                errDiv.classList.remove('hidden');
+            });
+        }
+
+        window.handleLogout = function() {
+            signOut(auth);
+        }
+
+        function initDashboard() {
+            loadKitchenOrders();
+            loadInventoryStock();
+        }
+
+        // Live Orders Listener
+        function loadKitchenOrders() {
+            const grid = document.getElementById('kitchen-orders-grid');
+            const ordersRef = ref(db, 'orders');
+
+            onValue(ordersRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    globalOrdersData = {};
+                    grid.innerHTML = `
+                        <div class="text-center py-16 text-gray-500 col-span-full glass-card rounded-2xl">
+                            <i class="fa-solid fa-clipboard-check text-4xl mb-3 text-gray-600"></i>
+                            <p>No active orders in queue right now.</p>
+                        </div>
+                    `;
+                    updateAnalyticsData({});
+                    return;
+                }
+
+                globalOrdersData = data;
+                updateAnalyticsData(data);
+                grid.innerHTML = '';
+
+                Object.keys(data).reverse().forEach(key => {
+                    const order = data[key];
+                    const orderIdShort = key.slice(-6).toUpperCase();
+                    const dateStr = new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    let statusBadge = '';
+                    let actionButtons = '';
+
+                    if (order.status === 'Pending') {
+                        statusBadge = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                        actionButtons = `<button onclick="updateOrderStatus('${key}', 'Preparing')" class="w-full py-2.5 rounded-xl bg-blue-500 text-black font-bold text-xs hover:bg-blue-400 transition-all shadow-md">Start Preparing</button>`;
+                    } else if (order.status === 'Preparing') {
+                        statusBadge = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                        actionButtons = `<button onclick="updateOrderStatus('${key}', 'Ready')" class="w-full py-2.5 rounded-xl bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 transition-all shadow-md">Mark as Ready</button>`;
+                    } else if (order.status === 'Ready') {
+                        statusBadge = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                        actionButtons = `<button onclick="updateOrderStatus('${key}', 'Completed')" class="w-full py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white font-bold text-xs transition-all border border-gray-600">Complete & Bill</button>`;
+                    } else {
+                        statusBadge = 'bg-gray-800 text-gray-400 border-gray-700';
+                        actionButtons = `<button onclick="openBillModal('${key}')" class="w-full py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-amber-400 font-bold text-xs transition-all border border-gray-700"><i class="fa-solid fa-file-invoice mr-2"></i>View Final Bill</button>`;
+                    }
+
+                    let itemsHtml = order.items.map(i => `<div class="flex justify-between text-xs py-1 text-gray-300"><span>${i.qty}x ${i.name}</span><span class="font-semibold">₹${i.price * i.qty}</span></div>`).join('');
+
+                    grid.innerHTML += `
+                        <div class="glass-card rounded-2xl p-6 space-y-4 border border-gray-800 flex flex-col justify-between">
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <span class="text-xs text-gray-500 font-mono">#${orderIdShort}</span>
+                                        <h3 class="font-bold text-white text-base">${order.customerName}</h3>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold border ${statusBadge}">${order.status}</span>
+                                </div>
+                                <div class="border-t border-gray-800/60 pt-3 space-y-1">
+                                    ${itemsHtml}
+                                </div>
+                            </div>
+                            <div class="space-y-3 pt-3 border-t border-gray-800/60">
+                                <div class="flex justify-between items-center text-xs text-gray-400">
+                                    <span>${dateStr}</span>
+                                    <span class="font-bold text-amber-400 text-sm">Total: ₹${order.total}</span>
+                                </div>
+                                ${actionButtons}
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        window.updateOrderStatus = function(orderKey, newStatus) {
+            playSound('beep');
+            const orderRef = ref(db, `orders/${orderKey}`);
+            update(orderRef, { status: newStatus }).then(() => {
+                if (newStatus === 'Completed') {
+                    playSound('success');
+                    openBillModal(orderKey);
+                }
+            });
+        }
+
+        // Analytics Calculator
+        function updateAnalyticsData(data) {
+            let totalRev = 0;
+            let totalCount = 0;
+            let completedCount = 0;
+            let pendingCount = 0;
+
+            Object.keys(data).forEach(k => {
+                const o = data[k];
+                totalCount++;
+                if (o.status === 'Completed') {
+                    completedCount++;
+                    totalRev += (o.total || 0);
+                } else {
+                    pendingCount++;
+                }
+            });
+
+            document.getElementById('stat-revenue').innerText = `₹${totalRev}`;
+            document.getElementById('stat-orders-count').innerText = totalCount;
+            document.getElementById('stat-completed').innerText = completedCount;
+            document.getElementById('stat-pending').innerText = pendingCount;
+        }
+
+        window.loadAnalytics = function() {
+            playSound('beep');
+            updateAnalyticsData(globalOrdersData);
+        }
+
+        // Menu Stock / Availability Management
+        function loadInventoryStock() {
+            const grid = document.getElementById('inventory-grid');
+            const stockRef = ref(db, 'inventory');
+
+            onValue(stockRef, (snapshot) => {
+                const stockData = snapshot.val() || {};
+                grid.innerHTML = '';
+
+                menuCatalog.forEach(item => {
+                    // Default to true if not set
+                    const isAvailable = stockData[item.id] !== undefined ? stockData[item.id] : true;
+                    
+                    grid.innerHTML += `
+                        <div class="glass-card rounded-2xl p-6 border border-gray-800 flex justify-between items-center">
+                            <div>
+                                <span class="text-[11px] text-amber-400 font-semibold uppercase">${item.category}</span>
+                                <h4 class="font-bold text-white text-base">${item.name}</h4>
+                                <span class="text-xs text-gray-400">₹${item.price}</span>
+                            </div>
+                            <div>
+                                <button onclick="toggleItemStock('${item.id}', ${!isAvailable})" class="px-4 py-2 rounded-xl text-xs font-bold transition-all border ${isAvailable ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'}">
+                                    ${isAvailable ? '<i class="fa-solid fa-check mr-1"></i> In Stock' : '<i class="fa-solid fa-xmark mr-1"></i> Out of Stock'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        window.toggleItemStock = function(itemId, status) {
+            playSound('beep');
+            const stockRef = ref(db, `inventory`);
+            update(stockRef, { [itemId]: status });
+        }
+
+        // Bill Modal and PDF Generation Logic
+        window.openBillModal = function(orderKey) {
+            playSound('beep');
+            const order = globalOrdersData[orderKey];
+            if (!order) return;
+
+            let itemsRows = order.items.map(i => `
+                <tr>
+                    <td class="py-2">${i.name}</td>
+                    <td class="text-center py-2">${i.qty}</td>
+                    <td class="text-right py-2">₹${i.price}</td>
+                    <td class="text-right py-2 font-semibold">₹${i.price * i.qty}</td>
+                </tr>
+            `).join('');
+
+            const modalContent = document.getElementById('bill-content');
+            modalContent.innerHTML = `
+                <div class="text-center space-y-1 pb-4 border-b border-gray-700">
+                    <h3 class="text-xl font-black tracking-wider text-white">GANI CAFE</h3>
+                    <p class="text-xs text-gray-400">Autonomous Kitchen & Cashier Console</p>
+                    <p class="text-[11px] text-amber-400 pt-1 font-semibold uppercase">Official Tax Invoice</p>
+                </div>
+
+                <div class="flex justify-between text-xs py-2 text-gray-300">
+                    <div>
+                        <p><strong>Customer:</strong> ${order.customerName}</p>
+                        <p><strong>Order ID:</strong> #${orderKey.slice(-6).toUpperCase()}</p>
+                    </div>
+                    <div class="text-right">
+                        <p><strong>Date:</strong> ${new Date(order.timestamp).toLocaleDateString()}</p>
+                        <p><strong>Time:</strong> ${new Date(order.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                    </div>
+                </div>
+
+                <table class="w-full text-xs text-left border-collapse my-2">
+                    <thead>
+                        <tr class="border-b border-gray-700 text-gray-400">
+                            <th class="py-2">Item</th>
+                            <th class="text-center py-2">Qty</th>
+                            <th class="text-right py-2">Price</th>
+                            <th class="text-right py-2">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        ${itemsRows}
+                    </tbody>
+                </table>
+
+                <div class="border-t border-gray-700 pt-3 space-y-1.5 text-xs">
+                    <div class="flex justify-between text-gray-400">
+                        <span>Subtotal</span>
+                        <span>₹${order.subtotal}</span>
+                    </div>
+                    <div class="flex justify-between text-gray-400">
+                        <span>GST (5%)</span>
+                        <span>₹${order.tax}</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold text-white pt-2 border-t border-gray-700">
+                        <span>Grand Total</span>
+                        <span class="text-amber-400">₹${order.total}</span>
+                    </div>
+                </div>
+
+                <div class="text-center pt-4 border-t border-gray-800 text-[11px] text-gray-500">
+                    <p>Status: <span class="font-bold text-amber-400">${order.status}</span></p>
+                    <p class="mt-1">Thank you for dining with Gani Cafe!</p>
+                </div>
+            `;
+            document.getElementById('bill-modal').classList.remove('hidden');
+        }
+
+        window.closeBillModal = function() {
+            playSound('beep');
+            document.getElementById('bill-modal').classList.add('hidden');
+        }
+
+        // Tab Navigation
+        window.switchTab = function(tab) {
+            playSound('beep');
+            const secOrders = document.getElementById('sec-orders');
+            const secAnalytics = document.getElementById('sec-analytics');
+            const secInventory = document.getElementById('sec-inventory');
+
+            const navOrders = document.getElementById('nav-orders');
+            const navAnalytics = document.getElementById('nav-analytics');
+            const navInventory = document.getElementById('nav-inventory');
+
+            secOrders.classList.add('hidden');
+            secAnalytics.classList.add('hidden');
+            secInventory.classList.add('hidden');
+
+            navOrders.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-gray-800 text-gray-300 hover:text-white transition-all whitespace-nowrap";
+            navAnalytics.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-gray-800 text-gray-300 hover:text-white transition-all whitespace-nowrap";
+            navInventory.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-gray-800 text-gray-300 hover:text-white transition-all whitespace-nowrap";
+
+            if (tab === 'orders') {
+                secOrders.classList.remove('hidden');
+                navOrders.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-black transition-all whitespace-nowrap shadow-md shadow-amber-500/20";
+            } else if (tab === 'analytics') {
+                secAnalytics.classList.remove('hidden');
+                navAnalytics.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-black transition-all whitespace-nowrap shadow-md shadow-amber-500/20";
+            } else if (tab === 'inventory') {
+                secInventory.classList.remove('hidden');
+                navInventory.className = "px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-black transition-all whitespace-nowrap shadow-md shadow-amber-500/20";
+            }
+        }
+    </script>
 </body>
 </html>
