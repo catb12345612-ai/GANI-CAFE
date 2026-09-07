@@ -59,7 +59,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <style>
-    /* Custom High-End Glassmorphism & Custom Scrollbars */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #030712; }
     ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 9999px; }
@@ -106,11 +105,10 @@
 </head>
 <body class="bg-elite-950 text-slate-100 font-sans min-h-screen selection:bg-amber-500 selection:text-black antialiased">
 
-  <!-- Ambient Light Orbs (VFX Background) -->
+  <!-- Ambient Light Orbs -->
   <div class="ambient-glow -top-48 -left-48 animate-pulse-slow"></div>
   <div class="ambient-glow top-1/2 -right-48 animate-pulse-slow" style="animation-delay: 1.5s;"></div>
 
-  <!-- Main Container -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- Elite Header -->
@@ -325,7 +323,7 @@
     </div>
   </div>
 
-  <!-- Web Audio Synth & SFX Engine (No External Audio Dependency) -->
+  <!-- Web Audio Synth & SFX Engine -->
   <script>
     let audioCtx = null;
     let sfxEnabled = true;
@@ -424,7 +422,6 @@
       return `${dateStr} • ${timeStr}`;
     }
 
-    // Function to log cleared/paid bills to Google Sheet
     function logBillToGoogleSheet(productName, paymentMode) {
       const data = {
         date: new Date().toLocaleDateString(),
@@ -436,9 +433,7 @@
       fetch(GOOGLE_SHEET_URL, {
         method: "POST",
         mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       })
       .then(() => console.log("Google Sheet logged successfully for:", productName))
@@ -455,6 +450,7 @@
         if (item.inStock !== false) {
           count++;
           let qty = cart[id] || 0;
+          let parsedPrice = Number(item.price) || 0;
           let actionHtml = qty === 0 
             ? `<button onclick="addToCart('${id}')" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-amber-500 hover:text-black font-mono text-xs font-bold text-slate-200 transition border border-slate-700 flex items-center justify-center gap-1.5">
                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add to Cart
@@ -471,7 +467,7 @@
                 <img src="${item.img}" alt="${item.name}" class="w-16 h-16 rounded-xl object-cover border border-slate-700 group-hover:scale-105 transition duration-300">
                 <div class="flex-1 min-w-0">
                   <h4 class="font-bold text-sm text-slate-200 truncate">${item.name}</h4>
-                  <p class="font-mono text-amber-400 font-bold text-sm mt-0.5">₹${item.price}</p>
+                  <p class="font-mono text-amber-400 font-bold text-sm mt-0.5">₹${parsedPrice}</p>
                 </div>
               </div>
               <div>${actionHtml}</div>
@@ -483,7 +479,6 @@
       lucide.createIcons();
     }
 
-    // Firebase Listeners
     db.ref('menu').on('value', snap => {
       menuItems = snap.val() || {};
       renderMenu();
@@ -494,12 +489,10 @@
       allOrdersData = snap.val() || {};
       let currentTable = document.getElementById('table-num').value;
       
-      // Check for newly completed or cleared status changes to trigger Google Sheet logging automatically
       Object.keys(allOrdersData).forEach(id => {
         let order = allOrdersData[id];
         let oldOrder = oldOrders[id];
 
-        // If an order has just been marked completed/paid/cleared and wasn't before
         if (order && order.items) {
           let wasClearedOrPaid = oldOrder && (oldOrder.status === 'Completed' || oldOrder.paymentStatus === 'Paid');
           let isClearedOrPaidNow = order.status === 'Completed' || order.paymentStatus === 'Paid' || order.status === 'Cleared';
@@ -566,18 +559,21 @@
       let hasItems = false;
 
       Object.keys(cart).forEach(id => {
-        let qty = cart[id];
+        let qty = Number(cart[id]) || 0;
         let item = menuItems[id];
         if (item && qty > 0) {
           hasItems = true;
           totalItemsCount += qty;
-          total += item.price * qty;
+          let unitPrice = Number(item.price) || 0;
+          let subtotal = unitPrice * qty;
+          total += subtotal;
+
           list.innerHTML += `
             <li class="flex items-center justify-between bg-elite-950/60 p-2.5 rounded-xl border border-slate-800">
               <span class="text-xs font-semibold text-slate-200 truncate max-w-[120px]">${item.name}</span>
               <div class="flex items-center gap-2">
                 <span class="font-mono text-xs text-slate-400">x${qty}</span>
-                <span class="font-mono font-bold text-xs text-amber-400 min-w-[45px] text-right">₹${item.price * qty}</span>
+                <span class="font-mono font-bold text-xs text-amber-400 min-w-[45px] text-right">₹${subtotal}</span>
               </div>
             </li>`;
         }
@@ -605,23 +601,22 @@
       let total = 0;
 
       Object.keys(cart).forEach(id => {
-        let qty = cart[id];
+        let qty = Number(cart[id]) || 0;
         let item = menuItems[id];
         if (item && qty > 0) {
+          let unitPrice = Number(item.price) || 0;
           items.push(`${qty}x ${item.name}`);
-          total += item.price * qty;
+          total += unitPrice * qty;
         }
       });
 
       if (items.length === 0) { alert('Cart is empty.'); return; }
       if (!table) { alert('Specify valid table.'); return; }
 
-      // Also log items immediately to Google Sheet upon checkout dispatch if preferred
       items.forEach(itemStr => {
         logBillToGoogleSheet(itemStr, paymentMode);
       });
 
-      // Elite Confetti VFX on Order Dispatch
       confetti({
         particleCount: 80,
         spread: 70,
@@ -667,13 +662,14 @@
 
       tableOrders.forEach(orderId => {
         let order = allOrdersData[orderId];
-        grandTotal += (order.total || 0);
+        let orderTotal = Number(order.total) || 0;
+        grandTotal += orderTotal;
         if (order.items) {
           order.items.forEach(itemStr => {
             tbody.innerHTML += `
               <tr>
                 <td class="py-2">${itemStr}</td>
-                <td class="py-2 text-right font-bold">₹${order.total}</td>
+                <td class="py-2 text-right font-bold">₹${orderTotal}</td>
               </tr>`;
           });
         }
@@ -714,14 +710,17 @@
 
     function filterCustomerOrders() {
       let currentTable = document.getElementById('table-num').value;
-      document.getElementById('display-table').innerText = currentTable;
+      let displayTableEl = document.getElementById('display-table');
+      if (displayTableEl) displayTableEl.innerText = currentTable;
+      
       let container = document.getElementById('customer-orders-container');
+      if (!container) return;
       container.innerHTML = '';
 
       let keys = Object.keys(allOrdersData);
       let tableOrders = keys.filter(id => {
         let order = allOrdersData[id];
-        return String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
+        return order && String(order.table) === String(currentTable) && order.status !== 'Cleared' && order.status !== 'Archived';
       });
 
       if (tableOrders.length === 0) {
@@ -732,36 +731,33 @@
       tableOrders.reverse().forEach(id => {
         let order = allOrdersData[id];
         let prepColor = order.status === 'Pending' ? 'text-rose-400 bg-rose-950/40 border-rose-500/30' : (order.status === 'Completed' ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-amber-400 bg-amber-950/40 border-amber-500/30');
-        let payColor = order.paymentStatus.includes('Paid') ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-rose-400 bg-rose-950/40 border-rose-500/30';
-        let itemsHtml = order.items.map(i => `<li class="text-xs text-slate-300 font-mono">• ${i}</li>`).join('');
+        let payColor = order.paymentStatus && order.paymentStatus.includes('Paid') ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-rose-400 bg-rose-950/40 border-rose-500/30';
+        let itemsHtml = order.items ? order.items.map(i => `<li class="text-xs text-slate-300 font-mono">• ${i}</li>`).join('') : '';
         let formattedTime = formatDateTime(order.timestamp);
+        let orderTotal = Number(order.total) || 0;
 
         container.innerHTML += `
           <div class="glass-card p-3.5 rounded-xl space-y-2">
-            <div class="flex justify-between items-start">
-              <div>
-                <span class="font-mono text-xs font-bold text-slate-200">#${id.slice(-5)}</span>
-                <span class="text-[10px] text-slate-400 font-mono block mt-0.5">${formattedTime}</span>
+            <div class="glass-card p-3.5 rounded-xl space-y-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="font-mono text-xs font-bold text-slate-200">#${id.slice(-5)}</span>
+                  <span class="text-[10px] text-slate-400 font-mono block mt-0.5">${formattedTime}</span>
+                </div>
+                <div class="flex gap-1.5">
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-mono border ${prepColor}">${order.status}</span>
+                  <span class="px-2 py-0.5 rounded-md text-[10px] font-mono border ${payColor}">${order.paymentStatus}</span>
+                </div>
               </div>
-              <div class="flex gap-1.5 flex-wrap justify-end">
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded-md border ${prepColor}">${order.status}</span>
-                <span class="text-[10px] font-mono px-2 py-0.5 rounded-md border ${payColor}">${order.paymentStatus}</span>
+              <ul class="space-y-0.5 pl-1">${itemsHtml}</ul>
+              <div class="flex justify-between items-center pt-2 border-t border-slate-800 text-xs">
+                <span class="text-slate-400 font-mono">Mode: ${order.paymentMode || 'UPI'}</span>
+                <span class="font-mono font-bold text-amber-400">₹${orderTotal}</span>
               </div>
-            </div>
-            <ul class="space-y-1 pl-1">${itemsHtml}</ul>
-            <div class="flex justify-between items-center pt-2 border-t border-slate-800 text-xs font-mono">
-              <span class="text-slate-400">Mode: ${order.paymentMode}</span>
-              <span class="font-bold text-amber-400">₹${order.total}</span>
             </div>
           </div>`;
       });
-      lucide.createIcons();
     }
-
-    // Initialize Lucide Icons on load
-    window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-    });
   </script>
 </body>
 </html>
