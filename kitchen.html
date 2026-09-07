@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Kitchen & Billing Control KDS</title>
+  <title>Gani Cafe - Ultimate KDS, Revenue & Inventory Control Hub</title>
   <!-- Firebase SDKs (Compat v8) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -28,71 +28,172 @@
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }
 
-    header { background: rgba(13, 17, 28, 0.95); backdrop-filter: blur(20px); padding: 18px 24px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    header h1 { margin: 0; font-size: 20px; font-weight: 900; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; text-transform: uppercase; }
+    header { background: rgba(13, 17, 28, 0.95); backdrop-filter: blur(20px); padding: 16px 24px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    header h1 { margin: 0; font-size: 18px; font-weight: 900; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; text-transform: uppercase; }
 
-    .kds-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
-    
-    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .nav-tabs { display: flex; gap: 8px; background: rgba(255,255,255,0.03); padding: 4px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); }
+    .nav-tab { background: transparent; border: none; color: var(--text-muted); padding: 8px 16px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; border-radius: 10px; transition: all 0.2s; }
+    .nav-tab.active { background: var(--accent-gradient); color: #000; box-shadow: 0 4px 15px rgba(217,119,6,0.3); }
 
-    .order-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 15px 40px rgba(0,0,0,0.6); backdrop-filter: blur(16px); position: relative; overflow: hidden; animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .main-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .view-section { display: none; animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .view-section.active { display: block; }
+
+    /* Analytics Dashboard Grid */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .metric-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 18px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
+    .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent-gradient); }
+    .metric-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .metric-value { font-size: 28px; font-weight: 900; color: #fff; }
+    .metric-sub { font-size: 11px; font-weight: 700; color: var(--green); margin-top: 6px; }
+
+    /* Orders Grid (KDS) */
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    .order-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 15px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden; }
     .order-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent-gradient); }
 
-    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
     .table-tag { font-size: 13px; font-weight: 900; color: var(--gold-light); background: rgba(217,119,6,0.1); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(217,119,6,0.2); }
     
     .status-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
     .status-Pending { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
     .status-Preparing { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
     .status-Ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-Billed { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.3); }
     .status-Cleared { background: rgba(14, 165, 233, 0.15); color: var(--blue); border: 1px solid rgba(14, 165, 233, 0.3); }
 
-    .items-list { margin: 10px 0 16px 0; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
-    .item-row { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+    .items-list { margin: 10px 0 16px 0; display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+    .item-row { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center; }
 
     .order-footer { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
-    
-    .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .action-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .btn { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; transition: all 0.2s; text-align: center; }
     .btn:active { transform: scale(0.96); }
     
     .btn-accept { background: rgba(14, 165, 233, 0.15); color: var(--blue); border-color: rgba(14, 165, 233, 0.4); }
     .btn-prep { background: rgba(249, 115, 22, 0.15); color: var(--orange); border-color: rgba(249, 115, 22, 0.4); }
     .btn-ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border-color: rgba(16, 185, 129, 0.4); }
-    .btn-clear { background: rgba(239, 68, 68, 0.2); color: #fff; border-color: var(--red); grid-column: span 2; }
-    .btn-clear:hover { background: var(--red); }
+    .btn-billed { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border-color: rgba(234, 179, 8, 0.4); }
+    .btn-print { background: rgba(217, 119, 6, 0.15); color: var(--gold-light); border-color: rgba(217, 119, 6, 0.4); grid-column: span 2; }
+    .btn-clear { background: var(--green); color: #000; border-color: var(--green); grid-column: span 2; font-size: 11px; padding: 12px; font-weight: 900; }
+
+    /* Inventory & Menu Management */
+    .menu-mgmt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .menu-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .toggle-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .3s; border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--green); }
+    input:checked + .slider:before { transform: translateX(24px); }
 
     .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 15px; font-weight: 600; grid-column: 1 / -1; }
-
-    .toast { position: fixed; top: 90px; left: 50%; transform: translateX(-50%) translateY(-30px); background: var(--green); color: #000; padding: 12px 24px; border-radius: 30px; font-weight: 900; font-size: 13px; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 400; pointer-events: none; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
+    .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-30px); background: var(--green); color: #000; padding: 12px 24px; border-radius: 30px; font-weight: 900; font-size: 13px; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 400; pointer-events: none; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* Printable Receipt Styling for Customer & Kitchen */
+    @media print {
+      body * { visibility: hidden; }
+      #printable-receipt, #printable-receipt * { visibility: visible; }
+      #printable-receipt { position: absolute; left: 0; top: 0; width: 80mm; padding: 10px; background: #fff; color: #000; font-family: monospace; }
     }
+    .receipt-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 500; justify-content: center; align-items: center; }
+    .receipt-box { background: #fff; color: #000; width: 320px; padding: 24px; border-radius: 12px; font-family: monospace; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🔥 GANI CAFE - KDS & CLEARANCE DESK</h1>
+    <h1>🔥 GANI CAFE - CONTROL HUB</h1>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchView('kds')">Live KDS</button>
+      <button class="nav-tab" onclick="switchView('analytics')">Revenue & Analytics</button>
+      <button class="nav-tab" onclick="switchView('inventory')">Menu & Stock</button>
+    </div>
     <div style="font-size: 12px; font-weight: 800; color: var(--gold-light);" id="live-clock">--:--:--</div>
   </header>
 
-  <div class="kds-container">
-    <div class="orders-grid" id="orders-grid">
-      <div class="empty-state">Connecting to Live Kitchen Stream...</div>
+  <div class="main-container">
+    
+    <!-- VIEW 1: KITCHEN DISPLAY SYSTEM (KDS) -->
+    <div id="view-kds" class="view-section active">
+      <div class="orders-grid" id="orders-grid">
+        <div class="empty-state">Connecting to Live Kitchen Stream...</div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: REVENUE & ANALYTICS DASHBOARD -->
+    <div id="view-analytics" class="view-section">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-title">Today's Revenue</div>
+          <div class="metric-value" id="stat-today">₹0</div>
+          <div class="metric-sub" id="stat-today-count">0 orders processed</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Yesterday's Revenue</div>
+          <div class="metric-value" id="stat-yesterday">₹0</div>
+          <div class="metric-sub">Completed Sales</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">This Month Revenue</div>
+          <div class="metric-value" id="stat-month">₹0</div>
+          <div class="metric-sub">Accumulated Total</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Yearly Total</div>
+          <div class="metric-value" id="stat-year">₹0</div>
+          <div class="metric-sub">Annual Performance</div>
+        </div>
+      </div>
+      
+      <div style="background: var(--card-bg); border: var(--luxury-border); border-radius: 20px; padding: 24px; margin-top: 24px;">
+        <h3 style="margin-top: 0; font-size: 16px; color: var(--gold-light);">Paid vs Billed Status Breakdown</h3>
+        <div style="display: flex; gap: 24px; margin-top: 16px;">
+          <div>Fully Cleared Revenue: <strong id="stat-cleared" style="color: var(--green);">₹0</strong></div>
+          <div>Pending Billed Orders: <strong id="stat-pending-billed" style="color: var(--yellow);">₹0</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: MENU & STOCK MANAGEMENT -->
+    <div id="view-inventory" class="view-section">
+      <div class="menu-mgmt-header">
+        <h2 style="margin: 0; font-size: 18px; color: var(--gold-light);">Menu Stock Control (In-Stock / Out-of-Stock)</h2>
+        <button class="btn btn-accept" onclick="addNewMenuItem()">+ Add Menu Item</button>
+      </div>
+      <div class="menu-grid" id="menu-items-grid">
+        <div class="empty-state">Loading Menu Catalog...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PRINTABLE RECEIPT MODAL -->
+  <div class="receipt-modal" id="receiptModal">
+    <div class="receipt-box" id="printable-receipt">
+      <div style="text-align: center; font-weight: bold; font-size: 16px;">GANI CAFE</div>
+      <div style="text-align: center; font-size: 11px; margin-bottom: 10px;">Kitchen & Billing Ticket</div>
+      <div id="receipt-details" style="font-size: 12px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px;"></div>
+      <div id="receipt-items" style="font-size: 12px; margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 10px;"></div>
+      <div id="receipt-total" style="font-size: 14px; font-weight: bold; text-align: right; margin-bottom: 20px;"></div>
+      <div style="text-align: center; font-size: 10px;">Thank you for dining at Gani Cafe!</div>
+    </div>
+    <div style="position: absolute; bottom: 30px; display: flex; gap: 12px;">
+      <button class="btn btn-clear" onclick="window.print()">Print Bill</button>
+      <button class="btn" onclick="closeReceiptModal()" style="background:#fff; color:#000;">Close</button>
     </div>
   </div>
 
   <div class="toast" id="toast-notification">Action executed successfully!</div>
 
   <script>
-    // --- GOOGLE APPS SCRIPT URL ---
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
 
-    // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -103,20 +204,24 @@
       appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe"
     };
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.database();
 
-    // Clock ticker
     setInterval(() => {
       document.getElementById('live-clock').innerText = new Date().toLocaleTimeString();
     }, 1000);
 
-    // --- ROBUST ITEM PARSER TO PREVENT [object Object] BUG ---
+    function switchView(viewName) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(`view-${viewName}`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
     function parseOrderItem(item) {
+      if (!item) return 'Custom Item';
       if (typeof item === 'string') return item;
-      if (typeof item === 'object' && item !== null) {
+      if (typeof item === 'object') {
         const qty = item.qty || item.quantity || 1;
         const name = item.name || item.title || item.itemName || 'Custom Item';
         return `${qty}x ${name}`;
@@ -124,37 +229,34 @@
       return String(item);
     }
 
-    // --- REAL-TIME LISTENERS FOR KITCHEN & BILLING ---
+    // --- REAL-TIME LISTENERS & ANALYTICS ---
     window.addEventListener('DOMContentLoaded', () => {
+      // Orders Listener
       db.ref('orders').on('value', (snapshot) => {
         const data = snapshot.val();
         const grid = document.getElementById('orders-grid');
 
         if (!data) {
           grid.innerHTML = `<div class="empty-state">No active kitchen orders right now. Waiting for customer requests...</div>`;
+          updateAnalytics({});
           return;
         }
 
         let ordersHtml = '';
-        const orderIds = Object.keys(data).reverse(); // Newest first
+        const orderIds = Object.keys(data).reverse();
 
         orderIds.forEach(id => {
           const order = data[id];
           if (!order) return;
-
-          // Skip completely cleared / archived orders from KDS screen if desired, or keep them visible
           if (order.status === 'Cleared' && order._archived) return;
 
           const statusClass = `status-${order.status || 'Pending'}`;
-          const itemsArray = Array.isArray(order.items) ? order.items : [];
+          let itemsArray = [];
+          if (Array.isArray(order.items)) itemsArray = order.items;
+          else if (typeof order.items === 'object') itemsArray = Object.values(order.items);
+          else if (typeof order.items === 'string') itemsArray = [order.items];
           
-          let itemsListHtml = itemsArray.map(item => {
-            const formattedText = parseOrderItem(item);
-            return `<div class="item-row"><span>${escapeHtml(formattedText)}</span></div>`;
-          }).join('');
-
-          let totalAmount = order.total || 0;
-          let paymentMode = order.paymentMode || 'QR Code';
+          let itemsListHtml = itemsArray.map(item => `<div class="item-row"><span>${escapeHtml(parseOrderItem(item))}</span></div>`).join('');
 
           ordersHtml += `
             <div class="order-card" id="card-${id}">
@@ -163,24 +265,20 @@
                   <span class="table-tag">Table #${escapeHtml(String(order.table || '1'))}</span>
                   <span class="status-badge ${statusClass}">${escapeHtml(order.status || 'Pending')}</span>
                 </div>
-                <div style="font-size: 11px; color: var(--text-muted); font-weight: 800; margin-bottom: 4px;">Order #${id.slice(-6).toUpperCase()} • Mode: ${escapeHtml(paymentMode)}</div>
-                
-                <div class="items-list">
-                  ${itemsListHtml}
-                </div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 800; margin-bottom: 6px;">Order #${id.slice(-6).toUpperCase()} • Mode: ${escapeHtml(order.paymentMode || 'QR')}</div>
+                <div class="items-list">${itemsListHtml}</div>
               </div>
-
               <div class="order-footer">
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 900;">
                   <span>Total Bill:</span>
-                  <span style="color: var(--green);">₹${totalAmount}</span>
+                  <span style="color: var(--green);">₹${order.total || 0}</span>
                 </div>
-
                 <div class="action-buttons">
                   <button class="btn btn-accept" onclick="updateOrderStatus('${id}', 'Accepted')">Accept</button>
                   <button class="btn btn-prep" onclick="updateOrderStatus('${id}', 'Preparing')">Prep</button>
                   <button class="btn btn-ready" onclick="updateOrderStatus('${id}', 'Ready')">Ready</button>
-                  <button class="btn" style="background: rgba(234, 179, 8, 0.15); color: var(--yellow); border-color: rgba(234, 179, 8, 0.4);" onclick="updateOrderStatus('${id}', 'Billed')">Mark Billed</button>
+                  <button class="btn btn-billed" onclick="updateOrderStatus('${id}', 'Billed')">Mark Billed</button>
+                  <button class="btn btn-print" onclick="openReceiptModal('${id}')">📄 Print Customer/Kitchen Bill</button>
                   <button class="btn btn-clear" onclick="clearAndArchiveOrder('${id}')">🔒 Verify Bill & Clear Order</button>
                 </div>
               </div>
@@ -189,71 +287,172 @@
         });
 
         grid.innerHTML = ordersHtml || `<div class="empty-state">All orders cleared successfully!</div>`;
+        updateAnalytics(data);
+      });
+
+      // Menu Inventory Listener
+      db.ref('menu').on('value', (snapshot) => {
+        const menuData = snapshot.val();
+        const menuGrid = document.getElementById('menu-items-grid');
+        if (!menuData) {
+          menuGrid.innerHTML = `<div class="empty-state">No menu items found. Add items to control stock.</div>`;
+          return;
+        }
+
+        let menuHtml = '';
+        Object.keys(menuData).forEach(itemId => {
+          const item = menuData[itemId];
+          const inStock = item.inStock !== false;
+          menuHtml += `
+            <div class="menu-card">
+              <div>
+                <div style="font-weight: 900; font-size: 14px;">${escapeHtml(item.name)}</div>
+                <div style="font-size: 12px; color: var(--gold-light); font-weight: 700;">₹${item.price || 0}</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" ${inStock ? 'checked' : ''} onchange="toggleStock('${itemId}', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          `;
+        });
+        menuGrid.innerHTML = menuHtml;
       });
     });
 
-    // --- UPDATE ORDER STATUS IN FIREBASE ---
-    function updateOrderStatus(orderId, newStatus) {
-      db.ref(`orders/${orderId}`).update({ status: newStatus }).then(() => {
-        showToast(`Order status updated to ${newStatus}`);
-      }).catch(err => {
-        console.error("Status update error:", err);
-        alert("Failed to update status.");
+    // --- ANALYTICS CALCULATOR ---
+    function updateAnalytics(orders) {
+      let todayRev = 0, todayCount = 0;
+      let yestRev = 0;
+      let monthRev = 0;
+      let yearRev = 0;
+      let clearedTotal = 0, pendingBilled = 0;
+
+      const now = new Date();
+      const todayStr = now.toDateString();
+      const yesterdayStr = new Date(now.getTime() - 86400000).toDateString();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      Object.values(orders).forEach(order => {
+        const amount = Number(order.total || 0);
+        const orderDate = order.clearedAt ? new Date(order.clearedAt) : (order.timestamp ? new Date(order.timestamp) : new Date());
+
+        if (order.status === 'Cleared') {
+          clearedTotal += amount;
+        } else if (order.status === 'Billed') {
+          pendingBilled += amount;
+        }
+
+        if (orderDate.toDateString() === todayStr) {
+          todayRev += amount;
+          todayCount++;
+        }
+        if (orderDate.toDateString() === yesterdayStr) {
+          yestRev += amount;
+        }
+        if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
+          monthRev += amount;
+        }
+        if (orderDate.getFullYear() === currentYear) {
+          yearRev += amount;
+        }
+      });
+
+      document.getElementById('stat-today').innerText = `₹${todayRev}`;
+      document.getElementById('stat-today-count').innerText = `${todayCount} orders processed`;
+      document.getElementById('stat-yesterday').innerText = `₹${yestRev}`;
+      document.getElementById('stat-month').innerText = `₹${monthRev}`;
+      document.getElementById('stat-year').innerText = `₹${yearRev}`;
+      document.getElementById('stat-cleared').innerText = `₹${clearedTotal}`;
+      document.getElementById('stat-pending-billed').innerText = `₹${pendingBilled}`;
+    }
+
+    // --- INVENTORY STOCK TOGGLE ---
+    function toggleStock(itemId, inStock) {
+      db.ref(`menu/${itemId}`).update({ inStock }).then(() => {
+        showToast(`Stock updated successfully`);
       });
     }
 
-    // --- BILL CLEARANCE & GOOGLE SHEETS SYNC ---
+    function addNewMenuItem() {
+      const name = prompt("Enter menu item name:");
+      const price = prompt("Enter price (₹):");
+      if (!name || !price) return;
+      
+      const newRef = db.ref('menu').push();
+      newRef.set({ name, price: Number(price), inStock: true }).then(() => {
+        showToast("Menu item added successfully!");
+      });
+    }
+
+    // --- ORDER ACTIONS ---
+    function updateOrderStatus(orderId, newStatus) {
+      db.ref(`orders/${orderId}`).update({ status: newStatus }).then(() => {
+        showToast(`Order status updated to ${newStatus}`);
+      });
+    }
+
     function clearAndArchiveOrder(orderId) {
       db.ref(`orders/${orderId}`).once('value', (snapshot) => {
         const orderData = snapshot.val();
         if (!orderData) return;
 
-        // 1. Send data to Google Apps Script storage
+        let rawItems = orderData.items;
+        let itemsString = Array.isArray(rawItems) ? rawItems.map(i => parseOrderItem(i)).join(', ') : String(rawItems || '');
+
         const payload = {
-          orderId: orderId,
-          table: orderData.table,
-          items: Array.isArray(orderData.items) ? orderData.items.map(i => parseOrderItem(i)).join(', ') : orderData.items,
-          total: orderData.total,
-          paymentMode: orderData.paymentMode || 'QR Code',
-          status: 'Cleared',
-          timestamp: new Date().toISOString()
+          orderId, table: orderData.table || '1', items: itemsString,
+          total: orderData.total || 0, paymentMode: orderData.paymentMode || 'QR',
+          status: 'Cleared', timestamp: new Date().toISOString()
         };
 
         fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
+          method: 'POST', mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
-        }).then(() => {
-          console.log("Logged successfully to Google Sheet.");
-        }).catch(err => {
-          console.error("Google Sheet sync error:", err);
-        });
+        }).catch(err => console.error("Sheets sync error:", err));
 
-        // 2. Update Firebase status to Cleared and remove/archive from active KDS view
-        db.ref(`orders/${orderId}`).update({ status: 'Cleared', _archived: true }).then(() => {
-          showToast("Bill cleared & saved to Google Sheet successfully! ✓");
-        }).catch(err => {
-          console.error("Clearance error:", err);
-        });
+        db.ref(`orders/${orderId}`).update({ 
+          status: 'Cleared', _archived: true, clearedAt: firebase.database.ServerValue.TIMESTAMP 
+        }).then(() => showToast("Bill cleared & securely synced! ✓"));
       });
+    }
+
+    // --- BILL PRINTING MODAL ---
+    function openReceiptModal(orderId) {
+      db.ref(`orders/${orderId}`).once('value', (snapshot) => {
+        const order = snapshot.val();
+        if (!order) return;
+
+        let itemsArray = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+        let itemsHtml = itemsArray.map(i => `<div>${parseOrderItem(i)}</div>`).join('');
+
+        document.getElementById('receipt-details').innerHTML = `
+          Order ID: #${orderId.slice(-6).toUpperCase()}<br>
+          Table: #${order.table || '1'}<br>
+          Date: ${new Date().toLocaleTimeString()}
+        `;
+        document.getElementById('receipt-items').innerHTML = itemsHtml;
+        document.getElementById('receipt-total').innerHTML = `TOTAL: ₹${order.total || 0}`;
+
+        document.getElementById('receiptModal').style.display = 'flex';
+      });
+    }
+
+    function closeReceiptModal() {
+      document.getElementById('receiptModal').style.display = 'none';
     }
 
     function showToast(msg) {
       const toast = document.getElementById('toast-notification');
       toast.innerText = msg;
       toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2500);
+      setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
     function escapeHtml(str) {
-      return String(str).replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;")
-                        .replace(/"/g, "&quot;")
-                        .replace(/'/g, "&#039;");
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
   </script>
 </body>
