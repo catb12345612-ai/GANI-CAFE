@@ -3,221 +3,95 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe - Executive Kitchen & Billing KDS</title>
+  <title>Gani Cafe - Kitchen & Billing Control KDS</title>
   <!-- Firebase SDKs (Compat v8) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     :root { 
       --gold: #d97706; 
-      --bg: #0b0f19; 
-      --card-bg: rgba(17, 24, 39, 0.95); 
+      --gold-light: #fbbf24;
+      --bg: #07090e; 
+      --card-bg: rgba(13, 17, 28, 0.95); 
       --glass-bg: rgba(255, 255, 255, 0.03);
       --text: #f8fafc; 
       --text-muted: #94a3b8; 
       --green: #10b981; 
       --red: #ef4444; 
       --orange: #f97316; 
-      --yellow: #eab308;
       --blue: #0ea5e9; 
-      --purple: #8b5cf6;
-      --accent-gradient: linear-gradient(135deg, #f97316 0%, #eab308 100%);
+      --yellow: #eab308;
+      --accent-gradient: linear-gradient(135deg, #d97706 0%, #fbbf24 50%, #f59e0b 100%);
+      --luxury-border: 1px solid rgba(217, 119, 6, 0.25);
     }
     
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 80px; min-height: 100vh; overflow-x: hidden; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }
 
-    /* Ambient VFX Background Glow */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -200px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 700px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(217, 119, 6, 0.12) 0%, rgba(11, 15, 25, 0) 70%);
-      z-index: -1;
-      pointer-events: none;
-    }
+    header { background: rgba(13, 17, 28, 0.95); backdrop-filter: blur(20px); padding: 18px 24px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    header h1 { margin: 0; font-size: 20px; font-weight: 900; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; text-transform: uppercase; }
+
+    .kds-container { max-width: 1400px; margin: 0 auto; padding: 24px; }
     
-    header { background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(16px); padding: 18px 28px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
-    header h1 { margin: 0; font-size: 20px; font-weight: 800; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; display: flex; align-items: center; gap: 10px; }
+    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+
+    .order-card { background: var(--card-bg); border: var(--luxury-border); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 15px 40px rgba(0,0,0,0.6); backdrop-filter: blur(16px); position: relative; overflow: hidden; animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .order-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent-gradient); }
+
+    .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .table-tag { font-size: 13px; font-weight: 900; color: var(--gold-light); background: rgba(217,119,6,0.1); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(217,119,6,0.2); }
     
-    .nav-tabs { display: flex; gap: 8px; background: rgba(255,255,255,0.04); padding: 4px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); }
-    .nav-tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-    .nav-tab-btn.active { background: var(--gold); color: #000; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3); }
+    .status-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
+    .status-Pending { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-Preparing { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
+    .status-Ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-Cleared { background: rgba(14, 165, 233, 0.15); color: var(--blue); border: 1px solid rgba(14, 165, 233, 0.3); }
 
-    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    .view-section { display: none; animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-    .view-section.active { display: block; }
+    .items-list { margin: 10px 0 16px 0; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+    .item-row { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center; }
 
-    /* Stats Ribbon */
-    .stats-ribbon { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 18px 20px; backdrop-filter: blur(10px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 6px; }
-    .stat-title { font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.5px; }
-    .stat-value { font-size: 24px; font-weight: 900; color: #fff; }
-
-    /* KDS Order Grid */
-    .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
-    .order-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; transition: transform 0.2s, box-shadow 0.2s; backdrop-filter: blur(12px); }
-    .order-card:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+    .order-footer { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
     
-    .order-card-header { padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
-    .order-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; }
-    
-    .order-item-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,0.06); }
-    
-    .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-    .badge-pending { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); animation: pulseGlowRed 2s infinite; }
-    .badge-accepted { background: rgba(14, 165, 233, 0.15); color: var(--blue); border: 1px solid rgba(14, 165, 233, 0.3); }
-    .badge-preparing { background: rgba(249, 115, 22, 0.15); color: var(--orange); border: 1px solid rgba(249, 115, 22, 0.3); }
-    .badge-ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-billed { background: rgba(234, 179, 8, 0.15); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.3); }
-    .badge-cleared { background: rgba(139, 92, 246, 0.15); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.3); }
-
-    .order-actions { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(11, 15, 25, 0.5); display: flex; flex-direction: column; gap: 10px; }
-    .action-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-    .btn { background: var(--gold); color: #000; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; transition: all 0.2s; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.2); text-align: center; }
+    .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 12px; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; transition: all 0.2s; text-align: center; }
     .btn:active { transform: scale(0.96); }
-    .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
-    .btn-green { background: var(--green); color: #fff; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-    .btn-blue { background: var(--blue); color: #fff; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3); }
-    .btn-orange { background: var(--orange); color: #fff; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3); }
-    .btn-yellow { background: var(--yellow); color: #000; box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3); }
-    .btn-red { background: var(--red); color: #fff; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+    
+    .btn-accept { background: rgba(14, 165, 233, 0.15); color: var(--blue); border-color: rgba(14, 165, 233, 0.4); }
+    .btn-prep { background: rgba(249, 115, 22, 0.15); color: var(--orange); border-color: rgba(249, 115, 22, 0.4); }
+    .btn-ready { background: rgba(16, 185, 129, 0.15); color: var(--green); border-color: rgba(16, 185, 129, 0.4); }
+    .btn-clear { background: rgba(239, 68, 68, 0.2); color: #fff; border-color: var(--red); grid-column: span 2; }
+    .btn-clear:hover { background: var(--red); }
 
-    /* Stock Management & Menu Builder Grid */
-    .management-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    @media(max-width: 900px) { .management-grid { grid-template-columns: 1fr; } }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-size: 15px; font-weight: 600; grid-column: 1 / -1; }
 
-    .panel-box { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); backdrop-filter: blur(12px); }
-    .panel-title { font-size: 18px; font-weight: 800; margin: 0 0 18px 0; display: flex; justify-content: space-between; align-items: center; }
-
-    .stock-item-row { display: flex; justify-content: space-between; align-items: center; background: var(--glass-bg); padding: 12px 16px; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.04); }
-    .stock-toggle-btn { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; cursor: pointer; border: none; transition: all 0.2s; }
-    .in-stock { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.4); }
-    .out-stock { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.4); }
-
-    /* Form Styles for Adding Menu Items */
-    .form-group { margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
-    .form-input, .form-select { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; }
-    .form-input:focus, .form-select:focus { border-color: var(--gold); }
-
-    /* Toast Notification */
-    .toast { position: fixed; top: 90px; left: 50%; transform: translateX(-50%) translateY(-30px); background: var(--green); color: #000; padding: 12px 24px; border-radius: 30px; font-weight: 800; font-size: 13px; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 400; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); pointer-events: none; }
+    .toast { position: fixed; top: 90px; left: 50%; transform: translateX(-50%) translateY(-30px); background: var(--green); color: #000; padding: 12px 24px; border-radius: 30px; font-weight: 900; font-size: 13px; opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 400; pointer-events: none; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulseGlowRed {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🍳 GANI CAFE <span style="font-size: 12px; background: rgba(217, 119, 6, 0.2); color: var(--gold); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(217, 119, 6, 0.4);">Kitchen & Billing Control KDS</span></h1>
-    <div class="nav-tabs">
-      <button class="nav-tab-btn active" onclick="switchView('kds', this)">Live KDS</button>
-      <button class="nav-tab-btn" onclick="switchView('stock', this)">Stock & Menu</button>
-    </div>
+    <h1>🔥 GANI CAFE - KDS & CLEARANCE DESK</h1>
+    <div style="font-size: 12px; font-weight: 800; color: var(--gold-light);" id="live-clock">--:--:--</div>
   </header>
 
-  <div class="container">
-    
-    <!-- STATS RIBBON -->
-    <div class="stats-ribbon">
-      <div class="stat-card">
-        <span class="stat-title">Active Orders</span>
-        <span class="stat-value" id="stat-active">0</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-title">Pending Bill Clearance</span>
-        <span class="stat-value" id="stat-pending-bills" style="color: var(--yellow);">0</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-title">Today's Revenue</span>
-        <span class="stat-value" id="stat-revenue" style="color: var(--green);">₹0</span>
-      </div>
+  <div class="kds-container">
+    <div class="orders-grid" id="orders-grid">
+      <div class="empty-state">Connecting to Live Kitchen Stream...</div>
     </div>
-
-    <!-- VIEW 1: LIVE KDS & BILLING CONTROL -->
-    <div class="view-section active" id="view-kds">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 20px;">Incoming Customer Orders & Bill Clearance</h2>
-        <div style="font-size: 13px; color: var(--text-muted);">Real-time Firebase Sync Active ⚡</div>
-      </div>
-      
-      <div class="orders-grid" id="kds-orders-grid">
-        <p style="color: var(--text-muted); grid-column: 1/-1; text-align: center; padding: 40px;">Listening for live customer orders...</p>
-      </div>
-    </div>
-
-    <!-- VIEW 2: STOCK & MENU BUILDER MANAGEMENT -->
-    <div class="view-section" id="view-stock">
-      <div class="management-grid">
-        
-        <!-- Stock Control Panel -->
-        <div class="panel-box">
-          <div class="panel-title">
-            <span>📦 Inventory Stock Status</span>
-            <span style="font-size: 12px; color: var(--text-muted);">Instant Toggle</span>
-          </div>
-          <div id="stock-list-container">
-            <!-- Dynamically populated stock items -->
-          </div>
-        </div>
-
-        <!-- Add Menu Item Panel -->
-        <div class="panel-box">
-          <div class="panel-title">
-            <span>➕ Add New Menu Item</span>
-            <span style="font-size: 12px; color: var(--text-muted);">Pushes with Image & Specs</span>
-          </div>
-          <form id="add-menu-form" onsubmit="handleAddNewItem(event)">
-            <div class="form-group">
-              <label class="form-label">Item Name</label>
-              <input type="text" class="form-input" id="new-item-name" placeholder="e.g. Truffle Cold Brew" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Category</label>
-              <select class="form-select" id="new-item-cat">
-                <option value="Coffee">☕ Coffee & Brews</option>
-                <option value="Fast Food">🍔 Fast Food</option>
-                <option value="Desserts">🍰 Desserts</option>
-                <option value="Beverages">🥤 Beverages</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Price (₹)</label>
-              <input type="number" class="form-input" id="new-item-price" placeholder="199" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Image URL (Unsplash or Direct Link)</label>
-              <input type="url" class="form-input" id="new-item-img" placeholder="https://images.unsplash.com/..." required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Description</label>
-              <input type="text" class="form-input" id="new-item-desc" placeholder="Rich artisan brew with notes of vanilla..." required>
-            </div>
-            <button type="submit" class="btn btn-green" style="width: 100%; padding: 14px; font-size: 13px; margin-top: 10px;">Publish Item to Live Menu ➔</button>
-          </form>
-        </div>
-
-      </div>
-    </div>
-
   </div>
 
-  <!-- Toast Notification -->
   <div class="toast" id="toast-notification">Action executed successfully!</div>
 
   <script>
+    // --- GOOGLE APPS SCRIPT URL ---
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
+
     // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
@@ -234,242 +108,133 @@
     }
     const db = firebase.database();
 
-    // --- ZERO-ERROR SYNTHESIZED SFX (WEB AUDIO API) ---
-    function playSFX(type) {
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        if (type === 'new_order') {
-          osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-          osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15);
-          osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.3);
-          gain.gain.setValueAtTime(0.15, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.5);
-        } else if (type === 'success') {
-          osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.2);
-          gain.gain.setValueAtTime(0.1, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.2);
-        }
-      } catch (e) {
-        // Handled browser audio restrictions safely
+    // Clock ticker
+    setInterval(() => {
+      document.getElementById('live-clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    // --- ROBUST ITEM PARSER TO PREVENT [object Object] BUG ---
+    function parseOrderItem(item) {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null) {
+        const qty = item.qty || item.quantity || 1;
+        const name = item.name || item.title || item.itemName || 'Custom Item';
+        return `${qty}x ${name}`;
       }
+      return String(item);
     }
 
-    let managedMenuItems = [
-      { id: 1, name: "Classic Espresso", category: "Coffee", price: 120, inStock: true },
-      { id: 2, name: "Caramel Macchiato", category: "Coffee", price: 180, inStock: true },
-      { id: 3, name: "Cold Brew Supreme", category: "Coffee", price: 160, inStock: true },
-      { id: 4, name: "Crispy Peri Peri Fries", category: "Fast Food", price: 140, inStock: true },
-      { id: 5, name: "Gani Special Burger", category: "Fast Food", price: 220, inStock: true },
-      { id: 6, name: "Loaded Cheese Nachos", category: "Fast Food", price: 190, inStock: true },
-      { id: 7, name: "Belgian Chocolate Waffle", category: "Desserts", price: 200, inStock: true },
-      { id: 8, name: "New York Cheesecake", category: "Desserts", price: 240, inStock: true },
-      { id: 9, name: "Fresh Mint Mojito", category: "Beverages", price: 150, inStock: true }
-    ];
-
-    let liveOrdersData = {};
-    let previousOrderCount = 0;
-
+    // --- REAL-TIME LISTENERS FOR KITCHEN & BILLING ---
     window.addEventListener('DOMContentLoaded', () => {
-      initFirebaseListeners();
-      renderStockManagement();
+      db.ref('orders').on('value', (snapshot) => {
+        const data = snapshot.val();
+        const grid = document.getElementById('orders-grid');
+
+        if (!data) {
+          grid.innerHTML = `<div class="empty-state">No active kitchen orders right now. Waiting for customer requests...</div>`;
+          return;
+        }
+
+        let ordersHtml = '';
+        const orderIds = Object.keys(data).reverse(); // Newest first
+
+        orderIds.forEach(id => {
+          const order = data[id];
+          if (!order) return;
+
+          // Skip completely cleared / archived orders from KDS screen if desired, or keep them visible
+          if (order.status === 'Cleared' && order._archived) return;
+
+          const statusClass = `status-${order.status || 'Pending'}`;
+          const itemsArray = Array.isArray(order.items) ? order.items : [];
+          
+          let itemsListHtml = itemsArray.map(item => {
+            const formattedText = parseOrderItem(item);
+            return `<div class="item-row"><span>${escapeHtml(formattedText)}</span></div>`;
+          }).join('');
+
+          let totalAmount = order.total || 0;
+          let paymentMode = order.paymentMode || 'QR Code';
+
+          ordersHtml += `
+            <div class="order-card" id="card-${id}">
+              <div>
+                <div class="order-header">
+                  <span class="table-tag">Table #${escapeHtml(String(order.table || '1'))}</span>
+                  <span class="status-badge ${statusClass}">${escapeHtml(order.status || 'Pending')}</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 800; margin-bottom: 4px;">Order #${id.slice(-6).toUpperCase()} • Mode: ${escapeHtml(paymentMode)}</div>
+                
+                <div class="items-list">
+                  ${itemsListHtml}
+                </div>
+              </div>
+
+              <div class="order-footer">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 900;">
+                  <span>Total Bill:</span>
+                  <span style="color: var(--green);">₹${totalAmount}</span>
+                </div>
+
+                <div class="action-buttons">
+                  <button class="btn btn-accept" onclick="updateOrderStatus('${id}', 'Accepted')">Accept</button>
+                  <button class="btn btn-prep" onclick="updateOrderStatus('${id}', 'Preparing')">Prep</button>
+                  <button class="btn btn-ready" onclick="updateOrderStatus('${id}', 'Ready')">Ready</button>
+                  <button class="btn" style="background: rgba(234, 179, 8, 0.15); color: var(--yellow); border-color: rgba(234, 179, 8, 0.4);" onclick="updateOrderStatus('${id}', 'Billed')">Mark Billed</button>
+                  <button class="btn btn-clear" onclick="clearAndArchiveOrder('${id}')">🔒 Verify Bill & Clear Order</button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+
+        grid.innerHTML = ordersHtml || `<div class="empty-state">All orders cleared successfully!</div>`;
+      });
     });
 
-    function switchView(viewName, btnElement) {
-      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
-      
-      document.getElementById(`view-${viewName}`).classList.add('active');
-      btnElement.classList.add('active');
-    }
-
-    // --- FIREBASE LISTENERS & KDS SYNC ---
-    function initFirebaseListeners() {
-      db.ref('orders').on('value', snap => {
-        const data = snap.val() || {};
-        liveOrdersData = data;
-        
-        const keys = Object.keys(data);
-        if (keys.length > previousOrderCount && previousOrderCount !== 0) {
-          playSFX('new_order');
-          showToast("New customer order received! 🔔");
-        }
-        previousOrderCount = keys.length;
-
-        renderKDSOrders(data);
-        updateStats(data);
-      });
-
-      db.ref('menu_stock').on('value', snap => {
-        const stockData = snap.val();
-        if (stockData) {
-          managedMenuItems = stockData;
-          renderStockManagement();
-        }
-      });
-    }
-
-    function renderKDSOrders(orders) {
-      const grid = document.getElementById('kds-orders-grid');
-      const keys = Object.keys(orders);
-
-      if (keys.length === 0) {
-        grid.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1; text-align: center; padding: 40px;">No active orders right now.</p>`;
-        return;
-      }
-
-      keys.sort((a, b) => (orders[b].timestamp || 0) - (orders[a].timestamp || 0));
-
-      grid.innerHTML = keys.map(key => {
-        let order = orders[key];
-        let status = order.status || "Pending";
-        let badgeClass = "badge-pending";
-        if (status === 'Accepted') badgeClass = "badge-accepted";
-        if (status === 'Preparing') badgeClass = "badge-preparing";
-        if (status === 'Ready' || status === 'Completed') badgeClass = "badge-ready";
-        if (status === 'Billed') badgeClass = "badge-billed";
-        if (status === 'Cleared') badgeClass = "badge-cleared";
-
-        let itemsHtml = (order.items || []).map(itemStr => `
-          <div class="order-item-row">
-            <span>${escapeHtml(itemStr)}</span>
-          </div>
-        `).join('');
-
-        return `
-          <div class="order-card">
-            <div class="order-card-header">
-              <div>
-                <span style="font-size: 11px; color: var(--text-muted); font-weight: 800;">TABLE #${escapeHtml(order.table || '1')}</span>
-                <h3 style="margin: 2px 0 0 0; font-size: 16px;">Order #${key.slice(-5)}</h3>
-              </div>
-              <span class="status-badge ${badgeClass}">${status}</span>
-            </div>
-            
-            <div class="order-body">
-              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 800;">Ordered Items:</div>
-              ${itemsHtml}
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-weight: 800; font-size: 15px;">
-                <span>Total Bill Amount:</span>
-                <span style="color: var(--green);">₹${order.total || 0}</span>
-              </div>
-            </div>
-
-            <div class="order-actions">
-              <div class="action-btn-group">
-                <button class="btn btn-blue" onclick="updateOrderStatus('${key}', 'Accepted')">Accept Order</button>
-                <button class="btn btn-orange" onclick="updateOrderStatus('${key}', 'Preparing')">Start Prep</button>
-              </div>
-              <div class="action-btn-group">
-                <button class="btn btn-green" onclick="updateOrderStatus('${key}', 'Ready')">Mark Ready</button>
-                <button class="btn btn-yellow" onclick="updateOrderStatus('${key}', 'Billed')">Bill Clearance</button>
-              </div>
-              <button class="btn btn-red" style="width: 100%;" onclick="clearOrder('${key}')">Close & Clear Order</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
+    // --- UPDATE ORDER STATUS IN FIREBASE ---
     function updateOrderStatus(orderId, newStatus) {
       db.ref(`orders/${orderId}`).update({ status: newStatus }).then(() => {
-        playSFX('success');
-        showToast(`Order status updated to: ${newStatus}`);
+        showToast(`Order status updated to ${newStatus}`);
       }).catch(err => {
-        showToast("Error updating order. Check connection.");
+        console.error("Status update error:", err);
+        alert("Failed to update status.");
       });
     }
 
-    function clearOrder(orderId) {
-      if (confirm("Are you sure you want to archive and clear this order?")) {
-        db.ref(`orders/${orderId}`).update({ status: "Cleared" }).then(() => {
-          playSFX('success');
-          showToast("Order cleared successfully.");
+    // --- BILL CLEARANCE & GOOGLE SHEETS SYNC ---
+    function clearAndArchiveOrder(orderId) {
+      db.ref(`orders/${orderId}`).once('value', (snapshot) => {
+        const orderData = snapshot.val();
+        if (!orderData) return;
+
+        // 1. Send data to Google Apps Script storage
+        const payload = {
+          orderId: orderId,
+          table: orderData.table,
+          items: Array.isArray(orderData.items) ? orderData.items.map(i => parseOrderItem(i)).join(', ') : orderData.items,
+          total: orderData.total,
+          paymentMode: orderData.paymentMode || 'QR Code',
+          status: 'Cleared',
+          timestamp: new Date().toISOString()
+        };
+
+        fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(() => {
+          console.log("Logged successfully to Google Sheet.");
+        }).catch(err => {
+          console.error("Google Sheet sync error:", err);
         });
-      }
-    }
 
-    function updateStats(orders) {
-      const keys = Object.keys(orders);
-      let activeCount = 0;
-      let pendingBills = 0;
-      let totalRev = 0;
-
-      keys.forEach(k => {
-        let o = orders[k];
-        if (o.status !== 'Cleared') {
-          activeCount++;
-        }
-        if (o.status !== 'Billed' && o.status !== 'Cleared') {
-          pendingBills++;
-        }
-        if (o.status === 'Billed' || o.status === 'Ready' || o.status === 'Completed') {
-          totalRev += (o.total || 0);
-        }
-      });
-
-      document.getElementById('stat-active').innerText = activeCount;
-      document.getElementById('stat-pending-bills').innerText = pendingBills;
-      document.getElementById('stat-revenue').innerText = `₹${totalRev}`;
-    }
-
-    // --- STOCK & MENU MANAGEMENT ---
-    function renderStockManagement() {
-      const container = document.getElementById('stock-list-container');
-      container.innerHTML = managedMenuItems.map((item, index) => `
-        <div class="stock-item-row">
-          <div>
-            <div style="font-weight: 700; font-size: 14px;">${escapeHtml(item.name)}</div>
-            <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(item.category)} • ₹${item.price}</div>
-          </div>
-          <button class="stock-toggle-btn ${item.inStock !== false ? 'in-stock' : 'out-stock'}" onclick="toggleStockStatus(${index})">
-            ${item.inStock !== false ? 'In Stock ✓' : 'Out of Stock ✕'}
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function toggleStockStatus(index) {
-      managedMenuItems[index].inStock = managedMenuItems[index].inStock === false ? true : false;
-      db.ref('menu_stock').set(managedMenuItems).then(() => {
-        playSFX('success');
-        renderStockManagement();
-        showToast("Stock status updated!");
-      });
-    }
-
-    function handleAddNewItem(e) {
-      e.preventDefault();
-      const newItem = {
-        id: Date.now(),
-        name: document.getElementById('new-item-name').value,
-        category: document.getElementById('new-item-cat').value,
-        price: parseFloat(document.getElementById('new-item-price').value),
-        image: document.getElementById('new-item-img').value,
-        desc: document.getElementById('new-item-desc').value,
-        inStock: true
-      };
-
-      db.ref('menu_stock').once('value', snap => {
-        let currentList = snap.val() || managedMenuItems;
-        currentList.push(newItem);
-        db.ref('menu_stock').set(currentList).then(() => {
-          playSFX('success');
-          showToast("New item published to live menu successfully!");
-          document.getElementById('add-menu-form').reset();
-          managedMenuItems = currentList;
-          renderStockManagement();
+        // 2. Update Firebase status to Cleared and remove/archive from active KDS view
+        db.ref(`orders/${orderId}`).update({ status: 'Cleared', _archived: true }).then(() => {
+          showToast("Bill cleared & saved to Google Sheet successfully! ✓");
+        }).catch(err => {
+          console.error("Clearance error:", err);
         });
       });
     }
