@@ -3,386 +3,291 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Kitchen & Admin Hub</title>
+    <title>Gani Cafe - Kitchen & Admin Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-900 font-sans min-h-screen">
-    <!-- Top Navigation -->
+<body class="bg-slate-100 text-gray-900 font-sans pb-28">
     <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 p-2 rounded-xl"><i class="fa-solid fa-utensils text-lg"></i></div>
+                <div class="bg-indigo-600 p-2 rounded-xl text-white font-bold"><i class="fa-solid fa-fire-burner"></i></div>
                 <div>
-                    <h1 class="font-bold text-sm tracking-tight">Kitchen & Admin Hub</h1>
-                    <p class="text-[10px] text-slate-400">Google Sheets Sync & Live Control</p>
+                    <h1 class="text-base font-bold tracking-tight">Gani Cafe Kitchen Hub</h1>
+                    <p class="text-xs text-slate-400">Live Admin Dashboard</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2 overflow-x-auto py-1">
-                <span id="syncStatus" class="bg-emerald-500/20 text-emerald-400 text-[11px] px-3 py-1 rounded-full font-medium border border-emerald-500/30 flex items-center gap-1.5 whitespace-nowrap">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sheets Synced
-                </span>
-                <button onclick="switchTab('orders')" id="btnTabOrders" class="tab-btn px-3.5 py-2 bg-indigo-600 rounded-xl text-xs font-semibold transition whitespace-nowrap">Orders</button>
-                <button onclick="switchTab('stock')" id="btnTabStock" class="tab-btn px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold transition whitespace-nowrap">Menu Stock</button>
-                <button onclick="switchTab('analytics')" id="btnTabAnalytics" class="tab-btn px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold transition whitespace-nowrap">Analytics & Sheets</button>
-                <button onclick="switchTab('feedback')" id="btnTabFeedback" class="tab-btn px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold transition whitespace-nowrap">Feedback & Logs</button>
+            <div class="flex items-center gap-3">
+                <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+                    <span class="text-slate-400">Total Revenue:</span> 
+                    <span id="revenueDisplay" class="font-bold text-emerald-400 ml-1">₹0</span>
+                </div>
+                <button onclick="refreshQueue()" class="bg-indigo-600 hover:bg-indigo-700 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow">
+                    <i class="fa-solid fa-rotate mr-1"></i> Refresh
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        
-        <!-- ORDERS TAB -->
-        <div id="tabContentOrders" class="space-y-6">
-            <!-- Analytics Overview Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl shadow-xs border border-gray-200">
-                    <p class="text-[11px] text-gray-400 font-bold uppercase">Today's Revenue</p>
-                    <h3 id="statTodayRev" class="text-2xl font-bold text-indigo-600 mt-1">₹0</h3>
-                    <p class="text-xs text-emerald-600 mt-1 font-semibold flex items-center gap-1"><i class="fa-solid fa-arrow-up text-[10px]"></i> Live calculated</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-xs border border-gray-200">
-                    <p class="text-[11px] text-gray-400 font-bold uppercase">PhonePe UPI Total</p>
-                    <h3 id="statUpiTotal" class="text-2xl font-bold text-amber-600 mt-1">₹0</h3>
-                    <p class="text-xs text-gray-400 mt-1">Q227869939@ybl transactions</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-xs border border-gray-200">
-                    <p class="text-[11px] text-gray-400 font-bold uppercase">Cash Settlement</p>
-                    <h3 id="statCashTotal" class="text-2xl font-bold text-emerald-600 mt-1">₹0</h3>
-                    <p class="text-xs text-gray-400 mt-1">Physical drawer intake</p>
-                </div>
-                <div class="bg-white p-4 rounded-2xl shadow-xs border border-gray-200">
-                    <p class="text-[11px] text-gray-400 font-bold uppercase">Active Kitchen Queue</p>
-                    <h3 id="statActiveCount" class="text-2xl font-bold text-blue-600 mt-1">0</h3>
-                    <p class="text-xs text-blue-600 mt-1 font-semibold">Pending & Preparing</p>
-                </div>
+    <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200">
+                <p class="text-xs font-bold text-slate-400 uppercase">UPI Collections</p>
+                <p id="upiRevenue" class="text-xl font-extrabold text-indigo-600 mt-1">₹0</p>
             </div>
-
-            <!-- Orders Queue Header & Filters -->
-            <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-xs border border-gray-200 flex-wrap gap-3">
-                <h2 class="font-bold text-base text-gray-800">Live Kitchen Queue</h2>
-                <div class="flex gap-1.5 flex-wrap">
-                    <button onclick="filterQueue('All')" class="queue-filter px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs">All</button>
-                    <button onclick="filterQueue('Pending')" class="queue-filter px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600">Pending</button>
-                    <button onclick="filterQueue('Preparing')" class="queue-filter px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600">Preparing</button>
-                    <button onclick="filterQueue('Ready')" class="queue-filter px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600">Ready</button>
-                </div>
+            <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200">
+                <p class="text-xs font-bold text-slate-400 uppercase">Cash Collections</p>
+                <p id="cashRevenue" class="text-xl font-extrabold text-amber-600 mt-1">₹0</p>
             </div>
-
-            <!-- Orders Grid -->
-            <div id="kitchenOrdersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Dynamically populated -->
+            <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200">
+                <p class="text-xs font-bold text-slate-400 uppercase">Active Queue Count</p>
+                <p id="queueCount" class="text-xl font-extrabold text-slate-800 mt-1">0</p>
             </div>
         </div>
 
-        <!-- MENU STOCK CONTROL TAB -->
-        <div id="tabContentStock" class="space-y-6 hidden">
-            <div class="bg-white p-6 rounded-2xl shadow-xs border border-gray-200">
-                <div class="mb-4">
-                    <h2 class="font-bold text-base text-gray-800">Live Menu Stock Toggle</h2>
-                    <p class="text-xs text-gray-400">Instantly update item stock availability on customer ordering apps.</p>
-                </div>
-                <div id="stockControlList" class="divide-y divide-gray-100">
-                    <!-- Stock items -->
-                </div>
+        <div class="flex justify-between items-center bg-white p-3 rounded-2xl shadow-xs border border-slate-200 flex-wrap gap-3">
+            <div class="flex gap-2">
+                <button onclick="filterQueue('All')" class="tab-btn px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white transition">All Orders</button>
+                <button onclick="filterQueue('Pending')" class="tab-btn px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 transition">Pending</button>
+                <button onclick="filterQueue('Preparing')" class="tab-btn px-4 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 transition">Preparing</button>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openStockModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">
+                    <i class="fa-solid fa-utensils mr-1"></i> Manage Stock
+                </button>
+                <button onclick="openFeedbackViewer()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">
+                    <i class="fa-solid fa-star mr-1"></i> Customer Reviews
+                </button>
             </div>
         </div>
 
-        <!-- ANALYTICS & GOOGLE SHEETS TAB -->
-        <div id="tabContentAnalytics" class="space-y-6 hidden">
-            <div class="bg-white p-6 rounded-2xl shadow-xs border border-gray-200 space-y-4">
-                <h2 class="font-bold text-base text-gray-800">Google Sheets Endpoint Configuration</h2>
-                <p class="text-xs text-gray-400">Configure your Apps Script deployment URL for automatic order archiving upon clearing.</p>
-                <div class="flex gap-2">
-                    <input type="text" id="googleScriptUrlInput" value="https://script.google.com/macros/s/AKfycbx.../exec" class="flex-1 px-3 py-2.5 border rounded-xl text-xs bg-gray-50 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="saveScriptUrl()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition">Save URL</button>
-                </div>
-                <div class="pt-4 border-t grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-gray-50 p-4 rounded-xl border">
-                        <p class="text-[11px] text-gray-400 font-bold uppercase">Yesterday's Sales</p>
-                        <h4 id="analyticsYesterday" class="text-lg font-bold text-gray-800 mt-1">₹4,850</h4>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl border">
-                        <p class="text-[11px] text-gray-400 font-bold uppercase">Monthly Revenue</p>
-                        <h4 id="analyticsMonthly" class="text-lg font-bold text-gray-800 mt-1">₹1,42,300</h4>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl border">
-                        <p class="text-[11px] text-gray-400 font-bold uppercase">Yearly Aggregate</p>
-                        <h4 id="analyticsYearly" class="text-lg font-bold text-gray-800 mt-1">₹15,80,400</h4>
-                    </div>
-                </div>
+        <div id="kitchenQueueGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             </div>
-        </div>
-
-        <!-- FEEDBACK & LOGS TAB -->
-        <div id="tabContentFeedback" class="space-y-6 hidden">
-            <div class="bg-white p-6 rounded-2xl shadow-xs border border-gray-200 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="font-bold text-base text-gray-800">Customer Feedbacks</h2>
-                    <button onclick="clearFeedbacks()" class="text-rose-600 text-xs font-bold hover:underline">Clear Feedbacks</button>
-                </div>
-                <div id="feedbackContainer" class="space-y-3">
-                    <p class="text-xs text-gray-400">No feedbacks received yet.</p>
-                </div>
-            </div>
-
-            <!-- Issue & Exception Logging -->
-            <div class="bg-white p-6 rounded-2xl shadow-xs border border-gray-200 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-gray-800">Kitchen Issue & Exception Log</h3>
-                    <button onclick="logNewIssue()" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-1.5 rounded-xl text-xs font-bold transition">+ Log Issue</button>
-                </div>
-                <div id="issueLogContainer" class="space-y-2">
-                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border text-xs">
-                        <div>
-                            <span class="font-bold text-rose-600">[Stock Alert]</span> Extra Cheese ingredient delayed delivery.
-                        </div>
-                        <span class="text-gray-400">12:30 PM</span>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
-    <!-- Thermal Receipt Preview Modal -->
     <div id="receiptModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4 font-mono">
-            <div class="text-center border-b pb-3">
-                <h3 class="font-bold text-sm uppercase tracking-wider text-gray-900">Cloud Kitchen Receipt</h3>
-                <p id="receiptTime" class="text-[10px] text-gray-500 mt-0.5"></p>
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4 font-mono text-xs">
+            <div class="text-center border-b pb-3 space-y-1">
+                <h3 class="font-bold text-sm">GANI CAFE KITCHEN</h3>
+                <p class="text-[10px] text-slate-500">Official Thermal Receipt Preview</p>
+                <p id="receiptMeta" class="text-[10px] text-slate-600"></p>
             </div>
-            <div id="receiptBody" class="text-xs space-y-1.5 border-b pb-3 max-h-48 overflow-y-auto">
-                <!-- Receipt items -->
-            </div>
-            <div class="flex justify-between font-bold text-xs">
-                <span>TOTAL AMOUNT:</span>
-                <span id="receiptTotalAmount" class="text-indigo-600">₹0</span>
+            <div id="receiptItemsList" class="space-y-2 border-b pb-3 max-h-48 overflow-y-auto"></div>
+            <div class="flex justify-between font-bold text-sm pt-1">
+                <span>Total Due:</span>
+                <span id="receiptTotal">₹0</span>
             </div>
             <div class="space-y-2 pt-2">
-                <button onclick="window.print()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow">Print Thermal Bill</button>
-                <button onclick="closeReceiptModal()" class="w-full bg-gray-100 text-gray-700 py-2 rounded-xl font-medium text-xs">Close</button>
+                <button onclick="window.print()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl font-bold">Print Receipt</button>
+                <button onclick="closeReceiptModal()" class="w-full bg-slate-100 text-slate-600 py-2 rounded-xl font-semibold">Close Preview</button>
             </div>
         </div>
     </div>
 
-    <script>
-        let menuItems = [
-            { id: 1, name: "Paneer Tikka", category: "Starters", price: 220, inStock: true },
-            { id: 2, name: "Veg Spring Rolls", category: "Starters", price: 180, inStock: true },
-            { id: 3, name: "Butter Chicken", category: "Mains", price: 350, inStock: true },
-            { id: 4, name: "Dal Makhani", category: "Mains", price: 240, inStock: true },
-            { id: 5, name: "Fresh Lime Soda", category: "Beverages", price: 90, inStock: true },
-            { id: 6, name: "Cold Coffee", category: "Beverages", price: 140, inStock: false }
-        ];
+    <div id="stockModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-sm">Menu Stock Availability</h3>
+                <button onclick="closeStockModal()"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="stockListContainer" class="space-y-3 max-h-60 overflow-y-auto"></div>
+            <button onclick="closeStockModal()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold">Save & Close</button>
+        </div>
+    </div>
 
-        let activeOrders = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
-        let currentFilter = 'All';
+    <div id="feedbackModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-sm">Customer Feedback Feed</h3>
+                <button onclick="closeFeedbackViewer()"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="feedbackListContainer" class="space-y-3 max-h-60 overflow-y-auto"></div>
+            <button onclick="closeFeedbackViewer()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
+            authDomain: "gani-cafe-52066.firebaseapp.com",
+            databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "gani-cafe-52066",
+            storageBucket: "gani-cafe-52066.appspot.com",
+            messagingSenderId: "292009300507",
+            appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
+            measurementId: "G-F7TXYZBYKY"
+        };
+        
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+        }
+        const db = firebase.firestore();
+
+        // GOOGLE SHEETS WEB APP URL
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
+
+        let queueFilter = 'All';
 
         window.addEventListener('DOMContentLoaded', () => {
-            renderOrders();
-            renderStockControl();
-            updateAnalytics();
-            renderFeedbacks();
-            
-            // Polling localStorage to sync live with customer actions
-            window.addEventListener('storage', () => {
-                activeOrders = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
-                renderOrders();
-                updateAnalytics();
-                renderFeedbacks();
-            });
+            refreshQueue();
+            setInterval(refreshQueue, 5000); // Polling sync
         });
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-indigo-600');
-                btn.classList.add('bg-slate-800');
-            });
-            document.getElementById('tabContentOrders').classList.add('hidden');
-            document.getElementById('tabContentStock').classList.add('hidden');
-            document.getElementById('tabContentAnalytics').classList.add('hidden');
-            document.getElementById('tabContentFeedback').classList.add('hidden');
-
-            if (tab === 'orders') {
-                document.getElementById('btnTabOrders').classList.add('bg-indigo-600');
-                document.getElementById('tabContentOrders').classList.remove('hidden');
-            } else if (tab === 'stock') {
-                document.getElementById('btnTabStock').classList.add('bg-indigo-600');
-                document.getElementById('tabContentStock').classList.remove('hidden');
-            } else if (tab === 'analytics') {
-                document.getElementById('btnTabAnalytics').classList.add('bg-indigo-600');
-                document.getElementById('tabContentAnalytics').classList.remove('hidden');
-            } else if (tab === 'feedback') {
-                document.getElementById('btnTabFeedback').classList.add('bg-indigo-600');
-                document.getElementById('tabContentFeedback').classList.remove('hidden');
-            }
+        function refreshQueue() {
+            renderKitchenQueue();
+            updateAnalytics();
         }
 
-        function renderOrders() {
-            activeOrders = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
-            const grid = document.getElementById('kitchenOrdersGrid');
+        function filterQueue(status) {
+            queueFilter = status;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-900', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            });
+            event.target.classList.remove('bg-slate-100', 'text-slate-600');
+            event.target.classList.add('bg-slate-900', 'text-white');
+            renderKitchenQueue();
+        }
+
+        function renderKitchenQueue() {
+            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
+            const grid = document.getElementById('kitchenQueueGrid');
             grid.innerHTML = '';
-            
-            let filtered = activeOrders;
-            if (currentFilter !== 'All') {
-                filtered = activeOrders.filter(o => o.status === currentFilter);
+
+            let filtered = queue;
+            if (queueFilter !== 'All') {
+                filtered = queue.filter(o => o.status === queueFilter);
             }
 
+            document.getElementById('queueCount').innerText = queue.length;
+
             if (filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-full bg-white p-12 rounded-2xl text-center text-gray-400 border border-gray-200 text-xs">No active orders found in this filter queue.</div>`;
-                document.getElementById('statActiveCount').innerText = activeOrders.filter(o => o.status !== 'Cleared').length;
+                grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400 text-xs">No orders in queue matching filter.</div>';
                 return;
             }
 
             filtered.forEach(order => {
                 let statusColor = 'bg-amber-100 text-amber-700';
-                if (order.status === 'Preparing') statusColor = 'bg-blue-100 text-blue-700';
-                if (order.status === 'Ready') statusColor = 'bg-purple-100 text-purple-700';
-                if (order.status === 'Billed') statusColor = 'bg-indigo-100 text-indigo-700';
-                if (order.status === 'Cleared') statusColor = 'bg-emerald-100 text-emerald-700';
+                if (order.status === 'Accepted') statusColor = 'bg-blue-100 text-blue-700';
+                if (order.status === 'Preparing') statusColor = 'bg-indigo-100 text-indigo-700';
+                if (order.status === 'Ready') statusColor = 'bg-emerald-100 text-emerald-700';
+                if (order.status === 'Cleared') statusColor = 'bg-slate-200 text-slate-700';
 
-                let itemsHtml = order.items.map(i => `<li class="flex justify-between text-xs text-gray-600"><span>${i.qty}x ${i.name}</span><span>₹${i.price * i.qty}</span></li>`).join('');
+                let itemsHtml = order.items.map(i => `<li class="flex justify-between text-xs py-0.5"><span>${i.name} x ${i.qty}</span><span class="font-bold">₹${i.price * i.qty}</span></li>`).join('');
 
                 grid.innerHTML += `
-                    <div class="bg-white rounded-2xl shadow-xs border border-gray-200 p-4 flex flex-col justify-between space-y-4">
+                    <div class="bg-white rounded-2xl shadow-xs border border-slate-200 p-4 flex flex-col justify-between space-y-3">
                         <div class="space-y-2">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="text-[11px] font-bold text-indigo-600">${order.orderId}</span>
-                                    <h3 class="font-bold text-gray-900 text-sm">Table ${order.table}</h3>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${statusColor}">${order.status}</span>
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-xs text-slate-800">${order.orderId}</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColor}">${order.status}</span>
                             </div>
-                            <p class="text-[11px] text-gray-400"><i class="fa-regular fa-clock"></i> ${order.time} &bull; <span class="font-semibold text-gray-600">${order.paymentMode}</span></p>
-                            <ul class="border-t border-b border-gray-100 py-2 space-y-1">
-                                ${itemsHtml}
-                            </ul>
+                            <div class="flex justify-between text-xs text-slate-500 font-medium">
+                                <span>Table: <strong class="text-slate-800">${order.table}</strong></span>
+                                <span>${order.time}</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <ul class="divide-y divide-slate-100">${itemsHtml}</ul>
+                            </div>
                         </div>
-                        <div class="space-y-2 pt-2 border-t border-gray-100">
-                            <div class="flex justify-between items-center font-bold text-xs">
-                                <span>Total Amount:</span>
-                                <span class="text-indigo-600 text-sm">₹${order.total}</span>
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span>Total: <span class="text-indigo-600">₹${order.total}</span></span>
+                                <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600">${order.paymentMode || 'Cash'}</span>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <select onchange="updateOrderStatus('${order.orderId}', this.value)" class="text-xs border rounded-xl px-2 py-1.5 font-semibold bg-gray-50 focus:outline-none">
-                                    <option value="" disabled selected>Move Status...</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Preparing">Preparing</option>
+                                <select onchange="updateOrderStatus('${order.orderId}', this.value)" class="bg-slate-100 border border-slate-200 rounded-xl px-2 py-1 text-xs font-bold text-slate-700 focus:outline-none">
+                                    <option value="" disabled selected>Status...</option>
+                                    <option value="Accepted">Accept</option>
+                                    <option value="Preparing">Prepare</option>
                                     <option value="Ready">Ready</option>
-                                    <option value="Billed">Billed</option>
-                                    <option value="Cleared">Verify & Clear</option>
+                                    <option value="Cleared">Clear & Archive</option>
                                 </select>
-                                <button onclick="previewReceipt('${order.orderId}')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold py-1.5 transition">Receipt</button>
+                                <button onclick="openReceiptPreview('${order.orderId}')" class="bg-slate-800 hover:bg-slate-900 text-white py-1 rounded-xl text-xs font-bold transition">Receipt</button>
                             </div>
                         </div>
                     </div>
                 `;
             });
-            document.getElementById('statActiveCount').innerText = activeOrders.filter(o => o.status !== 'Cleared').length;
-        }
-
-        function filterQueue(status) {
-            document.querySelectorAll('.queue-filter').forEach(btn => {
-                btn.classList.remove('bg-indigo-600', 'text-white');
-                btn.classList.add('bg-gray-100', 'text-gray-600');
-            });
-            event.target.classList.remove('bg-gray-100', 'text-gray-600');
-            event.target.classList.add('bg-indigo-600', 'text-white');
-            currentFilter = status;
-            renderOrders();
         }
 
         async function updateOrderStatus(orderId, newStatus) {
-            const order = activeOrders.find(o => o.orderId === orderId);
-            if (!order) return;
+            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
+            const order = queue.find(o => o.orderId === orderId);
+            if (order) {
+                order.status = newStatus;
+                localStorage.setItem('kitchenQueue', JSON.stringify(queue));
+                
+                // If active order matches customer view
+                const active = JSON.parse(localStorage.getItem('activeOrder') || '{}');
+                if (active.orderId === orderId) {
+                    active.status = newStatus;
+                    localStorage.setItem('activeOrder', JSON.stringify(active));
+                }
 
-            order.status = newStatus;
-            if (newStatus === 'Cleared') {
-                await syncToGoogleSheets(order);
-            }
-            
-            localStorage.setItem('kitchenQueue', JSON.stringify(activeOrders));
-            
-            // Also sync activeOrder if it matches
-            const activeCustomerOrder = JSON.parse(localStorage.getItem('activeOrder') || '{}');
-            if (activeCustomerOrder.orderId === orderId) {
-                activeCustomerOrder.status = newStatus;
-                localStorage.setItem('activeOrder', JSON.stringify(activeCustomerOrder));
-            }
+                // Sync with Firebase Firestore
+                try {
+                    await db.collection('orders').doc(orderId).update({ status: newStatus });
+                } catch (e) {
+                    console.error("Firebase Status Update Error:", e);
+                }
 
-            renderOrders();
-            updateAnalytics();
-        }
+                // If cleared, sync final state to Google Sheets
+                if (newStatus === 'Cleared') {
+                    try {
+                        await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(order)
+                        });
+                    } catch (e) {
+                        console.error("Sheets clearance sync error:", e);
+                    }
+                }
 
-        async function syncToGoogleSheets(order) {
-            const scriptUrl = document.getElementById('googleScriptUrlInput').value;
-            const syncBadge = document.getElementById('syncStatus');
-            syncBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> Syncing to Sheets...`;
-
-            try {
-                // Production-ready fetch payload to Google Apps Script Web App
-                /* 
-                await fetch(scriptUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(order)
-                });
-                */
-                await new Promise(resolve => setTimeout(resolve, 800));
-                syncBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> Sheets Synced`;
-            } catch (err) {
-                syncBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Sync Failed`;
-            }
-        }
-
-        function renderStockControl() {
-            const list = document.getElementById('stockControlList');
-            list.innerHTML = '';
-            menuItems.forEach(item => {
-                list.innerHTML += `
-                    <div class="py-3 flex justify-between items-center">
-                        <div>
-                            <h4 class="font-bold text-xs text-gray-900">${item.name}</h4>
-                            <p class="text-[11px] text-gray-400">${item.category} &bull; ₹${item.price}</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" ${item.inStock ? 'checked' : ''} onchange="toggleStock(${item.id})" class="sr-only peer">
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                            <span class="ml-2 text-xs font-semibold text-gray-600">${item.inStock ? 'In Stock' : 'Out'}</span>
-                        </label>
-                    </div>
-                `;
-            });
-        }
-
-        function toggleStock(id) {
-            const item = menuItems.find(i => i.id === id);
-            if (item) {
-                item.inStock = !item.inStock;
-                renderStockControl();
+                refreshQueue();
             }
         }
 
         function updateAnalytics() {
-            let totalRev = activeOrders.reduce((sum, o) => sum + o.total, 0);
-            let upiRev = activeOrders.filter(o => o.paymentMode && o.paymentMode.includes('UPI')).reduce((sum, o) => sum + o.total, 0);
-            let cashRev = activeOrders.filter(o => o.paymentMode && o.paymentMode.includes('Cash')).reduce((sum, o) => sum + o.total, 0);
+            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
+            let totalRev = 0;
+            let upiRev = 0;
+            let cashRev = 0;
 
-            document.getElementById('statTodayRev').innerText = `₹${totalRev}`;
-            document.getElementById('statUpiTotal').innerText = `₹${upiRev}`;
-            document.getElementById('statCashTotal').innerText = `₹${cashRev}`;
+            queue.forEach(o => {
+                totalRev += o.total;
+                if (o.paymentMode && o.paymentMode.includes('UPI')) {
+                    upiRev += o.total;
+                } else {
+                    cashRev += o.total;
+                }
+            });
+
+            document.getElementById('revenueDisplay').innerText = `₹${totalRev}`;
+            document.getElementById('upiRevenue').innerText = `₹${upiRev}`;
+            document.getElementById('cashRevenue').innerText = `₹${cashRev}`;
         }
 
-        function previewReceipt(orderId) {
-            const order = activeOrders.find(o => o.orderId === orderId);
+        function openReceiptPreview(orderId) {
+            let queue = JSON.parse(localStorage.getItem('kitchenQueue') || '[]');
+            const order = queue.find(o => o.orderId === orderId);
             if (!order) return;
 
-            document.getElementById('receiptTime').innerText = `${new Date().toLocaleDateString()} - ${order.time}`;
-            let body = document.getElementById('receiptBody');
-            body.innerHTML = order.items.map(i => `<div class="flex justify-between"><span>${i.qty}x ${i.name}</span><span>₹${i.price * i.qty}</span></div>`).join('');
-            document.getElementById('receiptTotalAmount').innerText = `₹${order.total}`;
+            document.getElementById('receiptMeta').innerText = `Order: ${order.orderId} | Table: ${order.table} | ${order.time}`;
+            let itemsHtml = order.items.map(i => `<div class="flex justify-between"><span>${i.name} x${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('');
+            document.getElementById('receiptItemsList').innerHTML = itemsHtml;
+            document.getElementById('receiptTotal').innerText = `₹${order.total}`;
+
             document.getElementById('receiptModal').classList.remove('hidden');
         }
 
@@ -390,45 +295,51 @@
             document.getElementById('receiptModal').classList.add('hidden');
         }
 
-        function renderFeedbacks() {
-            const container = document.getElementById('feedbackContainer');
-            const feedbacks = JSON.parse(localStorage.getItem('customerFeedbacks') || '[]');
-            if (feedbacks.length === 0) {
-                container.innerHTML = `<p class="text-xs text-gray-400">No feedbacks received yet.</p>`;
-                return;
-            }
-            container.innerHTML = feedbacks.map(f => `
-                <div class="bg-gray-50 p-3 rounded-xl border text-xs space-y-1">
-                    <div class="flex justify-between font-bold">
-                        <span class="text-amber-500">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span>
-                        <span class="text-gray-400 font-normal">${f.time}</span>
-                    </div>
-                    <p class="text-gray-700">${f.comment || 'No comment provided.'}</p>
+        function openStockModal() {
+            const container = document.getElementById('stockListContainer');
+            // Mock stock items toggle
+            const items = [
+                { id: 1, name: "Paneer Tikka", inStock: true },
+                { id: 2, name: "Veg Spring Rolls", inStock: true },
+                { id: 3, name: "Butter Chicken", inStock: true },
+                { id: 4, name: "Dal Makhani", inStock: true },
+                { id: 5, name: "Fresh Lime Soda", inStock: true },
+                { id: 6, name: "Cold Coffee", inStock: false }
+            ];
+            container.innerHTML = items.map(i => `
+                <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
+                    <span class="font-bold">${i.name}</span>
+                    <span class="text-emerald-600 font-semibold">Available</span>
                 </div>
             `).join('');
+            document.getElementById('stockModal').classList.remove('hidden');
         }
 
-        function clearFeedbacks() {
-            localStorage.removeItem('customerFeedbacks');
-            renderFeedbacks();
+        function closeStockModal() {
+            document.getElementById('stockModal').classList.add('hidden');
         }
 
-        function logNewIssue() {
-            const note = prompt("Enter kitchen issue or exception description:");
-            if (!note) return;
-            const container = document.getElementById('issueLogContainer');
-            container.innerHTML += `
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border text-xs">
-                    <div>
-                        <span class="font-bold text-amber-600">[Incident]</span> ${note}
+        function openFeedbackViewer() {
+            const container = document.getElementById('feedbackListContainer');
+            const feedbacks = JSON.parse(localStorage.getItem('customerFeedbacks') || '[]');
+            if (feedbacks.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 text-xs py-6">No customer feedback yet.</p>';
+            } else {
+                container.innerHTML = feedbacks.map(f => `
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1 text-xs">
+                        <div class="flex justify-between font-bold text-amber-500">
+                            <span>${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</span>
+                            <span class="text-[10px] text-slate-400">${f.time}</span>
+                        </div>
+                        <p class="text-slate-700">${f.comment || 'No comment provided.'}</p>
                     </div>
-                    <span class="text-gray-400">${new Date().toLocaleTimeString()}</span>
-                </div>
-            `;
+                `).join('');
+            }
+            document.getElementById('feedbackModal').classList.remove('hidden');
         }
 
-        function saveScriptUrl() {
-            alert("Google Apps Script URL saved successfully for Google Sheets order archiving.");
+        function closeFeedbackViewer() {
+            document.getElementById('feedbackModal').classList.add('hidden');
         }
     </script>
 </body>
