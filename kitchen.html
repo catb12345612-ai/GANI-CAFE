@@ -7,7 +7,7 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <!-- html2pdf.js CDN for robust PDF generation without errors -->
+  <!-- html2pdf.js CDN for robust PDF generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root { 
@@ -30,7 +30,6 @@
     header { background: var(--card-bg); padding: 20px 30px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); flex-wrap: wrap; gap: 15px; }
     header h1 { margin: 0; font-size: 24px; font-weight: 800; background: linear-gradient(to right, var(--gold), var(--yellow)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     
-    /* Analytics Tally Bar */
     .analytics-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .stat-card { background: linear-gradient(145deg, var(--card-bg), rgba(30,41,59,0.5)); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     .stat-card span:first-child { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px; }
@@ -61,8 +60,8 @@
     .ledger-card { border-left: 4px solid var(--cyan); }
 
     .admin-form { background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 10px; margin-bottom: 18px; border: 1px solid rgba(255,255,255,0.03); display: flex; flex-direction: column; gap: 10px; }
-    .admin-form input { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; transition: border 0.3s; }
-    .admin-form input:focus { border-color: var(--blue); }
+    .admin-form input, .admin-form select { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none; transition: border 0.3s; }
+    .admin-form input:focus, .admin-form select:focus { border-color: var(--blue); }
     
     .table-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 10px; margin-top: 15px; }
     .table-box { padding: 12px 5px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 13px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s; }
@@ -72,6 +71,10 @@
     .qty-controls { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 8px; }
     .qty-btn { background: transparent; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 0 8px; }
     .qty-btn:hover { color: var(--gold); }
+
+    /* Modal Overlay Styling */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px); }
+    .modal-card { background: #111827; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 420px; border-radius: 16px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
   </style>
 </head>
 <body>
@@ -181,6 +184,41 @@
 
   </div>
 
+  <!-- Clearance & Billing Confirmation Modal -->
+  <div id="clearance-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <h3 style="margin-top: 0; color: var(--gold);">📋 Order Clearance & Checkout</h3>
+      <p style="font-size: 12px; color: var(--text-muted);" id="modal-order-info">Table 1 (#12345)</p>
+      
+      <div class="admin-form" style="background: transparent; padding: 0;">
+        <label style="font-size: 11px; color: var(--text-muted);">Payment Mode</label>
+        <select id="modal-pay-mode">
+          <option value="UPI">UPI / QR Code</option>
+          <option value="Cash">Cash</option>
+          <option value="Card">Credit/Debit Card</option>
+        </select>
+
+        <label style="font-size: 11px; color: var(--text-muted);">Payment Status</label>
+        <select id="modal-pay-status">
+          <option value="Paid">Paid ✓</option>
+          <option value="In Bill">In Bill (Unpaid)</option>
+        </select>
+
+        <label style="font-size: 11px; color: var(--text-muted);">Kitchen Status</label>
+        <select id="modal-kitchen-status">
+          <option value="Completed">Completed ✓</option>
+          <option value="Preparing">Preparing</option>
+          <option value="Pending">Pending</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
+        <button class="btn" style="background: rgba(255,255,255,0.1); color: #fff;" onclick="closeClearanceModal()">Cancel</button>
+        <button class="btn" style="background: var(--green); color: #fff;" id="modal-confirm-btn">Clear & Print PDF</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden Printable Container used for automated PDF rendering -->
   <div id="pdf-receipt-template" style="display:none;"></div>
 
@@ -209,6 +247,7 @@
     let inventoryItems = {};
     let allFeedbacks = {};
     let previousOrderCount = 0;
+    let selectedOrderIdForClearance = null;
 
     function playSound() {
       let audio = document.getElementById('kitchen-alert-sound');
@@ -333,7 +372,7 @@
       let container = document.getElementById('sales-ledger-container');
       let keys = Object.keys(orders);
       let paidOrders = keys.filter(id => orders[id].paymentStatus === 'Paid')
-                           .sort((a, b) => orders[b].timestamp - orders[a].timestamp);
+                            .sort((a, b) => orders[b].timestamp - orders[a].timestamp);
 
       if (paidOrders.length === 0) {
         container.innerHTML = `<p style="color: var(--text-muted); font-size: 13px;">No completed transactions yet.</p>`;
@@ -435,9 +474,9 @@
                 ${order.status === 'Pending' ? `<button class="btn" style="background:var(--orange);" onclick="updateStatus('${id}', 'Preparing')">Cooking</button>` : ''}
                 ${order.status !== 'Completed' ? `<button class="btn" style="background:var(--green); color:#fff;" onclick="updateStatus('${id}', 'Completed')">Ready</button>` : ''}
                 ${payStatus !== 'Paid' ? `<button class="btn" style="background:var(--yellow); color:#000;" onclick="markStatus('${id}', 'In Bill')">In Bill</button>` : ''}
-                ${payStatus !== 'Paid' ? `<button class="btn" style="background:var(--blue); color:#fff;" onclick="markStatus('${id}', 'Paid')">Paid ₹</button>` : ''}
+                ${payStatus !== 'Paid' ? `<button class="btn" style="background:var(--blue); color:#fff;" onclick="quickPayAndClear('${id}')">Paid ₹</button>` : ''}
                 <button class="btn" style="background:var(--purple); color:#fff;" onclick="downloadPDFReceipt('${id}')">📥 PDF</button>
-                <button class="btn" style="background:var(--red); color:#fff;" onclick="clearOrder('${id}')">Clear ✕</button>
+                <button class="btn" style="background:var(--red); color:#fff;" onclick="openClearanceModal('${id}')">Clear ✕</button>
               </div>
             </div>
           </div>`;
@@ -497,13 +536,59 @@
       }).join('');
     }
 
-    // Action Handlers
+    // Direct Status Handlers
     function updateStatus(id, newStatus) { db.ref(`orders/${id}`).update({ status: newStatus }); }
     function markStatus(id, paymentStatus) { db.ref(`orders/${id}`).update({ paymentStatus: paymentStatus }); }
     function toggleStock(id, currentStatus) { db.ref(`menu/${id}`).update({ inStock: !currentStatus }); }
-    function clearOrder(id) { if (confirm('Archive this order off the live board?')) db.ref(`orders/${id}`).update({ status: 'Cleared' }); }
 
-    // Robust PDF Receipt Generator Function (Zero Error Guarantee)
+    // Enhanced One-Click Quick Pay & Clear Logic
+    function quickPayAndClear(id) {
+      if (confirm('Mark this order as PAID and clear from live kitchen queue?')) {
+        db.ref(`orders/${id}`).update({
+          paymentStatus: 'Paid',
+          status: 'Cleared',
+          paymentMode: 'Cash/UPI'
+        });
+        downloadPDFReceipt(id);
+      }
+    }
+
+    // Unified Clearance Modal Handler
+    function openClearanceModal(id) {
+      selectedOrderIdForClearance = id;
+      let order = allOrders[id];
+      if (!order) return;
+
+      document.getElementById('modal-order-info').innerText = `Table ${order.table} | Total: ₹${order.total} | ID: #${id.slice(-5)}`;
+      document.getElementById('modal-pay-mode').value = order.paymentMode || 'UPI';
+      document.getElementById('modal-pay-status').value = order.paymentStatus === 'Paid' ? 'Paid' : 'Paid';
+      document.getElementById('modal-kitchen-status').value = 'Completed';
+
+      document.getElementById('clearance-modal').style.display = 'flex';
+
+      document.getElementById('modal-confirm-btn').onclick = function() {
+        let mode = document.getElementById('modal-pay-mode').value;
+        let payStatus = document.getElementById('modal-pay-status').value;
+        let kStatus = document.getElementById('modal-kitchen-status').value;
+
+        db.ref(`orders/${id}`).update({
+          paymentMode: mode,
+          paymentStatus: payStatus,
+          status: 'Cleared',
+          kitchenCompletionStatus: kStatus
+        });
+
+        downloadPDFReceipt(id);
+        closeClearanceModal();
+      };
+    }
+
+    function closeClearanceModal() {
+      document.getElementById('clearance-modal').style.display = 'none';
+      selectedOrderIdForClearance = null;
+    }
+
+    // PDF Receipt Generator Function
     function downloadPDFReceipt(id) {
       let order = allOrders[id];
       if (!order) return;
@@ -522,7 +607,7 @@
             <div><strong>Order ID:</strong> #${id.slice(-5)}</div>
             <div><strong>Table:</strong> ${order.table}</div>
             <div><strong>Date:</strong> ${formatFullDateTime(order.timestamp)}</div>
-            <div><strong>Status:</strong> ${order.paymentStatus || 'Unpaid'} (${order.paymentMode || 'Cash'})</div>
+            <div><strong>Status:</strong> ${order.paymentStatus || 'Paid'} (${order.paymentMode || 'Cash/UPI'})</div>
           </div>
           <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
           <div style="font-size: 11px; font-weight: bold; margin-bottom: 4px;">ORDERED ITEMS:</div>
