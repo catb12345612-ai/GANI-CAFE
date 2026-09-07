@@ -393,6 +393,8 @@
 
   <!-- Firebase & Core Application Logic -->
   <script>
+    const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbw2D8ddsD6kNbIyLQu_tsmGXUxIzIpQ8noKPvdBBt-wdHUYCd35PIy6-oeHI-fnsw0V/exec";
+
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -420,6 +422,27 @@
       let dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
       let timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       return `${dateStr} • ${timeStr}`;
+    }
+
+    // Function to log cleared/paid bills to Google Sheet
+    function logBillToGoogleSheet(productName, paymentMode) {
+      const data = {
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString(),
+        product: productName,
+        payment_mode: paymentMode
+      };
+
+      fetch(GOOGLE_SHEET_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      })
+      .then(() => console.log("Google Sheet logged successfully for:", productName))
+      .catch(error => console.error("Error logging to Google Sheet:", error));
     }
 
     function renderMenu() {
@@ -467,11 +490,27 @@
     });
 
     db.ref('orders').on('value', snap => {
+      let oldOrders = allOrdersData;
       allOrdersData = snap.val() || {};
       let currentTable = document.getElementById('table-num').value;
       
+      // Check for newly completed or cleared status changes to trigger Google Sheet logging automatically
       Object.keys(allOrdersData).forEach(id => {
         let order = allOrdersData[id];
+        let oldOrder = oldOrders[id];
+
+        // If an order has just been marked completed/paid/cleared and wasn't before
+        if (order && order.items) {
+          let wasClearedOrPaid = oldOrder && (oldOrder.status === 'Completed' || oldOrder.paymentStatus === 'Paid');
+          let isClearedOrPaidNow = order.status === 'Completed' || order.paymentStatus === 'Paid' || order.status === 'Cleared';
+          
+          if (!wasClearedOrPaid && isClearedOrPaidNow) {
+            order.items.forEach(itemStr => {
+              logBillToGoogleSheet(itemStr, order.paymentMode || 'UPI');
+            });
+          }
+        }
+
         if (String(order.table) === String(currentTable)) {
           if (previousTableStatuses[id] && previousTableStatuses[id] !== order.status) {
             if (order.status === 'Completed' || order.status === 'Preparing') {
@@ -577,6 +616,11 @@
       if (items.length === 0) { alert('Cart is empty.'); return; }
       if (!table) { alert('Specify valid table.'); return; }
 
+      // Also log items immediately to Google Sheet upon checkout dispatch if preferred
+      items.forEach(itemStr => {
+        logBillToGoogleSheet(itemStr, paymentMode);
+      });
+
       // Elite Confetti VFX on Order Dispatch
       confetti({
         particleCount: 80,
@@ -590,7 +634,7 @@
         items: items,
         total: total,
         status: 'Pending',
-        paymentStatus: 'Unpaid',
+        paymentStatus: 'Paid',
         paymentMode: paymentMode,
         timestamp: Date.now()
       });
