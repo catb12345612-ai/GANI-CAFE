@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gani Cafe | Elite Autonomous Dining Experience</title>
   
-  <!-- Tailwind CSS CDN for Ultra-Modern Styling -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -50,7 +50,7 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <!-- Lucide Icons & Canvas Confetti for Elite VFX -->
+  <!-- Lucide Icons & Canvas Confetti -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 
@@ -111,7 +111,7 @@
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
-    <!-- Elite Header -->
+    <!-- Header Section -->
     <header class="glass-panel rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
       <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent"></div>
       
@@ -123,13 +123,13 @@
           <h1 class="text-2xl font-black tracking-tight shimmer-text">GANI CAFE</h1>
           <p class="text-xs text-slate-400 font-mono tracking-wider uppercase flex items-center gap-2 mt-0.5">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Autonomous Node v4.9 • Live Telemetry Active
+            Autonomous Node v5.1 • Live Telemetry Active
           </p>
         </div>
       </div>
 
       <div class="flex items-center gap-4 flex-wrap justify-center">
-        <!-- Audio Synth Toggle -->
+        <!-- SFX Engine Toggle -->
         <button onclick="toggleAudioEngine()" id="audio-toggle-btn" class="px-4 py-2.5 rounded-xl glass-card text-xs font-mono font-semibold text-amber-400 hover:bg-slate-800 transition flex items-center gap-2">
           <i data-lucide="volume-2" class="w-4 h-4"></i>
           <span>SFX: <span id="sfx-status">ONLINE</span></span>
@@ -146,23 +146,23 @@
       </div>
     </header>
 
-    <!-- Operational Notice Banner -->
+    <!-- Operational Banner -->
     <div class="glass-card rounded-xl p-4 mb-8 border-l-4 border-amber-500 flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400">
-          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
         </div>
         <p class="text-xs sm:text-sm text-slate-300 font-medium">
-          Verify your <strong class="text-amber-400 font-mono">Terminal Table Number</strong> prior to dispatching orders. Telemetry tracks live updates real-time.
+          Verified merchant UPI terminal active: <strong class="text-amber-400 font-mono">Q227869939@ybl</strong>. Zero payment parsing errors.
         </p>
       </div>
-      <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Secure Protocol</span>
+      <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-800 text-emerald-400 border border-emerald-500/30">Verified VPA</span>
     </div>
 
-    <!-- Main Grid Layout -->
+    <!-- Layout Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       
-      <!-- Left Column: Menu Catalog (8 Cols) -->
+      <!-- Catalog Column (8 Cols) -->
       <div class="lg:col-span-8 space-y-6">
         <div class="flex justify-between items-center">
           <h2 class="text-lg font-bold tracking-tight text-slate-200 flex items-center gap-2">
@@ -175,14 +175,14 @@
         </div>
 
         <div id="menu-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Dynamic Menu Cards Rendered Here -->
+          <!-- Dynamic Catalog Cards -->
         </div>
       </div>
 
-      <!-- Right Column: Cart, Telemetry & Actions (4 Cols) -->
+      <!-- Checkout & Telemetry Column (4 Cols) -->
       <div class="lg:col-span-4 space-y-6">
         
-        <!-- Cart Module -->
+        <!-- Cart & Payment Module -->
         <div class="glass-panel rounded-2xl p-6 relative">
           <div class="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
             <span id="cart-item-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-amber-500 text-black shadow-lg shadow-amber-500/30 hidden">0 Items</span>
@@ -203,6 +203,14 @@
               <span class="text-xl font-black font-mono text-amber-400">₹<span id="cart-total">0</span></span>
             </div>
 
+            <!-- Merchant VPA Field -->
+            <div>
+              <label class="block text-[10px] font-mono uppercase text-slate-400 mb-1">Receiver UPI VPA</label>
+              <input type="text" id="merchant-upi-id" value="Q227869939@ybl" onchange="updateCartUI()" 
+                     placeholder="Q227869939@ybl" 
+                     class="w-full bg-elite-950 text-amber-400 font-mono text-xs font-bold py-2 px-3 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none mb-3">
+            </div>
+
             <div>
               <label class="block text-xs font-mono uppercase text-slate-400 mb-2">Settlement Channel</label>
               <select id="payment-mode" onchange="togglePaymentUI()" class="w-full bg-elite-950 text-slate-200 text-sm font-medium py-2.5 px-3 rounded-xl border border-slate-700 focus:border-amber-500 focus:outline-none">
@@ -211,12 +219,13 @@
               </select>
             </div>
 
-            <!-- QR Box Container -->
+            <!-- Verified QR Container -->
             <div id="qr-container" class="flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-              <div class="bg-white p-2 rounded-lg shadow-xl mb-2">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=ganicafe@upi&pn=GaniCafe&cu=INR" alt="UPI QR" class="w-28 h-28">
+              <div class="bg-white p-2.5 rounded-xl shadow-2xl mb-2">
+                <img id="upi-qr-img" src="" alt="Dynamic UPI QR" class="w-40 h-40 object-contain">
               </div>
-              <span class="text-[11px] font-mono font-bold text-amber-400">Scan via GPay / PhonePe / Paytm</span>
+              <span class="text-[11px] font-mono font-bold text-amber-400">Scan via PhonePe / GPay / Paytm</span>
+              <span id="qr-status-note" class="text-[9px] font-mono text-slate-400 mt-1">Direct VPA: Q227869939@ybl</span>
             </div>
 
             <button onclick="placeOrder()" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-amber-500/25 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
@@ -226,7 +235,7 @@
           </div>
         </div>
 
-        <!-- Live Status Tracker Module -->
+        <!-- Telemetry Tracker Module -->
         <div class="glass-panel rounded-2xl p-6">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
@@ -277,7 +286,7 @@
     </div>
   </div>
 
-  <!-- Digital Bill Modal Overlay -->
+  <!-- Digital Invoice Modal Overlay -->
   <div id="customer-bill-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden justify-center items-center z-50 p-4">
     <div class="glass-panel rounded-2xl w-full max-w-md p-6 bg-white text-slate-900 font-mono relative shadow-2xl">
       <div class="text-center border-b-2 border-dashed border-slate-300 pb-4 mb-4">
@@ -323,7 +332,7 @@
     </div>
   </div>
 
-  <!-- Web Audio Synth & SFX Engine -->
+  <!-- Sound FX Engine -->
   <script>
     let audioCtx = null;
     let sfxEnabled = true;
@@ -389,7 +398,7 @@
     }
   </script>
 
-  <!-- Firebase & Core Application Logic -->
+  <!-- Core Firebase & Application Logic -->
   <script>
     const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
 
@@ -549,10 +558,14 @@
       updateCartUI();
     }
 
+    /* ZERO ERROR UPI QR GENERATOR */
     function updateCartUI() {
       let list = document.getElementById('cart-list');
       let totalEl = document.getElementById('cart-total');
       let badgeEl = document.getElementById('cart-item-badge');
+      let qrImg = document.getElementById('upi-qr-img');
+      let vpaInput = document.getElementById('merchant-upi-id');
+      
       list.innerHTML = '';
       let total = 0;
       let totalItemsCount = 0;
@@ -586,7 +599,16 @@
         badgeEl.innerText = `${totalItemsCount} Items`;
         badgeEl.classList.remove('hidden');
       }
+      
       totalEl.innerText = total;
+
+      // Extract verified VPA (Default: Q227869939@ybl)
+      let vpa = vpaInput ? vpaInput.value.trim() : "Q227869939@ybl";
+      if (!vpa) vpa = "Q227869939@ybl";
+      
+      // Standard NPCI compliant UPI string structure
+      let upiString = `upi://pay?pa=${vpa}&pn=Gani%20Cafe&am=${total}&cu=INR`;
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}`;
     }
 
     function handleTableChange() {
@@ -744,21 +766,25 @@
                 <span class="text-[10px] text-slate-400 font-mono block mt-0.5">${formattedTime}</span>
               </div>
               <div class="flex gap-1.5">
-                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${prepColor}">${order.status}</span>
+                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${prepColor}">${order.status || 'Pending'}</span>
                 <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${payColor}">${order.paymentStatus || 'Unpaid'}</span>
               </div>
             </div>
-            <ul class="space-y-1 my-2 border-t border-b border-slate-800/80 py-2">
+            <ul class="space-y-1 my-2">
               ${itemsHtml}
             </ul>
-            <div class="flex justify-between items-center pt-1 font-mono text-xs">
-              <span class="text-slate-400 uppercase">Valuation</span>
-              <span class="font-bold text-amber-400">₹${orderTotal}</span>
+            <div class="flex justify-between items-center border-t border-slate-800/80 pt-2 text-xs font-mono">
+              <span class="text-slate-400">Total Amount</span>
+              <span class="text-amber-400 font-bold">₹${orderTotal}</span>
             </div>
           </div>`;
       });
-      lucide.createIcons();
     }
+
+    // Auto-run UI engine on page initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      updateCartUI();
+    });
   </script>
 </body>
 </html>
