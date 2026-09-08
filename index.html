@@ -191,7 +191,7 @@
     }
   </style>
 </head>
-<body>
+<body onload="initApp()">
 
   <!-- HEADER -->
   <header>
@@ -312,7 +312,6 @@
     
     const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbybeSPXR0ud-SIEYb8FWcovCdrZfaDHwvckXrZDcD9yLbeIHcJDqOVmTg4vWioE-cG0/exec";
 
-    // Initialize Firebase safely
     let db;
     try {
       firebase.initializeApp(firebaseConfig);
@@ -321,7 +320,6 @@
       console.error("Firebase init failed:", e);
     }
 
-    // Mock Data for Zero Error Fallback
     const mockMenu = [
       { id: 'm1', name: 'Premium Cappuccino', category: 'Coffee', price: 140, inStock: true, img: 'https://images.unsplash.com/photo-1534045511874-5694c921501e?w=300' },
       { id: 'm2', name: 'Iced Caramel Macchiato', category: 'Coffee', price: 180, inStock: true, img: 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=300' },
@@ -337,12 +335,44 @@
     let isAISearchActive = false;
     let suggestedItem = null;
 
+    // Sound Synthesizer for UI SFX
+    function playSFX(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'click') {
+          osc.frequency.setValueAtTime(400, ctx.currentTime);
+          gain.gain.setValueAtTime(0.05, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+          osc.start(); osc.stop(ctx.currentTime + 0.05);
+        } else if (type === 'add') {
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+          osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1); // A5
+          gain.gain.setValueAtTime(0.08, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+          osc.start(); osc.stop(ctx.currentTime + 0.12);
+        } else if (type === 'success') {
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+          osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
+          osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16);
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+          osc.start(); osc.stop(ctx.currentTime + 0.3);
+        }
+      } catch(e) {
+        // AudioContext ignored if blocked
+      }
+    }
+
     // ==========================================
     // 2. INITIALIZATION & DATA FETCHING
     // ==========================================
     function initApp() {
       if (db) {
-        // Fetch Menu
         db.ref("menu").on("value", snapshot => {
           const val = snapshot.val();
           if (val) {
@@ -357,7 +387,7 @@
                 img: item.img || item.image || item.imageUrl || "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300"
               }));
           } else {
-            menuData = mockMenu; // Fallback to mock
+            menuData = mockMenu;
           }
           renderCategories();
           renderMenu();
@@ -368,14 +398,12 @@
           renderMenu();
         });
 
-        // Fetch Orders
         db.ref("orders").on("value", snapshot => {
           const val = snapshot.val();
           liveOrders = val ? Object.values(val).filter(o => o && typeof o === 'object') : [];
           renderOrdersTracker();
         });
       } else {
-        // Run with mock data if no db
         menuData = mockMenu;
         renderCategories();
         renderMenu();
@@ -411,11 +439,9 @@
 
     function renderMenu() {
       const query = document.getElementById("searchInput").value.toLowerCase();
-      
       let filtered = menuData;
 
       if (isAISearchActive) {
-        // AI Logic: Suggest premium/high margin items or random combo
         filtered = menuData.filter(i => i.price > 130).slice(0, 6);
       } else {
         filtered = menuData.filter(item => 
@@ -505,7 +531,7 @@
 
     function calculateTotals() {
       const subtotal = cart.reduce((acc, i) => acc + (Number(i.price) * i.qty), 0);
-      const tax = subtotal * 0.05; // 5% GST Mock
+      const tax = subtotal * 0.05;
       const total = subtotal + tax;
 
       document.getElementById("subtotalVal").innerText = `₹${subtotal.toFixed(2)}`;
@@ -515,12 +541,10 @@
       return Math.round(total);
     }
 
-    // --- AI Pairing Engine ---
     function processAIEngine() {
       const box = document.getElementById("aiSuggestionBox");
       if (cart.length === 0) { box.classList.remove("active"); return; }
 
-      // Logic: If cart has coffee, suggest snack/dessert. If cart has meal, suggest drink.
       const hasCoffee = cart.some(i => i.category.toLowerCase() === 'coffee' || i.category.toLowerCase() === 'drinks');
       const hasFood = cart.some(i => i.category.toLowerCase() === 'snacks' || i.category.toLowerCase() === 'meals');
 
@@ -581,7 +605,6 @@
       
       if (method === "UPI QR") {
         qrBox.style.display = "block";
-        // Generating real UPI link QR
         const upiString = `upi://pay?pa=ganicafe@upi&pn=GaniCafe&am=${total}&cu=INR`;
         document.getElementById("upiQrCodeImg").src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}&margin=10`;
         document.getElementById("qrAmountLabel").innerText = `₹${total}`;
@@ -594,7 +617,7 @@
       const tableNo = document.getElementById("tableSelector").value;
       const payMethod = document.getElementById("paymentMethod").value;
       const totalAmount = calculateTotals();
-      const orderId = "ORD" + Math.floor(1000 + Math.random() * 9000); // Shorter elegant ID
+      const orderId = "ORD" + Math.floor(1000 + Math.random() * 9000);
 
       const orderPayload = {
         orderId: orderId, 
@@ -603,20 +626,18 @@
         totalAmount: totalAmount,
         paymentMethod: payMethod, 
         paymentStatus: payMethod === "Cash" ? "Pending" : "Paid",
-        kitchenStatus: "Pending", // Pending -> Preparing -> Ready
+        kitchenStatus: "Pending",
         timestamp: Date.now(), 
         dateStr: new Date().toLocaleString()
       };
 
-      // 1. Firebase Write
       if (db) {
         db.ref("orders/" + orderId).set(orderPayload).catch(e => console.error("Firebase write error:", e));
       } else {
-        liveOrders.push(orderPayload); // Local mock fallback
+        liveOrders.push(orderPayload);
         renderOrdersTracker();
       }
 
-      // 2. Google Apps Script Post
       try {
         fetch(GAS_WEBAPP_URL, {
           method: "POST", mode: "no-cors",
@@ -628,7 +649,6 @@
       playSFX('success');
       alert(`Order ${orderId} sent to Kitchen successfully!`);
       
-      // Reset State
       cart = []; 
       renderCart(); 
       document.getElementById("aiSuggestionBox").classList.remove("active");
@@ -649,7 +669,6 @@
       }
 
       container.innerHTML = sorted.map(o => {
-        // Determine timeline states
         const kStatus = o.kitchenStatus || "Pending";
         const isPrep = kStatus === "Preparing" || kStatus === "Ready";
         const isReady = kStatus === "Ready";
@@ -666,62 +685,32 @@
           </div>
           
           <div style="font-size: 0.85rem; color: #d4d4d8; margin-bottom: 15px; line-height: 1.4;">
-            ${o.items.map(i => `<span style="display:inline-block; margin-right:8px; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">${i.qty}x ${i.name}</span>`).join("")}
+            ${o.items.map(i => `<span style="display:inline-block; margin-right:8px; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; margin-bottom: 4px;">${i.qty}x ${i.name}</span>`).join('')}
+          </div>
+
+          <div class="status-badges">
+            <span class="badge ${pStatus === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">${pStatus} (${o.paymentMethod})</span>
+            <span class="badge" style="background: rgba(139, 92, 246, 0.1); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3);">Kitchen: ${kStatus}</span>
           </div>
 
           <div class="timeline">
             <div class="step completed">
               <div class="step-icon">✓</div>
-              <div class="step-text">Placed</div>
+              <div class="step-text">Received</div>
             </div>
-            <div class="step ${isPrep ? 'completed' : (kStatus === 'Pending' ? 'active' : '')}">
-              <div class="step-icon">${isPrep ? '✓' : '⚙'}</div>
+            <div class="step ${isPrep ? 'completed' : ''}">
+              <div class="step-icon">${isPrep ? '✓' : ''}</div>
               <div class="step-text">Preparing</div>
             </div>
             <div class="step ${isReady ? 'completed active' : ''}">
-              <div class="step-icon">${isReady ? '✓' : '★'}</div>
+              <div class="step-icon">${isReady ? '✓' : ''}</div>
               <div class="step-text">Ready</div>
             </div>
           </div>
-
-          <div class="status-badges">
-            <span class="badge ${pStatus === 'Paid' ? 'badge-paid' : 'badge-unpaid'}">💳 ${pStatus}</span>
-          </div>
         </div>
-      `}).join("");
+        `;
+      }).join("");
     }
-
-    // ==========================================
-    // 7. UTILS & EFFECTS
-    // ==========================================
-    function playSFX(type) {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        
-        if (type === 'click') { 
-          osc.frequency.setValueAtTime(400, ctx.currentTime); 
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1); 
-          osc.start(); osc.stop(ctx.currentTime + 0.1);
-        } else if (type === 'add') { 
-          osc.frequency.setValueAtTime(800, ctx.currentTime); 
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15); 
-          osc.start(); osc.stop(ctx.currentTime + 0.15);
-        } else if (type === 'success') {
-          // Double beep
-          osc.frequency.setValueAtTime(600, ctx.currentTime);
-          osc.frequency.setValueAtTime(900, ctx.currentTime + 0.1);
-          gain.gain.setValueAtTime(0.1, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-          osc.start(); osc.stop(ctx.currentTime + 0.3);
-        }
-      } catch(e){}
-    }
-
-    // Boot Up
-    window.onload = initApp;
   </script>
 </body>
 </html>
