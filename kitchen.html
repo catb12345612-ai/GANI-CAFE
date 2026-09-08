@@ -3,80 +3,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gani Cafe | Kitchen Admin</title>
+  <title>Gani Cafe | Smart Kitchen AI</title>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
   <style>
-    :root { --bg-dark: #070a12; --card-bg: #111827; --accent-gold: #f59e0b; --accent-emerald: #10b981; --accent-blue: #3b82f6; --danger: #ef4444; --text-light: #f9fafb; --text-muted: #9ca3af; --border-color: #1f2937; }
+    :root { 
+      --bg-dark: #050505; 
+      --card-bg: #11131a; 
+      --accent-gold: #f59e0b; 
+      --accent-emerald: #10b981; 
+      --accent-blue: #3b82f6; 
+      --accent-ai: #8b5cf6;
+      --danger: #ef4444; 
+      --text-light: #f9fafb; 
+      --text-muted: #9ca3af; 
+      --border-color: #272a35; 
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
     body { background: var(--bg-dark); color: var(--text-light); min-height: 100vh; display: flex; flex-direction: column; }
-    header { background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-    .brand { font-size: 1.5rem; font-weight: 800; color: var(--accent-gold); }
-    .nav-tabs { display: flex; gap: 10px; }
-    .tab-btn { background: #1f2937; border: none; color: #fff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .tab-btn.active { background: var(--accent-gold); color: #000; }
+    
+    /* Header & Nav */
+    header { background: rgba(17, 19, 26, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100;}
+    .brand { font-size: 1.5rem; font-weight: 800; background: linear-gradient(90deg, var(--accent-gold), var(--accent-ai)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-tabs { display: flex; gap: 10px; flex-wrap: wrap; }
+    .tab-btn { background: #1f2937; border: 1px solid transparent; color: #fff; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+    .tab-btn:hover { background: #374151; }
+    .tab-btn.active { background: rgba(139, 92, 246, 0.15); color: var(--accent-ai); border-color: var(--accent-ai); box-shadow: 0 0 10px rgba(139,92,246,0.2); }
+    
     .content-area { flex: 1; padding: 20px; overflow-y: auto; }
     
-    .kds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
-    .ticket-card { background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 10px; display: flex; flex-direction: column; }
-    .ticket-head { padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-    .ticket-body { padding: 14px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-    .ticket-actions { padding: 10px; background: #000; display: flex; gap: 8px; }
-    .btn-act { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; }
+    /* Grid Layouts */
+    .kds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
     
+    /* Cards */
+    .ticket-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .ticket-card:hover { transform: translateY(-3px); border-color: #3b82f6; }
+    .ticket-head { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
+    .ticket-body { padding: 15px; flex: 1; display: flex; flex-direction: column; gap: 10px; font-size: 1.05rem; }
+    .ticket-actions { padding: 12px; background: rgba(0,0,0,0.5); display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    /* Buttons */
+    .btn-act { flex: 1; min-width: 100px; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: #fff; transition: opacity 0.2s; }
+    .btn-act:hover { opacity: 0.8; }
+    .btn-outline { background: transparent; border: 1px solid var(--text-muted); color: var(--text-light); }
+    
+    /* Tables */
     .tables-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
-    .table-box { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; }
-    .table-box.occupied { border-color: var(--danger); background: rgba(239,68,68,0.1); }
+    .table-box { background: var(--card-bg); border: 1px solid var(--border-color); padding: 20px 15px; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.3s; }
+    .table-box.occupied { border-color: var(--danger); background: rgba(239,68,68,0.08); box-shadow: 0 0 15px rgba(239,68,68,0.1); }
     
-    .form-box { background: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); max-width: 500px; }
-    input, select { width: 100%; padding: 10px; margin-top: 8px; margin-bottom: 12px; background: #000; border: 1px solid var(--border-color); color: #fff; border-radius: 6px; }
+    /* Forms & Inputs */
+    .form-box { background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); }
+    input, select { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; border-radius: 8px; outline: none; }
+    input:focus { border-color: var(--accent-ai); }
+
+    /* Data Tables (Tally) */
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+    .data-table th { color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; }
+
+    /* AI Dashboard specific */
+    .ai-insight-card { background: linear-gradient(145deg, rgba(139,92,246,0.1), rgba(0,0,0,0)); border: 1px solid rgba(139,92,246,0.3); padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--accent-ai); }
+    .ai-insight-card h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--accent-ai); }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="brand">🍳 GANI CAFE KITCHEN</div>
+    <div class="brand">🍳 GANI CAFE | AI KITCHEN</div>
     <div class="nav-tabs">
-      <button class="tab-btn active" id="tabKds" onclick="switchTab('kds')">Live Orders</button>
-      <button class="tab-btn" id="tabMenu" onclick="switchTab('menu')">Manage Menu</button>
-      <button class="tab-btn" id="tabTables" onclick="switchTab('tables')">Tables</button>
-      <button class="tab-btn" id="tabTally" onclick="switchTab('tally')">Sales Tally</button>
+      <button class="tab-btn active" id="tabKds" onclick="switchTab('kds')">🔴 Live KDS</button>
+      <button class="tab-btn" id="tabMenu" onclick="switchTab('menu')">📦 Menu & Stock</button>
+      <button class="tab-btn" id="tabTables" onclick="switchTab('tables')">🪑 Tables</button>
+      <button class="tab-btn" id="tabTally" onclick="switchTab('tally')">📊 Daily Tracker</button>
+      <button class="tab-btn" id="tabAi" onclick="switchTab('ai')">🧠 AI Insights</button>
     </div>
   </header>
 
   <div class="content-area">
+    <!-- LIVE KDS VIEW -->
     <div id="viewKds">
+      <div style="margin-bottom: 15px; color: var(--text-muted);">Real-time kitchen display and clearance system.</div>
       <div class="kds-grid" id="kdsTicketsContainer"></div>
     </div>
 
+    <!-- MENU & STOCK VIEW -->
     <div id="viewMenu" style="display: none;">
-      <h2>Add / Manage Menu Items</h2>
-      <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 15px;">
-        <div class="form-box">
-          <input type="text" id="newItemName" placeholder="Item Name">
-          <input type="text" id="newItemCat" placeholder="Category (e.g. Chai, Snacks)">
-          <input type="number" id="newItemPrice" placeholder="Price">
-          <input type="text" id="newItemImg" placeholder="Image URL (Optional)">
-          <button class="btn-act" style="background:var(--accent-emerald);" onclick="addNewMenuItem()">Save Item</button>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div class="form-box" style="flex: 1; min-width: 300px; max-width: 400px;">
+          <h2 style="margin-bottom: 15px;">➕ Add New Item</h2>
+          <input type="text" id="newItemName" placeholder="Item Name (e.g. Masala Dosa)">
+          <input type="text" id="newItemCat" placeholder="Category (e.g. Breakfast, Beverages)">
+          <input type="number" id="newItemPrice" placeholder="Price (₹)">
+          <button class="btn-act" style="background:var(--accent-ai); width: 100%;" onclick="addNewMenuItem()">Save to Menu</button>
         </div>
-        <div style="flex:1; min-width:300px; max-height: 500px; overflow-y: auto;" id="stockListContainer"></div>
+        <div class="form-box" style="flex: 2; min-width: 300px; max-height: 600px; overflow-y: auto;">
+          <h2 style="margin-bottom: 15px;">📦 Current Stock Management</h2>
+          <div id="stockListContainer"></div>
+        </div>
       </div>
     </div>
 
+    <!-- TABLES VIEW -->
     <div id="viewTables" style="display: none;">
+      <h2 style="margin-bottom: 20px;">Live Table Status</h2>
       <div class="tables-grid" id="tablesGridContainer"></div>
     </div>
 
+    <!-- DAILY TRACKER VIEW -->
     <div id="viewTally" style="display: none;">
       <div class="form-box" style="max-width: 100%;">
-        <h2>Total Revenue: <span id="totalRevenueLabel" style="color:var(--accent-emerald);">₹0</span></h2>
-        <p id="totalOrdersCountLabel">Total Orders: 0</p>
-        <div id="salesBreakdownContainer" style="margin-top:15px;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div>
+            <h2 style="font-size: 2rem;">Total Revenue: <span id="totalRevenueLabel" style="color:var(--accent-emerald);">₹0</span></h2>
+            <p id="totalOrdersCountLabel" style="color: var(--text-muted); margin-top: 5px;">Total Orders: 0</p>
+          </div>
+          <button class="btn-act btn-outline" style="max-width: 200px;" onclick="downloadEndOfDayReport()">📥 Export EOD Report</button>
+        </div>
+        <hr style="border-color: var(--border-color); margin: 20px 0;">
+        <h3 style="margin-bottom: 10px;">Itemized Sales Breakdown</h3>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Qty Sold</th>
+                <th>Revenue Generated</th>
+              </tr>
+            </thead>
+            <tbody id="salesBreakdownContainer"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI INSIGHTS VIEW -->
+    <div id="viewAi" style="display: none;">
+      <h2 style="margin-bottom: 20px; color: var(--accent-ai);">System Intelligence & Diagnostics</h2>
+      <div id="aiInsightsContainer">
+        <!-- Injected via JS -->
       </div>
     </div>
   </div>
 
   <script>
+    // --- FIREBASE INIT ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM", authDomain: "gani-cafe-52066.firebaseapp.com",
       databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -86,68 +157,109 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // --- GLOBAL STATE ---
     let ordersData = [];
     let menuData = [];
     let tablesData = {};
 
     function initKitchen() {
+      // Listen to Orders
       db.ref("orders").on("value", snapshot => {
         const val = snapshot.val();
         ordersData = val ? Object.values(val).filter(o => o && typeof o === 'object') : [];
-        renderKds(); renderTally();
+        renderKds(); 
+        renderTally();
+        generateAIInsights();
       });
 
+      // Listen to Menu
       db.ref("menu").on("value", snapshot => {
         const val = snapshot.val();
         menuData = val ? Object.values(val).filter(i => i && typeof i === 'object') : [];
         renderStockList();
       });
 
+      // Listen to Tables
       db.ref("tables").on("value", snapshot => {
-        tablesData = snapshot.val() || {}; renderTables();
+        tablesData = snapshot.val() || {}; 
+        renderTables();
+        generateAIInsights();
       });
     }
 
+    // --- TAB SWITCHING ---
     function switchTab(tab) {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      ["viewKds", "viewMenu", "viewTables", "viewTally"].forEach(v => document.getElementById(v).style.display = "none");
-      document.getElementById("tab" + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add("active");
-      document.getElementById("view" + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = "block";
+      ["viewKds", "viewMenu", "viewTables", "viewTally", "viewAi"].forEach(v => document.getElementById(v).style.display = "none");
+      
+      const tabId = "tab" + tab.charAt(0).toUpperCase() + tab.slice(1);
+      const viewId = "view" + tab.charAt(0).toUpperCase() + tab.slice(1);
+      
+      document.getElementById(tabId).classList.add("active");
+      document.getElementById(viewId).style.display = "block";
     }
 
+    // --- 1. KDS (LIVE ORDERS) ---
     function renderKds() {
       const container = document.getElementById("kdsTicketsContainer");
       const list = ordersData.filter(o => o.clearanceStatus !== "Cleared");
-      if (list.length === 0) { container.innerHTML = `<p>No active orders.</p>`; return; }
+      
+      if (list.length === 0) { 
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--text-muted); width: 100%; grid-column: 1/-1;">✅ All caught up! No active orders in the kitchen.</div>`; 
+        return; 
+      }
 
-      container.innerHTML = list.map(o => `
+      container.innerHTML = list.map(o => {
+        const timeBadge = `<span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 4px;">${o.paymentMethod || 'CASH'}</span>`;
+        return `
         <div class="ticket-card">
           <div class="ticket-head">
-            <div><strong>${o.orderId}</strong><br><span style="color:var(--accent-gold);">${o.tableNo}</span></div>
-            <span>${o.kitchenStatus}</span>
+            <div>
+              <strong style="font-size:1.1rem; color:var(--accent-gold);">${o.tableNo || 'Takeaway'}</strong><br>
+              <span style="font-size:0.8rem; color:var(--text-muted);">#${o.orderId.substring(0,8)}</span>
+            </div>
+            <div style="text-align: right;">
+              <span style="color:${o.kitchenStatus === 'Ready' ? 'var(--accent-emerald)' : 'var(--text-light)'}; font-weight: bold;">${o.kitchenStatus || 'Pending'}</span><br>
+              ${timeBadge}
+            </div>
           </div>
           <div class="ticket-body">
-            ${(o.items || []).map(i => `<div>${i.qty}x ${i.name}</div>`).join("")}
-            <hr style="border-color:var(--border-color);"><div style="font-size:0.85rem;">Total: ₹${o.totalAmount} (${o.paymentMethod})</div>
+            ${(o.items || []).map(i => `
+              <div style="display:flex; justify-content:space-between;">
+                <span><strong style="color:var(--accent-blue);">${i.qty}x</strong> ${i.name}</span>
+              </div>`).join("")}
           </div>
           <div class="ticket-actions">
-            ${o.kitchenStatus === 'Pending' ? `<button class="btn-act" style="background:var(--accent-blue);" onclick="updateStatus('${o.orderId}', 'Preparing')">Start Prep</button>` 
-            : o.kitchenStatus === 'Preparing' ? `<button class="btn-act" style="background:var(--accent-emerald);" onclick="updateStatus('${o.orderId}', 'Ready')">Mark Ready</button>` 
-            : `<button class="btn-act" style="background:var(--danger);" onclick="clearOrder('${o.orderId}')">Clear Order</button>`}
+            <button class="btn-act btn-outline" style="flex: 0.5;" onclick="downloadBill('${o.orderId}')">📥 Bill</button>
+            ${(!o.kitchenStatus || o.kitchenStatus === 'Pending') ? 
+              `<button class="btn-act" style="background:var(--accent-blue);" onclick="updateStatus('${o.orderId}', 'Preparing')">Start Prep</button>` : 
+              o.kitchenStatus === 'Preparing' ? 
+              `<button class="btn-act" style="background:var(--accent-emerald);" onclick="updateStatus('${o.orderId}', 'Ready')">Mark Ready</button>` : 
+              `<button class="btn-act" style="background:var(--danger);" onclick="clearOrder('${o.orderId}')">Clear Order</button>`}
           </div>
         </div>
-      `).join("");
+      `}).join("");
     }
 
     function updateStatus(id, status) { db.ref(`orders/${id}/kitchenStatus`).set(status); }
     function clearOrder(id) { db.ref(`orders/${id}/clearanceStatus`).set("Cleared"); }
 
+    // --- 2. MENU & STOCK ---
     function renderStockList() {
-      document.getElementById("stockListContainer").innerHTML = menuData.map(item => `
-        <div style="display:flex; justify-content:space-between; padding:10px; border:1px solid var(--border-color); margin-bottom:5px; border-radius:6px;">
-          <div><strong>${item.name || 'Unknown'}</strong> - ₹${item.price || 0}</div>
-          <button class="btn-act" style="max-width:80px; background:${item.inStock !== false ? 'var(--danger)' : 'var(--accent-emerald)'}" onclick="toggleStock('${item.id}', ${item.inStock === false})">
-            ${item.inStock !== false ? 'Out' : 'In'}
+      const container = document.getElementById("stockListContainer");
+      if (menuData.length === 0) {
+        container.innerHTML = `<p style="color:var(--text-muted);">No items in menu yet.</p>`;
+        return;
+      }
+      container.innerHTML = menuData.map(item => `
+        <div style="display:flex; justify-content:space-between; align-items: center; padding:12px; border:1px solid var(--border-color); margin-bottom:8px; border-radius:8px; background: rgba(0,0,0,0.2);">
+          <div>
+            <strong>${item.name || 'Unknown'}</strong> <span style="color:var(--text-muted); font-size: 0.9rem;">(${item.category || 'General'})</span><br>
+            <span style="color:var(--accent-gold);">₹${item.price || 0}</span>
+          </div>
+          <button class="btn-act" style="max-width:100px; background:${item.inStock !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}; color:${item.inStock !== false ? 'var(--danger)' : 'var(--accent-emerald)'}; border: 1px solid ${item.inStock !== false ? 'var(--danger)' : 'var(--accent-emerald)'};" 
+            onclick="toggleStock('${item.id}', ${item.inStock === false})">
+            ${item.inStock !== false ? 'Mark Out' : 'Restock'}
           </button>
         </div>
       `).join("");
@@ -159,30 +271,169 @@
       const name = document.getElementById("newItemName").value.trim();
       const cat = document.getElementById("newItemCat").value.trim();
       const price = parseFloat(document.getElementById("newItemPrice").value);
-      const img = document.getElementById("newItemImg").value.trim() || "https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=300";
 
-      if (!name || !cat || isNaN(price)) return alert("Please fill name, category and price.");
-      const id = "custom_" + Date.now();
-      db.ref(`menu/${id}`).set({ id, name, category: cat, price, inStock: true, img });
-      alert("Added!");
+      if (!name || isNaN(price)) return alert("Item Name and Price are mandatory.");
+      const id = "itm_" + Date.now();
+      db.ref(`menu/${id}`).set({ id, name, category: cat || 'General', price, inStock: true });
+      
+      document.getElementById("newItemName").value = '';
+      document.getElementById("newItemCat").value = '';
+      document.getElementById("newItemPrice").value = '';
     }
 
+    // --- 3. TABLES ---
     function renderTables() {
       let html = "";
-      for (let i = 1; i <= 10; i++) {
-        const tKey = `Table ${i}`; const isOcc = tablesData[tKey] === 'Occupied';
-        html += `<div class="table-box ${isOcc ? 'occupied' : ''}" onclick="toggleTable('${tKey}', ${!isOcc})"><h3>Table ${i}</h3><p>${isOcc ? 'OCCUPIED' : 'AVAILABLE'}</p></div>`;
+      for (let i = 1; i <= 15; i++) {
+        const tKey = `Table ${i}`; 
+        const isOcc = tablesData[tKey] === 'Occupied';
+        html += `
+          <div class="table-box ${isOcc ? 'occupied' : ''}" onclick="toggleTable('${tKey}', ${!isOcc})">
+            <h3 style="margin-bottom:5px;">Table ${i}</h3>
+            <span style="font-size:0.85rem; font-weight:bold; color:${isOcc ? 'var(--danger)' : 'var(--accent-emerald)'};">
+              ${isOcc ? 'OCCUPIED' : 'AVAILABLE'}
+            </span>
+          </div>`;
       }
       document.getElementById("tablesGridContainer").innerHTML = html;
     }
     function toggleTable(tKey, setOcc) { db.ref(`tables/${tKey}`).set(setOcc ? 'Occupied' : 'Available'); }
 
+    // --- 4. DAILY TRACKER (TALLY) ---
     function renderTally() {
-      const totalRev = ordersData.reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0);
-      document.getElementById("totalRevenueLabel").innerText = `₹${totalRev}`;
-      document.getElementById("totalOrdersCountLabel").innerText = `Total Orders: ${ordersData.length}`;
+      let totalRev = 0;
+      const itemTracker = {};
+
+      ordersData.forEach(o => {
+        totalRev += (Number(o.totalAmount) || 0);
+        if (o.items && Array.isArray(o.items)) {
+          o.items.forEach(i => {
+            if (!itemTracker[i.name]) itemTracker[i.name] = { qty: 0, rev: 0 };
+            itemTracker[i.name].qty += i.qty;
+            itemTracker[i.name].rev += (i.qty * (i.price || 0));
+          });
+        }
+      });
+
+      document.getElementById("totalRevenueLabel").innerText = `₹${totalRev.toLocaleString()}`;
+      document.getElementById("totalOrdersCountLabel").innerText = `Total Orders processed: ${ordersData.length}`;
+
+      const tbody = document.getElementById("salesBreakdownContainer");
+      const sortedItems = Object.entries(itemTracker).sort((a,b) => b[1].qty - a[1].qty);
+      
+      if (sortedItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No sales data yet.</td></tr>`;
+      } else {
+        tbody.innerHTML = sortedItems.map(([name, data]) => `
+          <tr>
+            <td style="font-weight:bold;">${name}</td>
+            <td><span style="background:rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px;">${data.qty}</span></td>
+            <td style="color:var(--accent-emerald);">₹${data.rev.toLocaleString()}</td>
+          </tr>
+        `).join("");
+      }
     }
 
+    // --- 5. AUTOMATED BILL DOWNLOADS ---
+    function downloadBill(orderId) {
+      const order = ordersData.find(o => o.orderId === orderId);
+      if (!order) return alert("Order data missing.");
+
+      let text = `================================\n`;
+      text += `          GANI CAFE\n`;
+      text += `================================\n`;
+      text += `Order ID: ${order.orderId}\n`;
+      text += `Table: ${order.tableNo || 'N/A'}\n`;
+      text += `Payment: ${order.paymentMethod || 'CASH'}\n`;
+      text += `--------------------------------\n`;
+      
+      (order.items || []).forEach(i => {
+        text += `${i.qty}x ${i.name.padEnd(20)} ₹${(i.qty * (i.price || 0))}\n`;
+      });
+      
+      text += `--------------------------------\n`;
+      text += `TOTAL AMOUNT: ₹${order.totalAmount}\n`;
+      text += `================================\n`;
+      text += `      Thank you for visiting!   \n`;
+
+      triggerDownload(text, `Bill_${order.tableNo || 'Takeaway'}_${orderId.substring(0,6)}.txt`);
+    }
+
+    function downloadEndOfDayReport() {
+      let text = `GANI CAFE - END OF DAY REPORT\nDate: ${new Date().toLocaleDateString()}\n\n`;
+      text += `Total Orders: ${ordersData.length}\n`;
+      const totalRev = ordersData.reduce((acc, o) => acc + (Number(o.totalAmount) || 0), 0);
+      text += `Total Revenue: ₹${totalRev}\n\n`;
+      
+      text += `--- ITEM SALES BREAKDOWN ---\n`;
+      const tracker = {};
+      ordersData.forEach(o => o.items?.forEach(i => { tracker[i.name] = (tracker[i.name] || 0) + i.qty; }));
+      Object.entries(tracker).sort((a,b) => b[1]-a[1]).forEach(([name, qty]) => {
+        text += `${qty}x - ${name}\n`;
+      });
+
+      triggerDownload(text, `GaniCafe_EOD_Report_${new Date().toLocaleDateString().replace(/\//g,'-')}.txt`);
+    }
+
+    function triggerDownload(content, filename) {
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // --- 6. AI ASSISTANT LOGIC ---
+    function generateAIInsights() {
+      const container = document.getElementById("aiInsightsContainer");
+      let insightsHTML = "";
+
+      // Insight 1: Trending Item
+      const itemTracker = {};
+      ordersData.forEach(o => o.items?.forEach(i => { itemTracker[i.name] = (itemTracker[i.name] || 0) + i.qty; }));
+      const sortedItems = Object.entries(itemTracker).sort((a,b) => b[1] - a[1]);
+      
+      if (sortedItems.length > 0) {
+        insightsHTML += `
+          <div class="ai-insight-card">
+            <h3>📈 Trending Item Detected</h3>
+            <p><strong>${sortedItems[0][0]}</strong> is your top seller today with <strong>${sortedItems[0][1]} orders</strong>. Ensure you have enough raw materials in stock for the next rush.</p>
+          </div>
+        `;
+      }
+
+      // Insight 2: Table Efficiency Alert
+      const occupiedTablesCount = Object.values(tablesData).filter(v => v === 'Occupied').length;
+      if (occupiedTablesCount > 10) {
+        insightsHTML += `
+          <div class="ai-insight-card" style="border-left-color: var(--danger);">
+            <h3 style="color:var(--danger);">⚠️ High Capacity Warning</h3>
+            <p>Over 10 tables are currently marked as occupied. Consider optimizing kitchen output times or checking if completed tables need to be cleared in the system.</p>
+          </div>
+        `;
+      }
+
+      // Insight 3: Menu Optimization (Zero Sales)
+      const unsoldItems = menuData.filter(m => !itemTracker[m.name]);
+      if (unsoldItems.length > 0 && ordersData.length > 5) {
+        insightsHTML += `
+          <div class="ai-insight-card" style="border-left-color: var(--accent-gold);">
+            <h3 style="color:var(--accent-gold);">💡 Menu Optimization</h3>
+            <p>Items like <strong>${unsoldItems[0].name}</strong> haven't sold yet today. Consider a quick promo or checking if they are accidentally marked out of stock.</p>
+          </div>
+        `;
+      }
+
+      if (insightsHTML === "") {
+        insightsHTML = `<p style="color:var(--text-muted);">Collecting more data to generate insights...</p>`;
+      }
+
+      container.innerHTML = insightsHTML;
+    }
+
+    // Boot Up
     window.onload = initKitchen;
   </script>
 </body>
