@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GANI CAFE - Kitchen Monitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 p-4">
+
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <h1 class="text-2xl font-black uppercase text-amber-600">Gani Cafe - Kitchen Monitor</h1>
+      <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full animate-pulse">● System Live</span>
+    </div>
+    
+    <!-- Order Grid -->
+    <div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+  </div>
+
+  <script>
+    // --- YOUR FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
+      authDomain: "gani-cafe-52066.firebaseapp.com",
+      databaseURL: "https://gani-cafe-52066-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gani-cafe-52066",
+      storageBucket: "gani-cafe-52066.firebasestorage.app",
+      messagingSenderId: "292009300507",
+      appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
+      measurementId: "G-F7TXYZBYKY"
+    };
+    
+    // --- YOUR GOOGLE SCRIPT URL ---
+    const GOOGLE_SHEET_URL = "https://script.google.com/macros/library/d/1HD9e-FLxTT9MQe5tsqn1xPI8VVJw8Sl2ynVgDuPrznzm5Y-71a2FJsIm/1"; 
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Play a chime sound when a new order arrives
+    db.ref('orders').on('child_added', () => {
+       try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+    });
+
+    // Fetch and display orders instantly
+    db.ref('orders').on('value', snap => {
+      const grid = document.getElementById('kitchenGrid');
+      grid.innerHTML = '';
+      const orders = snap.val() || {};
+      
+      Object.entries(orders).forEach(([id, order]) => {
+        grid.innerHTML += `
+          <div class="bg-white p-4 rounded-lg shadow-md border-l-4 ${order.status === 'pending' ? 'border-amber-500' : 'border-blue-500'}">
+            <div class="flex justify-between items-center mb-2 border-b pb-2">
+              <span class="font-black text-lg">Table ${order.table}</span>
+              <span class="text-xs font-bold uppercase bg-slate-100 px-2 py-1 rounded">${order.status}</span>
+            </div>
+            <p class="font-bold text-sm mb-4 leading-loose">${order.items.replace(/,/g, '<br>')}</p>
+            <p class="font-black text-amber-600 mb-4">₹${order.total}</p>
+            
+            ${order.status === 'pending' ? 
+              `<button onclick="updateStatus('${id}', 'cooking')" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow active:scale-95">Accept Order</button>` : 
+              `<button onclick="completeAndArchive('${id}')" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold shadow active:scale-95">Serve & Save Bill</button>`
+            }
+          </div>
+        `;
+      });
+    });
+
+    // Change order status from Pending to Cooking
+    function updateStatus(id, status) {
+      db.ref('orders/' + id).update({ status: status });
+    }
+
+    // Archive to Google Sheets and delete from Firebase
+    async function completeAndArchive(id) {
+      const orderSnap = await db.ref('orders/' + id).once('value');
+      const order = orderSnap.val();
+      if (!order) return;
+      
+      // Send to Google Sheets
+      fetch(GOOGLE_SHEET_URL, {
+        method: "POST", mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order)
+      });
+      
+      // Delete from Firebase instantly
+      db.ref('orders/' + id).remove();
+    }
+  </script>
+</body>
+</html>
