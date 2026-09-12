@@ -2,72 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GANI CAFE - Ordering System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gani Cafe - Premium Dining</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase Compat SDKs for simple single-file deployment -->
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <!-- Smooth Animations -->
+  <style>
+    .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.3); }
+    .item-card { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s; }
+    .item-card:active { transform: scale(0.97); }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+  </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased pb-32">
 
-  <!-- NAVIGATION -->
-  <nav class="bg-amber-600 text-white p-3 shadow-md flex justify-between items-center sticky top-0 z-50">
-    <h1 class="font-black text-xl tracking-widest uppercase">Gani Cafe</h1>
-    <div class="flex space-x-1">
-      <button onclick="switchView('menu')" class="bg-amber-700 px-3 py-1 text-sm font-bold rounded">Menu</button>
-      <button onclick="switchView('kitchen')" class="bg-amber-700 px-3 py-1 text-sm font-bold rounded">Kitchen</button>
-      <button onclick="switchView('admin')" class="bg-amber-700 px-3 py-1 text-sm font-bold rounded">Admin</button>
+  <!-- Premium Glass Header -->
+  <header class="glass sticky top-0 z-50 px-5 py-4 shadow-sm flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-black tracking-tight text-gray-900">Gani Cafe</h1>
+      <p class="text-xs font-semibold text-amber-600 tracking-widest uppercase">Smart Ordering</p>
     </div>
-  </nav>
+    <div class="bg-gray-100 px-3 py-1.5 rounded-full flex items-center space-x-2 border border-gray-200">
+      <span class="text-xs font-bold text-gray-500">TABLE</span>
+      <input type="number" id="tableNum" value="1" class="w-8 bg-transparent font-black text-gray-900 text-center outline-none">
+    </div>
+  </header>
 
-  <!-- 1. CUSTOMER VIEW -->
-  <div id="view-menu" class="max-w-md mx-auto p-4 pb-24">
-    <div class="bg-white p-3 rounded-lg shadow-sm border flex items-center justify-between mb-4">
-      <span class="font-bold">Table No:</span>
-      <input type="number" id="tableNum" value="1" class="w-16 border rounded text-center p-1 text-amber-600 font-bold">
-    </div>
-    <div id="menuList" class="space-y-3"></div>
-    
-    <!-- Active Order Tracker -->
-    <div id="activeTracker" class="hidden bg-blue-600 text-white p-4 rounded-lg shadow-xl mb-4 flex justify-between items-center">
-      <div>
-        <p class="text-xs uppercase text-blue-200 font-bold">Order Status</p>
-        <p id="orderStatusText" class="text-lg font-black uppercase">Cooking...</p>
-      </div>
-    </div>
-
-    <!-- Cart Footer -->
-    <div id="cartFooter" class="hidden fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white p-4 border-t shadow-2xl flex justify-between items-center">
-      <div>
-        <span class="text-xs text-gray-500">Total</span>
-        <span id="cartTotal" class="text-2xl font-black text-amber-600 block">₹0</span>
-      </div>
-      <button onclick="placeOrder()" class="bg-amber-600 text-white px-6 py-3 rounded-xl font-bold shadow-md active:scale-95">Place Order</button>
-    </div>
+  <!-- Category Pills -->
+  <div class="px-5 py-4 flex space-x-3 overflow-x-auto hide-scroll sticky top-[72px] z-40 bg-gray-50">
+    <button onclick="filterMenu('All')" class="category-btn active px-5 py-2 rounded-full font-bold text-sm bg-gray-900 text-white shadow-md transition">All</button>
+    <button onclick="filterMenu('Chai')" class="category-btn px-5 py-2 rounded-full font-bold text-sm bg-white text-gray-600 border shadow-sm transition">Chai</button>
+    <button onclick="filterMenu('Biryani')" class="category-btn px-5 py-2 rounded-full font-bold text-sm bg-white text-gray-600 border shadow-sm transition">Biryani</button>
   </div>
 
-  <!-- 2. KITCHEN VIEW -->
-  <div id="view-kitchen" class="hidden max-w-6xl mx-auto p-4">
-    <h2 class="text-xl font-black mb-4">Live Kitchen Monitor</h2>
-    <div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+  <!-- Menu Grid -->
+  <div id="menuGrid" class="px-5 grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+    <!-- Items inject here -->
+    <div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div></div>
   </div>
 
-  <!-- 3. ADMIN VIEW -->
-  <div id="view-admin" class="hidden max-w-2xl mx-auto p-4">
-    <div class="bg-white p-4 rounded-lg shadow-sm border mb-4">
-      <h3 class="font-bold mb-2">Add New Item</h3>
-      <div class="flex space-x-2">
-        <input type="text" id="newItemName" placeholder="Item Name" class="border p-2 rounded w-full">
-        <input type="number" id="newItemPrice" placeholder="Price" class="border p-2 rounded w-24">
-        <button onclick="addItem()" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold">Add</button>
-      </div>
+  <!-- Floating Cart -->
+  <div id="cartFooter" class="hidden fixed bottom-6 left-5 right-5 md:left-auto md:right-5 md:w-96 glass rounded-2xl shadow-2xl border border-gray-200 p-4 z-50 transform transition-all duration-300 translate-y-0">
+    <div class="flex justify-between items-center mb-3">
+      <span class="font-bold text-gray-500 text-sm">Total Amount</span>
+      <span id="cartTotal" class="text-2xl font-black text-gray-900">₹0</span>
     </div>
-    <div id="adminList" class="space-y-2"></div>
+    <button onclick="placeOrder()" class="w-full bg-gradient-to-r from-amber-600 to-orange-500 text-white py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-orange-500/30 transition-all">
+      Place Order
+    </button>
   </div>
 
   <script>
-    // --- YOUR SPECIFIC FIREBASE CONFIGURATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -75,73 +62,116 @@
       projectId: "gani-cafe-52066",
       storageBucket: "gani-cafe-52066.firebasestorage.app",
       messagingSenderId: "292009300507",
-      appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe",
-      measurementId: "G-F7TXYZBYKY"
+      appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe"
     };
-    
-    // IMPORTANT: You still need to paste your Google Apps Script URL inside the quotes below!
-    const GOOGLE_SHEET_URL = "https://script.google.com/macros/library/d/1HD9e-FLxTT9MQe5tsqn1xPI8VVJw8Sl2ynVgDuPrznzm5Y-71a2FJsIm/1";
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
     let menuData = {};
     let cart = {};
-    let myOrderId = localStorage.getItem('gani_order_id');
+    let currentFilter = 'All';
 
-    // Navigation & Table Parsing
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('table')) document.getElementById('tableNum').value = urlParams.get('table');
-    
-    function switchView(view) {
-      document.getElementById('view-menu').classList.toggle('hidden', view !== 'menu');
-      document.getElementById('view-kitchen').classList.toggle('hidden', view !== 'kitchen');
-      document.getElementById('view-admin').classList.toggle('hidden', view !== 'admin');
-    }
-    if (urlParams.get('view')) switchView(urlParams.get('view'));
+    // Auto-Seed Database with 20 Items if empty
+    const defaultMenu = [
+      { name: "Special Irani Chai", price: 25, cat: "Chai", img: "https://images.unsplash.com/photo-1576092762791-25e73e7ce767?w=400&q=80" },
+      { name: "Kullhad Masala Chai", price: 30, cat: "Chai", img: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=400&q=80" },
+      { name: "Zafrani Chai (Saffron)", price: 40, cat: "Chai", img: "https://images.unsplash.com/photo-1606791405792-1004f1718d0c?w=400&q=80" },
+      { name: "Adrak Wali Chai (Ginger)", price: 20, cat: "Chai", img: "https://images.unsplash.com/photo-1571934811356-5cc50f160cb2?w=400&q=80" },
+      { name: "Tandoori Chai", price: 35, cat: "Chai", img: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&q=80" },
+      { name: "Lemongrass Tea", price: 30, cat: "Chai", img: "https://images.unsplash.com/photo-1597481499750-3e6b22637e12?w=400&q=80" },
+      { name: "Sulaimani Black Tea", price: 20, cat: "Chai", img: "https://images.unsplash.com/photo-1594631252845-29fc4cc8cbf9?w=400&q=80" },
+      { name: "Rose Petal Chai", price: 35, cat: "Chai", img: "https://images.unsplash.com/photo-1557090495-fc9312e77b28?w=400&q=80" },
+      { name: "Cardamom Elachi Chai", price: 25, cat: "Chai", img: "https://images.unsplash.com/photo-1603522108740-410a4db0067b?w=400&q=80" },
+      { name: "Cutting Chai", price: 15, cat: "Chai", img: "https://images.unsplash.com/photo-1558160074-4d7d8bdf4256?w=400&q=80" },
+      { name: "Chicken Dum Biryani", price: 240, cat: "Biryani", img: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80" },
+      { name: "Mutton Mendi Biryani", price: 350, cat: "Biryani", img: "https://images.unsplash.com/photo-1633945274405-f6c22da7b752?w=400&q=80" },
+      { name: "Hyderabadi Handi Biryani", price: 280, cat: "Biryani", img: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&q=80" },
+      { name: "Special Prawn Biryani", price: 320, cat: "Biryani", img: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80" },
+      { name: "Paneer Tikka Biryani", price: 220, cat: "Biryani", img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80" },
+      { name: "Egg Roast Biryani", price: 180, cat: "Biryani", img: "https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=400&q=80" },
+      { name: "Mushroom Masala Biryani", price: 200, cat: "Biryani", img: "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&q=80" },
+      { name: "Keema Biryani", price: 290, cat: "Biryani", img: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400&q=80" },
+      { name: "Fish Tikka Biryani", price: 310, cat: "Biryani", img: "https://images.unsplash.com/photo-1544025162-8111142154ea?w=400&q=80" },
+      { name: "Zafrani Chicken Biryani", price: 270, cat: "Biryani", img: "https://images.unsplash.com/photo-1626779872583-b9fc1f912239?w=400&q=80" }
+    ];
 
-    // Menu Sync
+    db.ref('menu').once('value', snap => {
+      if (!snap.exists()) {
+        defaultMenu.forEach(item => {
+          db.ref('menu').push({ name: item.name, price: item.price, category: item.cat, image: item.img, in_stock: true });
+        });
+      }
+    });
+
+    // Fetch Menu and Render
     db.ref('menu').on('value', snap => {
       menuData = snap.val() || {};
       renderMenu();
-      renderAdmin();
     });
 
-    // CUSTOMER LOGIC
+    function filterMenu(category) {
+      currentFilter = category;
+      document.querySelectorAll('.category-btn').forEach(btn => {
+        if (btn.innerText === category) {
+          btn.className = "category-btn active px-5 py-2 rounded-full font-bold text-sm bg-gray-900 text-white shadow-md transition";
+        } else {
+          btn.className = "category-btn px-5 py-2 rounded-full font-bold text-sm bg-white text-gray-600 border shadow-sm transition";
+        }
+      });
+      renderMenu();
+    }
+
     function renderMenu() {
-      const list = document.getElementById('menuList');
-      list.innerHTML = '';
-      Object.keys(menuData).forEach(id => {
-        const item = menuData[id];
+      const grid = document.getElementById('menuGrid');
+      grid.innerHTML = '';
+      
+      Object.entries(menuData).forEach(([id, item]) => {
+        if (currentFilter !== 'All' && item.category !== currentFilter) return;
+        if (!item.in_stock && (cart[id] || 0) === 0) return;
+
         const qty = cart[id] || 0;
-        if (!item.in_stock && qty === 0 && document.getElementById('view-menu').classList.contains('hidden') === false) return; 
-        
-        list.innerHTML += `
-          <div class="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center">
-            <div>
-              <p class="font-bold">${item.name}</p>
-              <p class="text-amber-600 font-black">₹${item.price}</p>
-              ${!item.in_stock ? '<p class="text-xs text-red-500 font-bold">Out of Stock</p>' : ''}
+        grid.innerHTML += `
+          <div class="item-card bg-white rounded-2xl p-3 flex shadow-sm border border-gray-100 gap-4">
+            <div class="w-28 h-28 rounded-xl bg-gray-200 overflow-hidden flex-shrink-0">
+              <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
             </div>
-            ${item.in_stock ? `
-            <div class="flex items-center space-x-3">
-              <button onclick="updateCart('${id}', -1)" class="w-8 h-8 bg-slate-100 rounded-full font-bold">-</button>
-              <span class="font-bold w-4 text-center">${qty}</span>
-              <button onclick="updateCart('${id}', 1)" class="w-8 h-8 bg-amber-600 text-white rounded-full font-bold">+</button>
-            </div>` : ''}
+            <div class="flex flex-col justify-between py-1 flex-1">
+              <div>
+                <h3 class="font-bold text-gray-900 leading-tight">${item.name}</h3>
+                <p class="text-xs font-semibold text-gray-400 mt-1 uppercase tracking-wider">${item.category}</p>
+              </div>
+              <div class="flex justify-between items-center mt-2">
+                <span class="font-black text-lg text-gray-900">₹${item.price}</span>
+                <div class="flex items-center bg-gray-100 rounded-full p-1">
+                  <button onclick="updateCart('${id}', -1)" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm">-</button>
+                  <span class="w-6 text-center font-bold text-sm">${qty}</span>
+                  <button onclick="updateCart('${id}', 1)" class="w-8 h-8 rounded-full bg-amber-500 text-white font-bold shadow-sm">+</button>
+                </div>
+              </div>
+            </div>
           </div>
         `;
       });
-      
-      const total = Object.entries(cart).reduce((sum, [id, q]) => sum + (menuData[id].price * q), 0);
-      document.getElementById('cartTotal').innerText = '₹' + total;
-      document.getElementById('cartFooter').classList.toggle('hidden', total === 0);
+      updateCartUI();
     }
 
     function updateCart(id, change) {
       cart[id] = Math.max(0, (cart[id] || 0) + change);
       if (cart[id] === 0) delete cart[id];
       renderMenu();
+    }
+
+    function updateCartUI() {
+      const total = Object.entries(cart).reduce((sum, [id, q]) => sum + (menuData[id].price * q), 0);
+      document.getElementById('cartTotal').innerText = '₹' + total;
+      const footer = document.getElementById('cartFooter');
+      if (total > 0) {
+        footer.classList.remove('hidden', 'translate-y-full');
+      } else {
+        footer.classList.add('translate-y-full');
+        setTimeout(() => footer.classList.add('hidden'), 300);
+      }
     }
 
     function placeOrder() {
@@ -156,113 +186,16 @@
         total: total,
         status: 'pending',
         timestamp: Date.now()
-      });
-      
-      localStorage.setItem('gani_order_id', orderId);
-      myOrderId = orderId;
-      cart = {};
-      renderMenu();
-      listenToMyOrder();
-    }
-
-    function listenToMyOrder() {
-      if (!myOrderId) return;
-      db.ref('orders/' + myOrderId).on('value', snap => {
-        const order = snap.val();
-        if (order) {
-          document.getElementById('activeTracker').classList.remove('hidden');
-          document.getElementById('orderStatusText').innerText = order.status;
-        } else {
-          document.getElementById('activeTracker').classList.add('hidden');
-          localStorage.removeItem('gani_order_id');
-          myOrderId = null;
-        }
-      });
-    }
-    listenToMyOrder();
-
-    // KITCHEN LOGIC
-    db.ref('orders').on('child_added', () => {
-       try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
-    });
-
-    db.ref('orders').on('value', snap => {
-      const grid = document.getElementById('kitchenGrid');
-      grid.innerHTML = '';
-      const orders = snap.val() || {};
-      
-      Object.entries(orders).forEach(([id, order]) => {
-        grid.innerHTML += `
-          <div class="bg-white p-4 rounded-lg shadow-md border-l-4 ${order.status === 'pending' ? 'border-amber-500' : 'border-blue-500'}">
-            <div class="flex justify-between items-center mb-2 border-b pb-2">
-              <span class="font-black text-lg">Table ${order.table}</span>
-              <span class="text-xs font-bold uppercase bg-slate-100 px-2 py-1 rounded">${order.status}</span>
-            </div>
-            <p class="font-bold text-sm mb-4">${order.items.replace(/,/g, '<br>')}</p>
-            <p class="font-black text-amber-600 mb-2">₹${order.total}</p>
-            
-            ${order.status === 'pending' ? 
-              `<button onclick="updateStatus('${id}', 'cooking')" class="w-full bg-blue-600 text-white py-2 rounded font-bold">Accept</button>` : 
-              `<button onclick="completeAndArchive('${id}')" class="w-full bg-emerald-600 text-white py-2 rounded font-bold">Serve & Save Bill</button>`
-            }
-          </div>
-        `;
-      });
-    });
-
-    function updateStatus(id, status) {
-      db.ref('orders/' + id).update({ status: status });
-    }
-
-    async function completeAndArchive(id) {
-      const orderSnap = await db.ref('orders/' + id).once('value');
-      const order = orderSnap.val();
-      if (!order) return;
-      
-      // 1. Send to Google Sheets
-      if(GOOGLE_SHEET_URL !== "YOUR_APPS_SCRIPT_WEB_APP_URL") {
-        fetch(GOOGLE_SHEET_URL, {
-          method: "POST", mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(order)
-        });
-      }
-      
-      // 2. Delete from Firebase instantly to keep storage at 0MB
-      db.ref('orders/' + id).remove();
-    }
-
-    // ADMIN LOGIC
-    function renderAdmin() {
-      const list = document.getElementById('adminList');
-      list.innerHTML = '';
-      Object.entries(menuData).forEach(([id, item]) => {
-        list.innerHTML += `
-          <div class="bg-white p-3 rounded shadow-sm border flex justify-between items-center">
-            <div>
-              <p class="font-bold">${item.name} - ₹${item.price}</p>
-            </div>
-            <button onclick="toggleStock('${id}', ${item.in_stock})" class="px-3 py-1 rounded text-xs font-bold ${item.in_stock ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
-              ${item.in_stock ? 'In Stock' : 'Out'}
-            </button>
-          </div>
-        `;
+      }).then(() => {
+        alert("Order Placed Successfully! Your food is being prepared.");
+        cart = {};
+        renderMenu();
       });
     }
 
-    function addItem() {
-      const name = document.getElementById('newItemName').value;
-      const price = document.getElementById('newItemPrice').value;
-      if (name && price) {
-        db.ref('menu').push({ name: name, price: Number(price), in_stock: true });
-        document.getElementById('newItemName').value = '';
-        document.getElementById('newItemPrice').value = '';
-      }
-    }
-
-    function toggleStock(id, current) {
-      db.ref('menu/' + id).update({ in_stock: !current });
-    }
+    // Read Table Num from URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('table')) document.getElementById('tableNum').value = params.get('table');
   </script>
 </body>
 </html>
