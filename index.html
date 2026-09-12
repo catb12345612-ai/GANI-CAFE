@@ -8,15 +8,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
   <style>
-    .glass { background: rgba(255, 255, 255, 0.90); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-    .item-card { transition: transform 0.2s, box-shadow 0.2s; }
-    .item-card:active { transform: scale(0.97); }
+    .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid #e2e8f0; }
     .hide-scroll::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased pb-36">
 
-  <!-- Header & Table Selector -->
+  <!-- Header -->
   <header class="glass sticky top-0 z-50 px-5 py-4 shadow-sm flex justify-between items-center">
     <div>
       <h1 class="text-2xl font-black tracking-tight text-slate-900">Gani Cafe</h1>
@@ -27,46 +25,45 @@
       <select id="tableNum" class="bg-transparent font-black text-slate-900 outline-none cursor-pointer">
         <option value="1">1</option><option value="2">2</option><option value="3">3</option>
         <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-        <option value="10">10</option>
+        <option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
       </select>
     </div>
   </header>
 
-  <!-- Category Filter -->
-  <div class="px-5 py-4 flex space-x-3 overflow-x-auto hide-scroll sticky top-[72px] z-40 bg-slate-50/90 backdrop-blur-md">
-    <button onclick="filterMenu('All')" class="category-btn active px-6 py-2.5 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition">All Items</button>
-    <button onclick="filterMenu('Chai')" class="category-btn px-6 py-2.5 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition">Chai</button>
-    <button onclick="filterMenu('Biryani')" class="category-btn px-6 py-2.5 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition">Biryani</button>
+  <!-- Categories -->
+  <div class="px-5 py-4 flex space-x-3 overflow-x-auto hide-scroll sticky top-[72px] z-40 bg-slate-50/95 backdrop-blur-md">
+    <button onclick="filterMenu('All')" class="category-btn active px-6 py-2 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition">All Items</button>
+    <button onclick="filterMenu('Chai')" class="category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition">Chai</button>
+    <button onclick="filterMenu('Biryani')" class="category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition">Biryani</button>
   </div>
 
-  <!-- Active Order Tracker (Shows when order is placed) -->
+  <!-- Active Order Tracker with UPI -->
   <div id="activeTracker" class="hidden mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-amber-500">
-    <h3 class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Current Order Status</h3>
+    <h3 class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Order Status</h3>
     <p id="orderStatusText" class="text-xl font-black text-amber-400 uppercase tracking-wide">Pending</p>
-    <div id="paymentInstruction" class="hidden mt-3 pt-3 border-t border-slate-700 text-sm font-semibold text-emerald-400">
-      Food Served! Please pay via PhonePe / Cash at the counter to clear your bill.
+    
+    <div id="paymentSection" class="hidden mt-4 pt-4 border-t border-slate-700 text-center">
+      <p class="text-emerald-400 font-bold mb-3">Food Served! Please scan to pay via PhonePe/GPay</p>
+      <img id="upiQRCode" src="" class="mx-auto rounded-lg mb-3 w-40 h-40 bg-white p-2">
+      <button onclick="downloadCustomerBill()" class="bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm w-full hover:bg-slate-600">Download My Bill</button>
     </div>
   </div>
 
   <!-- Menu Grid -->
-  <div id="menuGrid" class="px-5 grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-    <!-- Items inject here -->
-  </div>
+  <div id="menuGrid" class="px-5 grid grid-cols-1 md:grid-cols-2 gap-4 mt-2"></div>
 
-  <!-- Floating Cart -->
+  <!-- Cart -->
   <div id="cartFooter" class="hidden fixed bottom-6 left-5 right-5 md:left-auto md:right-5 md:w-96 glass rounded-2xl shadow-2xl border border-slate-200 p-4 z-50">
     <div class="flex justify-between items-center mb-3">
       <span class="font-bold text-slate-500 text-sm">Total Bill</span>
       <span id="cartTotal" class="text-2xl font-black text-slate-900">₹0</span>
     </div>
-    <button onclick="placeOrder()" class="w-full bg-gradient-to-r from-amber-600 to-amber-500 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-transform">
+    <button onclick="placeOrder()" class="w-full bg-amber-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-transform">
       Confirm & Place Order
     </button>
   </div>
 
   <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -77,6 +74,9 @@
       appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe"
     };
 
+    // CHANGE THIS TO YOUR ACTUAL UPI ID
+    const RESTAURANT_UPI_ID = "Q227869939@ybl"; 
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
@@ -84,40 +84,11 @@
     let cart = {};
     let currentFilter = 'All';
     let myOrderId = localStorage.getItem('gani_cafe_order_id');
+    let myOrderDetails = null; // Stored for bill download
 
-    // --- SEED DATABASE (10 Chai, 10 Biryani with stable images) ---
-    const defaultMenu = [
-      { name: "Special Irani Chai", price: 25, cat: "Chai", img: "https://images.pexels.com/photos/1638280/pexels-photo-1638280.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Kullhad Masala Chai", price: 30, cat: "Chai", img: "https://images.pexels.com/photos/8420959/pexels-photo-8420959.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Zafrani Chai (Saffron)", price: 40, cat: "Chai", img: "https://images.pexels.com/photos/16186831/pexels-photo-16186831.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Adrak Wali Chai", price: 20, cat: "Chai", img: "https://images.pexels.com/photos/16280039/pexels-photo-16280039.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Tandoori Chai", price: 35, cat: "Chai", img: "https://images.pexels.com/photos/15705307/pexels-photo-15705307.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Lemongrass Tea", price: 30, cat: "Chai", img: "https://images.pexels.com/photos/1417945/pexels-photo-1417945.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Sulaimani Black Tea", price: 20, cat: "Chai", img: "https://images.pexels.com/photos/1793035/pexels-photo-1793035.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Rose Petal Chai", price: 35, cat: "Chai", img: "https://images.pexels.com/photos/6542691/pexels-photo-6542691.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Cardamom Elachi Chai", price: 25, cat: "Chai", img: "https://images.pexels.com/photos/1647976/pexels-photo-1647976.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Cutting Chai", price: 15, cat: "Chai", img: "https://images.pexels.com/photos/15705309/pexels-photo-15705309.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Chicken Dum Biryani", price: 240, cat: "Biryani", img: "https://images.pexels.com/photos/12737656/pexels-photo-12737656.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Mutton Mendi Biryani", price: 350, cat: "Biryani", img: "https://images.pexels.com/photos/1624487/pexels-photo-1624487.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Hyderabadi Handi Biryani", price: 280, cat: "Biryani", img: "https://images.pexels.com/photos/7394819/pexels-photo-7394819.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Special Prawn Biryani", price: 320, cat: "Biryani", img: "https://images.pexels.com/photos/20674313/pexels-photo-20674313.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Paneer Tikka Biryani", price: 220, cat: "Biryani", img: "https://images.pexels.com/photos/11111603/pexels-photo-11111603.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Egg Roast Biryani", price: 180, cat: "Biryani", img: "https://images.pexels.com/photos/7394814/pexels-photo-7394814.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Mushroom Masala Biryani", price: 200, cat: "Biryani", img: "https://images.pexels.com/photos/14101955/pexels-photo-14101955.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Keema Biryani", price: 290, cat: "Biryani", img: "https://images.pexels.com/photos/13591461/pexels-photo-13591461.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Fish Tikka Biryani", price: 310, cat: "Biryani", img: "https://images.pexels.com/photos/5410400/pexels-photo-5410400.jpeg?auto=compress&cs=tinysrgb&w=400" },
-      { name: "Zafrani Chicken Biryani", price: 270, cat: "Biryani", img: "https://images.pexels.com/photos/12645163/pexels-photo-12645163.jpeg?auto=compress&cs=tinysrgb&w=400" }
-    ];
+    // Bulletproof Fallback Image
+    const fallbackImg = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
 
-    db.ref('menu').once('value', snap => {
-      if (!snap.exists()) {
-        defaultMenu.forEach(item => {
-          db.ref('menu').push({ name: item.name, price: item.price, category: item.cat, image: item.img, in_stock: true });
-        });
-      }
-    });
-
-    // --- RENDER MENU ---
     db.ref('menu').on('value', snap => {
       menuData = snap.val() || {};
       renderMenu();
@@ -127,8 +98,8 @@
       currentFilter = category;
       document.querySelectorAll('.category-btn').forEach(btn => {
         btn.className = btn.innerText === category 
-          ? "category-btn active px-6 py-2.5 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition"
-          : "category-btn px-6 py-2.5 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition";
+          ? "category-btn active px-6 py-2 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition"
+          : "category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition";
       });
       renderMenu();
     }
@@ -139,14 +110,14 @@
       
       Object.entries(menuData).forEach(([id, item]) => {
         if (currentFilter !== 'All' && item.category !== currentFilter) return;
-        if (!item.in_stock && (cart[id] || 0) === 0) return; // Hide out of stock
+        if (!item.in_stock && (cart[id] || 0) === 0) return; 
 
         const qty = cart[id] || 0;
         grid.innerHTML += `
-          <div class="item-card bg-white rounded-2xl p-3 flex shadow-sm border border-slate-100 gap-4 relative overflow-hidden">
+          <div class="bg-white rounded-2xl p-3 flex shadow-sm border border-slate-100 gap-4 relative overflow-hidden">
             ${!item.in_stock ? `<div class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center"><span class="bg-red-500 text-white font-black px-3 py-1 rounded">SOLD OUT</span></div>` : ''}
             <div class="w-28 h-28 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0 shadow-inner">
-              <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.src='https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400'">
+              <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.src='${fallbackImg}'">
             </div>
             <div class="flex flex-col justify-between py-1 flex-1 z-0">
               <div>
@@ -155,9 +126,9 @@
               </div>
               <div class="flex justify-between items-center mt-2">
                 <span class="font-black text-lg text-slate-900">₹${item.price}</span>
-                <div class="flex items-center bg-slate-100 rounded-full p-1 shadow-inner border border-slate-200">
+                <div class="flex items-center bg-slate-100 rounded-full p-1 shadow-inner">
                   <button onclick="updateCart('${id}', -1)" class="w-8 h-8 rounded-full bg-white text-slate-800 font-black shadow-sm">-</button>
-                  <span class="w-6 text-center font-bold text-sm text-slate-800">${qty}</span>
+                  <span class="w-6 text-center font-bold text-sm">${qty}</span>
                   <button onclick="updateCart('${id}', 1)" class="w-8 h-8 rounded-full bg-amber-500 text-white font-black shadow-sm">+</button>
                 </div>
               </div>
@@ -181,18 +152,20 @@
     }
 
     function placeOrder() {
-      const orderId = "ORD-" + Math.floor(1000 + Math.random() * 9000); // 4 digit easy ID
+      const orderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
       const items = Object.entries(cart).map(([id, q]) => `${menuData[id].name} (x${q})`).join(', ');
       const total = Object.entries(cart).reduce((sum, [id, q]) => sum + (menuData[id].price * q), 0);
       
-      db.ref('orders/' + orderId).set({
+      const payload = {
         orderId: orderId,
-        table: document.getElementById('tableNum').value, // Max 10 via select box
+        table: document.getElementById('tableNum').value,
         items: items,
         total: total,
         status: 'pending',
         timestamp: Date.now()
-      }).then(() => {
+      };
+
+      db.ref('orders/' + orderId).set(payload).then(() => {
         cart = {};
         renderMenu();
         localStorage.setItem('gani_cafe_order_id', orderId);
@@ -201,52 +174,59 @@
       });
     }
 
-    // --- ORDER TRACKING ---
+    function downloadCustomerBill() {
+      if(!myOrderDetails) return;
+      let bill = `=== GANI CAFE ===\nOrder: ${myOrderDetails.orderId}\nTable: ${myOrderDetails.table}\n------------------\n${myOrderDetails.items.split(', ').join('\n')}\n------------------\nTOTAL: Rs. ${myOrderDetails.total}\n=================`;
+      const blob = new Blob([bill], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `GaniCafe_Bill_${myOrderDetails.orderId}.txt`;
+      a.click();
+    }
+
     function listenToMyOrder() {
       if (!myOrderId) return;
       db.ref('orders/' + myOrderId).on('value', snap => {
         const order = snap.val();
         const tracker = document.getElementById('activeTracker');
         const statusText = document.getElementById('orderStatusText');
-        const paymentInfo = document.getElementById('paymentInstruction');
+        const paySection = document.getElementById('paymentSection');
 
         if (order) {
+          myOrderDetails = order;
           tracker.classList.remove('hidden');
           
           if (order.status === 'pending') {
             tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-amber-500";
-            statusText.innerText = "Food is being Prepared...";
-            statusText.className = "text-xl font-black text-amber-400 uppercase tracking-wide";
-            paymentInfo.classList.add('hidden');
+            statusText.innerText = "Order Received...";
+            paySection.classList.add('hidden');
           } 
           else if (order.status === 'cooking') {
             tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-blue-500";
             statusText.innerText = "Chef is Cooking...";
-            statusText.className = "text-xl font-black text-blue-400 uppercase tracking-wide";
-            paymentInfo.classList.add('hidden');
+            paySection.classList.add('hidden');
           } 
           else if (order.status === 'served') {
             tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-emerald-500";
             statusText.innerText = "Food Served!";
-            statusText.className = "text-xl font-black text-emerald-400 uppercase tracking-wide";
-            paymentInfo.classList.remove('hidden');
+            // Generate exact UPI QR Code
+            const upiString = `upi://pay?pa=${RESTAURANT_UPI_ID}&pn=GaniCafe&am=${order.total}`;
+            document.getElementById('upiQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
+            paySection.classList.remove('hidden');
           }
         } else {
-          // Order was deleted from Firebase (meaning Kitchen cleared the bill)
+          // Bill cleared by kitchen
           tracker.classList.add('hidden');
           localStorage.removeItem('gani_cafe_order_id');
           myOrderId = null;
-          alert("Payment Confirmed. Thank you for visiting Gani Cafe!");
+          myOrderDetails = null;
+          alert("Payment Confirmed! Thank you for visiting Gani Cafe.");
         }
       });
     }
-    
-    // Auto-Select Table from QR URL (e.g. ?table=3)
+
     const params = new URLSearchParams(window.location.search);
-    if (params.get('table') && params.get('table') <= 10) {
-      document.getElementById('tableNum').value = params.get('table');
-    }
-    
+    if (params.get('table') && params.get('table') <= 10) document.getElementById('tableNum').value = params.get('table');
     listenToMyOrder();
   </script>
 </body>
