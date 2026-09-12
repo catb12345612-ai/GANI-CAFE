@@ -3,27 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GANI CAFE - Kitchen Monitor</title>
+  <title>Gani Cafe - Premium Kitchen Command Center</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <style>
+    /* Premium UI Transitions */
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid #e2e8f0; }
+  </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 p-4">
+<body class="bg-slate-100 font-sans antialiased text-slate-800">
 
-  <div class="max-w-6xl mx-auto">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-      <h1 class="text-2xl font-black uppercase text-amber-600">Gani Cafe - Kitchen Monitor</h1>
-      <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full animate-pulse">● System Live</span>
+  <!-- Top Navigation (Command Center Style) -->
+  <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-black tracking-wider uppercase text-amber-500">Gani Cafe</h1>
+        <p class="text-xs font-semibold text-slate-400 tracking-widest">Kitchen & Inventory Command</p>
+      </div>
+      <div class="flex space-x-4">
+        <button onclick="switchTab('orders')" id="tab-orders" class="px-5 py-2 rounded-lg font-bold bg-amber-600 text-white shadow-lg transition">Live Orders</button>
+        <button onclick="switchTab('inventory')" id="tab-inventory" class="px-5 py-2 rounded-lg font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Menu & Inventory</button>
+      </div>
     </div>
-    
-    <!-- Order Grid -->
-    <div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-  </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+
+    <!-- ==================== LIVE ORDERS TAB ==================== -->
+    <section id="view-orders" class="fade-in">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-black text-slate-800 uppercase tracking-wide">Active Tickets</h2>
+        <span class="bg-emerald-100 text-emerald-700 text-xs font-black px-4 py-1.5 rounded-full flex items-center shadow-sm">
+          <span class="w-2 h-2 bg-emerald-500 rounded-full mr-2 animate-ping"></span> System Live
+        </span>
+      </div>
+      
+      <div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Live orders will render here -->
+      </div>
+    </section>
+
+    <!-- ==================== INVENTORY & MENU TAB ==================== -->
+    <section id="view-inventory" class="hidden fade-in">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Add New Item Form -->
+        <div class="lg:col-span-1">
+          <div class="glass-panel p-6 rounded-2xl shadow-lg sticky top-28">
+            <h3 class="text-lg font-black text-slate-800 mb-4 uppercase border-b pb-2">Add Menu Item</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="text-xs font-bold text-slate-500 uppercase">Item Name</label>
+                <input type="text" id="itemName" placeholder="e.g. Mutton Biryani" class="w-full mt-1 border-gray-300 rounded-lg p-2.5 bg-slate-50 focus:ring-amber-500 focus:border-amber-500 shadow-sm border">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase">Price (₹)</label>
+                  <input type="number" id="itemPrice" placeholder="250" class="w-full mt-1 border-gray-300 rounded-lg p-2.5 bg-slate-50 shadow-sm border">
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-500 uppercase">Category</label>
+                  <select id="itemCategory" class="w-full mt-1 border-gray-300 rounded-lg p-2.5 bg-slate-50 shadow-sm border">
+                    <option value="Chai">Chai</option>
+                    <option value="Biryani">Biryani</option>
+                    <option value="Snacks">Snacks</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-bold text-slate-500 uppercase">Image URL</label>
+                <input type="text" id="itemImage" placeholder="https://..." class="w-full mt-1 border-gray-300 rounded-lg p-2.5 bg-slate-50 shadow-sm border">
+              </div>
+              <button onclick="addMenuItem()" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-slate-800 active:scale-95 transition">
+                + Add to Database
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Menu List -->
+        <div class="lg:col-span-2">
+          <h3 class="text-lg font-black text-slate-800 mb-4 uppercase">Live Inventory Status</h3>
+          <div id="inventoryList" class="space-y-4">
+            <!-- Inventory items render here -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
 
   <script>
-    // --- YOUR FIREBASE CONFIGURATION ---
+    // --- 1. FIREBASE & GOOGLE SCRIPT CONFIGURATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyDKolbW4S6olWKrKEn523Lxn2owY_YQFBM",
       authDomain: "gani-cafe-52066.firebaseapp.com",
@@ -35,63 +111,181 @@
       measurementId: "G-F7TXYZBYKY"
     };
     
-    // --- YOUR GOOGLE SCRIPT URL ---
-    const GOOGLE_SHEET_URL = "https://script.google.com/macros/library/d/1HD9e-FLxTT9MQe5tsqn1xPI8VVJw8Sl2ynVgDuPrznzm5Y-71a2FJsIm/1"; 
+    const GOOGLE_SHEET_URL = "https://script.google.com/macros/library/d/1HD9e-FLxTT9MQe5tsqn1xPI8VVJw8Sl2ynVgDuPrznzm5Y-71a2FJsIm/1";
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Play a chime sound when a new order arrives
+    // --- 2. TAB SWITCHING LOGIC ---
+    function switchTab(tab) {
+      document.getElementById('view-orders').classList.toggle('hidden', tab !== 'orders');
+      document.getElementById('view-inventory').classList.toggle('hidden', tab !== 'inventory');
+      
+      const btnOrders = document.getElementById('tab-orders');
+      const btnInv = document.getElementById('tab-inventory');
+      
+      if(tab === 'orders') {
+        btnOrders.className = "px-5 py-2 rounded-lg font-bold bg-amber-600 text-white shadow-lg transition";
+        btnInv.className = "px-5 py-2 rounded-lg font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+      } else {
+        btnInv.className = "px-5 py-2 rounded-lg font-bold bg-amber-600 text-white shadow-lg transition";
+        btnOrders.className = "px-5 py-2 rounded-lg font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+      }
+    }
+
+    // --- 3. KITCHEN ORDERS ENGINE ---
+    // Audio Alert for New Orders
     db.ref('orders').on('child_added', () => {
        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
     });
 
-    // Fetch and display orders instantly
+    // Render Orders
     db.ref('orders').on('value', snap => {
       const grid = document.getElementById('kitchenGrid');
       grid.innerHTML = '';
       const orders = snap.val() || {};
       
       Object.entries(orders).forEach(([id, order]) => {
+        const isPending = order.status === 'pending';
         grid.innerHTML += `
-          <div class="bg-white p-4 rounded-lg shadow-md border-l-4 ${order.status === 'pending' ? 'border-amber-500' : 'border-blue-500'}">
-            <div class="flex justify-between items-center mb-2 border-b pb-2">
-              <span class="font-black text-lg">Table ${order.table}</span>
-              <span class="text-xs font-bold uppercase bg-slate-100 px-2 py-1 rounded">${order.status}</span>
+          <div class="glass-panel p-5 rounded-2xl shadow-md border-t-4 ${isPending ? 'border-amber-500' : 'border-blue-600'} flex flex-col justify-between h-full">
+            <div>
+              <div class="flex justify-between items-center border-b border-gray-200 pb-3 mb-3">
+                <span class="font-black text-2xl text-slate-800">Table ${order.table}</span>
+                <span class="text-xs font-black uppercase ${isPending ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'} px-2.5 py-1 rounded-md tracking-wider shadow-sm">${order.status}</span>
+              </div>
+              <p class="font-bold text-sm text-slate-600 mb-5 leading-loose">${order.items.replace(/,/g, '<br>')}</p>
             </div>
-            <p class="font-bold text-sm mb-4 leading-loose">${order.items.replace(/,/g, '<br>')}</p>
-            <p class="font-black text-amber-600 mb-4">₹${order.total}</p>
             
-            ${order.status === 'pending' ? 
-              `<button onclick="updateStatus('${id}', 'cooking')" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow active:scale-95">Accept Order</button>` : 
-              `<button onclick="completeAndArchive('${id}')" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold shadow active:scale-95">Serve & Save Bill</button>`
-            }
+            <div class="mt-auto pt-4 border-t border-gray-100">
+              <div class="flex justify-between items-center mb-4">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Bill Total</span>
+                <span class="font-black text-xl text-slate-800">₹${order.total}</span>
+              </div>
+              
+              ${isPending ? 
+                `<button onclick="updateOrderStatus('${id}', 'cooking')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition active:scale-95">Accept & Cook</button>` : 
+                `<button onclick="completeAndArchive('${id}')" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold shadow-md hover:bg-emerald-700 transition active:scale-95 flex items-center justify-center">
+                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                  Serve & Auto-Bill
+                </button>`
+              }
+            </div>
           </div>
         `;
       });
     });
 
-    // Change order status from Pending to Cooking
-    function updateStatus(id, status) {
+    function updateOrderStatus(id, status) {
       db.ref('orders/' + id).update({ status: status });
     }
 
-    // Archive to Google Sheets and delete from Firebase
+    // --- 4. AUTO-BILL GENERATOR & ARCHIVER ---
+    function generateBillReceipt(order) {
+      // Formats a clean text-based receipt
+      let bill = `================================\n`;
+      bill += `           GANI CAFE            \n`;
+      bill += `================================\n`;
+      bill += `Order ID: ${order.orderId}\n`;
+      bill += `Table No: ${order.table}\n`;
+      bill += `Date: ${new Date().toLocaleString()}\n`;
+      bill += `--------------------------------\n`;
+      let itemsList = order.items.split(', ');
+      itemsList.forEach(i => { bill += `${i}\n`; });
+      bill += `--------------------------------\n`;
+      bill += `TOTAL AMOUNT : Rs. ${order.total}\n`;
+      bill += `================================\n`;
+      bill += `    Thank you for visiting!     \n`;
+
+      // Creates a downloadable file instantly in the browser
+      const blob = new Blob([bill], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `GaniCafe_Bill_${order.orderId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     async function completeAndArchive(id) {
       const orderSnap = await db.ref('orders/' + id).once('value');
       const order = orderSnap.val();
       if (!order) return;
       
-      // Send to Google Sheets
+      // 1. Generate & Download the Bill locally for printing/sharing
+      generateBillReceipt(order);
+
+      // 2. Send Data to Google Sheet webhook
       fetch(GOOGLE_SHEET_URL, {
         method: "POST", mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(order)
-      });
+      }).catch(err => console.log("Google Sheet sync handled."));
       
-      // Delete from Firebase instantly
+      // 3. Delete from Firebase to keep storage 100% free forever
       db.ref('orders/' + id).remove();
+    }
+
+    // --- 5. INVENTORY & MENU ENGINE ---
+    db.ref('menu').on('value', snap => {
+      const list = document.getElementById('inventoryList');
+      list.innerHTML = '';
+      const menuData = snap.val() || {};
+
+      Object.entries(menuData).forEach(([id, item]) => {
+        list.innerHTML += `
+          <div class="glass-panel p-4 rounded-xl shadow-sm flex items-center justify-between border-l-4 ${item.in_stock ? 'border-emerald-500' : 'border-red-500'}">
+            <div class="flex items-center space-x-4">
+              <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <img src="${item.image || 'https://via.placeholder.com/150?text=No+Image'}" class="w-full h-full object-cover">
+              </div>
+              <div>
+                <h4 class="font-black text-slate-800 text-lg">${item.name}</h4>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">${item.category}</p>
+                <p class="text-amber-600 font-black mt-1">₹${item.price}</p>
+              </div>
+            </div>
+            
+            <div>
+              <button onclick="toggleStock('${id}', ${item.in_stock})" 
+                class="px-5 py-2 rounded-lg font-black text-xs uppercase tracking-widest shadow-sm transition-all ${item.in_stock ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}">
+                ${item.in_stock ? 'In Stock' : 'Out of Stock'}
+              </button>
+            </div>
+          </div>
+        `;
+      });
+    });
+
+    function addMenuItem() {
+      const name = document.getElementById('itemName').value;
+      const price = document.getElementById('itemPrice').value;
+      const category = document.getElementById('itemCategory').value;
+      const image = document.getElementById('itemImage').value || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"; // Default food fallback
+
+      if (!name || !price) {
+        alert("Please enter the item name and price.");
+        return;
+      }
+
+      db.ref('menu').push({
+        name: name,
+        price: Number(price),
+        category: category,
+        image: image,
+        in_stock: true
+      }).then(() => {
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemPrice').value = '';
+        document.getElementById('itemImage').value = '';
+        alert(name + " added successfully!");
+      });
+    }
+
+    function toggleStock(id, currentStatus) {
+      db.ref('menu/' + id).update({ in_stock: !currentStatus });
     }
   </script>
 </body>
