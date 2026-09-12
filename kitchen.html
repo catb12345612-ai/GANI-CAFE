@@ -11,14 +11,15 @@
     @media print {
       body * { visibility: hidden; }
       #printArea, #printArea * { visibility: visible; }
-      #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+      #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
       .no-print { display: none !important; }
+      .print-shadow-none { box-shadow: none !important; border: 1px solid #ddd; }
     }
   </style>
 </head>
 <body class="bg-slate-100 font-sans antialiased text-slate-800">
 
-  <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-50">
+  <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-50 no-print">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
       <div>
         <h1 class="text-2xl font-black uppercase text-amber-500">Gani Cafe</h1>
@@ -27,7 +28,7 @@
       <div class="flex space-x-2">
         <button onclick="switchTab('orders')" id="tab-orders" class="px-4 py-2 rounded font-black bg-amber-600 text-white shadow">Orders</button>
         <button onclick="switchTab('inventory')" id="tab-inventory" class="px-4 py-2 rounded font-black bg-slate-800 text-slate-300">Inventory</button>
-        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2 rounded font-black bg-slate-800 text-slate-300">Dashboard</button>
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2 rounded font-black bg-slate-800 text-slate-300">Dashboard & History</button>
       </div>
     </div>
   </header>
@@ -36,12 +37,12 @@
 
     <!-- 1. LIVE ORDERS -->
     <section id="view-orders">
-      <h2 class="text-xl font-black uppercase mb-6">Live Tables</h2>
+      <h2 class="text-xl font-black uppercase mb-6 text-slate-800">Live Tables</h2>
       <div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </section>
 
     <!-- 2. INVENTORY & MENU -->
-    <section id="view-inventory" class="hidden">
+    <section id="view-inventory" class="hidden no-print">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-1">
           <div class="bg-white p-6 rounded-2xl shadow border">
@@ -66,18 +67,19 @@
       </div>
     </section>
 
-    <!-- 3. TALLY DASHBOARD (PDF Printable) -->
+    <!-- 3. DASHBOARD & DAILY HISTORY (PDF Printable) -->
     <section id="view-dashboard" class="hidden">
       <div class="flex justify-between items-center mb-6 no-print">
-        <h2 class="text-xl font-black uppercase tracking-wide">Sales Analytics</h2>
+        <h2 class="text-xl font-black uppercase tracking-wide">Sales & History</h2>
         <button onclick="window.print()" class="bg-emerald-600 text-white px-5 py-2 rounded-lg font-bold shadow-lg hover:bg-emerald-700">Download Report (PDF)</button>
       </div>
 
-      <div id="printArea" class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200">
+      <div id="printArea" class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 print-shadow-none">
         <h1 class="text-3xl font-black text-center mb-2 text-slate-900">Gani Cafe</h1>
         <p class="text-center text-slate-500 font-bold mb-8 uppercase">Official Sales Report</p>
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <!-- Totals Summary -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center mb-10">
           <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
             <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Today's Sales</p>
             <p id="tallyDaily" class="text-3xl font-black text-emerald-600">₹0</p>
@@ -95,6 +97,26 @@
             <p id="tallyYearly" class="text-3xl font-black text-slate-800">₹0</p>
           </div>
         </div>
+
+        <!-- Today's Itemized List -->
+        <div>
+          <h3 class="text-lg font-black uppercase text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">Today's Completed Orders</h3>
+          <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-slate-100 text-slate-500 uppercase font-bold text-[10px] tracking-widest">
+              <tr>
+                <th class="p-3 border-b">Time</th>
+                <th class="p-3 border-b">Table</th>
+                <th class="p-3 border-b">Order ID</th>
+                <th class="p-3 border-b w-1/2">Items Sold</th>
+                <th class="p-3 border-b text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="dailyLogsTable" class="divide-y divide-slate-100">
+              <!-- Logs inject here -->
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </section>
 
@@ -131,7 +153,7 @@
       document.getElementById('tab-dashboard').className = tab === 'dashboard' ? activeCls : inactiveCls;
     }
 
-    // --- KITCHEN ORDERS ---
+    // --- KITCHEN LIVE ORDERS ---
     db.ref('orders').on('child_added', () => {
        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
     });
@@ -151,7 +173,7 @@
         } else if (order.status === 'cooking') {
           actionButton = `<button onclick="updateOrderStatus('${id}', 'served')" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-black active:scale-95">Serve Food</button>`;
         } else if (order.status === 'served') {
-          actionButton = `<button onclick="clearAndSaveBill('${id}')" class="w-full bg-slate-900 text-white py-3 rounded-lg font-black border-2 border-emerald-500 active:scale-95">Payment Received - Clear Bill</button>`;
+          actionButton = `<button onclick="clearAndSaveBill('${id}')" class="w-full bg-slate-900 text-white py-3 rounded-lg font-black border-2 border-emerald-500 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.5)]">Payment Received - Clear Bill</button>`;
         }
 
         grid.innerHTML += `
@@ -179,19 +201,17 @@
       db.ref('orders/' + id).update({ status: status });
     }
 
-    // --- AUTO BILL, TALLY & CLEAR ---
+    // --- AUTO BILL, LOGS & CLEAR ---
     function getTallyKeys() {
       const d = new Date();
-      // Calculate start of week (Sunday)
       const day = d.getDay();
       const diff = d.getDate() - day;
       const weekStart = new Date(d.setDate(diff));
-      
       return {
-        daily: d.toISOString().split('T')[0], // 2026-09-13
-        weekly: weekStart.toISOString().split('T')[0], // Sunday date of current week
-        monthly: d.toISOString().substring(0,7), // 2026-09
-        yearly: d.toISOString().substring(0,4) // 2026
+        daily: new Date().toISOString().split('T')[0], 
+        weekly: weekStart.toISOString().split('T')[0], 
+        monthly: new Date().toISOString().substring(0,7),
+        yearly: new Date().toISOString().substring(0,4)
       };
     }
 
@@ -200,7 +220,7 @@
       const order = snap.val();
       if (!order) return;
       
-      // 1. Download Kitchen Receipt
+      // 1. Download Kitchen Receipt Text File
       let bill = `=== GANI CAFE ===\nTable: ${order.table}\nDate: ${new Date().toLocaleString()}\n------------------\n${order.items.split(', ').join('\n')}\n------------------\nTOTAL PAID: Rs. ${order.total}\n=================`;
       const blob = new Blob([bill], { type: 'text/plain' });
       const a = document.createElement('a');
@@ -208,31 +228,66 @@
       a.download = `Bill_Table${order.table}_${order.orderId}.txt`;
       a.click();
 
-      // 2. Update Tallies in Firebase instantly
+      // 2. Update Tallies
       const keys = getTallyKeys();
       const amount = Number(order.total);
-      
       db.ref(`tallies/daily/${keys.daily}`).transaction(val => (val || 0) + amount);
       db.ref(`tallies/weekly/${keys.weekly}`).transaction(val => (val || 0) + amount);
       db.ref(`tallies/monthly/${keys.monthly}`).transaction(val => (val || 0) + amount);
       db.ref(`tallies/yearly/${keys.yearly}`).transaction(val => (val || 0) + amount);
 
-      // 3. Send to Google Sheets Archive
+      // 3. Save to Today's Dashboard List (Time of order completion)
+      const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      db.ref(`daily_logs/${keys.daily}/${order.orderId}`).set({
+        time: timeNow,
+        table: order.table,
+        items: order.items,
+        total: order.total
+      });
+
+      // 4. Send to Google Sheets Archive
       fetch(GOOGLE_SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(order) });
       
-      // 4. Delete from Firebase
+      // 5. Delete from live Kitchen Screen
       db.ref('orders/' + id).remove();
     }
 
-    // --- DASHBOARD LISTENER ---
-    function listenToTallies() {
+    // --- DASHBOARD LISTENERS (Totals & History) ---
+    function listenToDashboard() {
       const keys = getTallyKeys();
+      
+      // Listen for Totals
       db.ref(`tallies/daily/${keys.daily}`).on('value', s => document.getElementById('tallyDaily').innerText = `₹${s.val() || 0}`);
       db.ref(`tallies/weekly/${keys.weekly}`).on('value', s => document.getElementById('tallyWeekly').innerText = `₹${s.val() || 0}`);
       db.ref(`tallies/monthly/${keys.monthly}`).on('value', s => document.getElementById('tallyMonthly').innerText = `₹${s.val() || 0}`);
       db.ref(`tallies/yearly/${keys.yearly}`).on('value', s => document.getElementById('tallyYearly').innerText = `₹${s.val() || 0}`);
+
+      // Listen for Today's Logs (The morning to night history)
+      db.ref(`daily_logs/${keys.daily}`).on('value', snap => {
+        const table = document.getElementById('dailyLogsTable');
+        table.innerHTML = '';
+        const logs = snap.val() || {};
+        
+        if(Object.keys(logs).length === 0) {
+          table.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold uppercase tracking-widest border-b">No orders completed today yet.</td></tr>`;
+          return;
+        }
+
+        // Render logs (newest at the top)
+        Object.entries(logs).reverse().forEach(([orderId, log]) => {
+          table.innerHTML += `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="p-3 border-b text-slate-500 font-bold">${log.time}</td>
+              <td class="p-3 border-b font-black text-slate-800">T-${log.table}</td>
+              <td class="p-3 border-b text-xs font-mono text-slate-400">${orderId}</td>
+              <td class="p-3 border-b text-slate-700 font-semibold">${log.items}</td>
+              <td class="p-3 border-b font-black text-emerald-600 text-right">₹${log.total}</td>
+            </tr>
+          `;
+        });
+      });
     }
-    listenToTallies();
+    listenToDashboard();
 
     // --- INVENTORY ---
     db.ref('menu').on('value', snap => {
@@ -247,7 +302,7 @@
               <img src="${item.image}" onerror="this.src='${fallbackImg}'" class="w-16 h-16 rounded-lg object-cover bg-slate-200">
               <div>
                 <h4 class="font-black text-slate-800">${item.name}</h4>
-                <p class="text-[10px] font-black text-slate-400 uppercase">${item.category}</p>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${item.category}</p>
                 <p class="text-amber-600 font-black">₹${item.price}</p>
               </div>
             </div>
