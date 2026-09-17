@@ -19,16 +19,29 @@
 </head>
 <body class="bg-slate-100 font-sans antialiased text-slate-800">
 
+  <!-- NEW: Audio & System Unlocker Screen (Fixes missing orders) -->
+  <div id="systemUnlocker" class="fixed inset-0 bg-slate-900/95 z-[100] flex flex-col items-center justify-center text-white cursor-pointer no-print backdrop-blur-sm" onclick="activateSystem()">
+    <div class="bg-slate-800 p-8 rounded-2xl text-center border border-slate-700 shadow-2xl">
+      <h1 class="text-3xl font-black mb-2 text-amber-500 uppercase tracking-widest">Gani Cafe POS</h1>
+      <p class="text-slate-300 font-bold mb-6">Tap anywhere to activate real-time sync & audio alerts.</p>
+      <button class="bg-amber-600 text-white px-8 py-3 rounded-lg font-black text-lg animate-pulse">ACTIVATE SYSTEM</button>
+    </div>
+  </div>
+
   <header class="bg-slate-900 text-white shadow-xl sticky top-0 z-50 no-print">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-black uppercase text-amber-500">Gani Cafe</h1>
-        <p class="text-xs font-bold text-slate-400 uppercase">Command Center</p>
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row md:justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div>
+          <h1 class="text-2xl font-black uppercase text-amber-500">Gani Cafe</h1>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Command Center</p>
+        </div>
+        <!-- NEW: Live Firebase Connection Indicator -->
+        <div id="connStatus" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]" title="System Connection Status"></div>
       </div>
-      <div class="flex space-x-2">
-        <button onclick="switchTab('orders')" id="tab-orders" class="px-4 py-2 rounded font-black bg-amber-600 text-white shadow">Orders</button>
-        <button onclick="switchTab('inventory')" id="tab-inventory" class="px-4 py-2 rounded font-black bg-slate-800 text-slate-300">Inventory</button>
-        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2 rounded font-black bg-slate-800 text-slate-300">Dashboard & History</button>
+      <div class="flex space-x-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scroll">
+        <button onclick="switchTab('orders')" id="tab-orders" class="px-4 py-2 rounded font-black bg-amber-600 text-white shadow whitespace-nowrap">Live Orders</button>
+        <button onclick="switchTab('inventory')" id="tab-inventory" class="px-4 py-2 rounded font-black bg-slate-800 text-slate-300 whitespace-nowrap hover:bg-slate-700 transition">Menu / Stock</button>
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2 rounded font-black bg-slate-800 text-slate-300 whitespace-nowrap hover:bg-slate-700 transition">Sales & Revenue</button>
       </div>
     </div>
   </header>
@@ -37,7 +50,10 @@
 
     <!-- 1. LIVE ORDERS -->
     <section id="view-orders">
-      <h2 class="text-xl font-black uppercase mb-6 text-slate-800">Live Tables</h2>
+      <div class="flex justify-between items-end mb-6">
+        <h2 class="text-xl font-black uppercase text-slate-800 tracking-wider">Live Tables</h2>
+        <span class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full"><span class="animate-pulse text-red-500 mr-1">●</span>LIVE SYNC</span>
+      </div>
       <div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </section>
 
@@ -45,70 +61,69 @@
     <section id="view-inventory" class="hidden no-print">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-1">
-          <div class="bg-white p-6 rounded-2xl shadow border">
-            <h3 class="text-lg font-black mb-4 uppercase border-b pb-2">Add New Item</h3>
+          <div class="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+            <h3 class="text-lg font-black mb-4 uppercase border-b pb-2 text-slate-800">Add New Item</h3>
             <div class="space-y-3">
-              <input type="text" id="itemName" placeholder="Item Name" class="w-full border rounded p-3 bg-slate-50 font-bold">
+              <input type="text" id="itemName" placeholder="Item Name" class="w-full border rounded-lg p-3 bg-slate-50 font-bold focus:border-amber-500 outline-none">
               <div class="flex space-x-2">
-                <input type="number" id="itemPrice" placeholder="Price ₹" class="w-1/2 border rounded p-3 bg-slate-50 font-bold">
-                <select id="itemCategory" class="w-1/2 border rounded p-3 bg-slate-50 font-bold">
+                <input type="number" id="itemPrice" placeholder="Price ₹" class="w-1/2 border rounded-lg p-3 bg-slate-50 font-bold focus:border-amber-500 outline-none">
+                <select id="itemCategory" class="w-1/2 border rounded-lg p-3 bg-slate-50 font-bold focus:border-amber-500 outline-none">
                   <option value="Chai">Chai</option><option value="Biryani">Biryani</option>
                 </select>
               </div>
-              <input type="text" id="itemImage" placeholder="Image URL (optional)" class="w-full border rounded p-3 bg-slate-50">
-              <button onclick="addMenuItem()" class="w-full bg-slate-900 text-white font-black py-3 rounded hover:bg-slate-800">Add to Menu</button>
+              <input type="text" id="itemImage" placeholder="Image URL (optional)" class="w-full border rounded-lg p-3 bg-slate-50 focus:border-amber-500 outline-none">
+              <button onclick="addMenuItem()" class="w-full bg-slate-900 text-amber-500 font-black py-3 rounded-lg hover:bg-slate-800 shadow-md">Add to Menu</button>
             </div>
           </div>
         </div>
         <div class="lg:col-span-2">
-          <h3 class="text-lg font-black mb-4 uppercase">Stock Control</h3>
-          <div id="inventoryList" class="space-y-3"></div>
+          <h3 class="text-lg font-black mb-4 uppercase tracking-wider text-slate-800">Stock Control</h3>
+          <div id="inventoryList" class="space-y-3 grid grid-cols-1 md:grid-cols-2 gap-3"></div>
         </div>
       </div>
     </section>
 
-    <!-- 3. DASHBOARD & DAILY HISTORY (PDF Printable) -->
+    <!-- 3. DASHBOARD & DAILY HISTORY -->
     <section id="view-dashboard" class="hidden">
       <div class="flex justify-between items-center mb-6 no-print">
         <h2 class="text-xl font-black uppercase tracking-wide">Sales & History</h2>
-        <button onclick="window.print()" class="bg-emerald-600 text-white px-5 py-2 rounded-lg font-bold shadow-lg hover:bg-emerald-700">Download Report (PDF)</button>
+        <button onclick="window.print()" class="bg-emerald-600 text-white px-5 py-2 rounded-lg font-bold shadow-lg hover:bg-emerald-700 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg> Print Report
+        </button>
       </div>
 
       <div id="printArea" class="bg-white p-8 rounded-2xl shadow-lg border border-slate-200 print-shadow-none">
         <h1 class="text-3xl font-black text-center mb-2 text-slate-900">Gani Cafe</h1>
-        <p class="text-center text-slate-500 font-bold mb-8 uppercase">Official Sales Report</p>
+        <p class="text-center text-slate-500 font-bold mb-8 uppercase tracking-widest">Official Sales Report</p>
         
-        <!-- Totals Summary -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center mb-10">
-          <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Today's Sales</p>
-            <p id="tallyDaily" class="text-3xl font-black text-emerald-600">₹0</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-10">
+          <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Today's Revenue</p>
+            <p id="tallyDaily" class="text-3xl font-black text-emerald-700">₹0</p>
           </div>
-          <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">This Week</p>
-            <p id="tallyWeekly" class="text-3xl font-black text-blue-600">₹0</p>
+          <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">This Week</p>
+            <p id="tallyWeekly" class="text-3xl font-black text-blue-700">₹0</p>
           </div>
-          <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">This Month</p>
-            <p id="tallyMonthly" class="text-3xl font-black text-amber-600">₹0</p>
+          <div class="bg-amber-50 p-6 rounded-xl border border-amber-100">
+            <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">This Month</p>
+            <p id="tallyMonthly" class="text-3xl font-black text-amber-700">₹0</p>
           </div>
-          <div class="bg-slate-50 p-6 rounded-xl border border-slate-100">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">This Year</p>
+          <div class="bg-slate-100 p-6 rounded-xl border border-slate-200">
+            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">This Year</p>
             <p id="tallyYearly" class="text-3xl font-black text-slate-800">₹0</p>
           </div>
         </div>
 
-        <!-- Today's Itemized List -->
         <div>
-          <h3 class="text-lg font-black uppercase text-slate-800 border-b-2 border-slate-200 pb-2 mb-4">Today's Completed Orders</h3>
+          <h3 class="text-lg font-black uppercase text-slate-800 border-b-2 border-slate-200 pb-2 mb-4 tracking-wider">Today's Completed Orders</h3>
           <table class="w-full text-left text-sm border-collapse">
-            <thead class="bg-slate-100 text-slate-500 uppercase font-bold text-[10px] tracking-widest">
+            <thead class="bg-slate-100 text-slate-500 uppercase font-black text-[10px] tracking-widest">
               <tr>
-                <th class="p-3 border-b">Time</th>
+                <th class="p-3 border-b rounded-tl-lg">Time</th>
                 <th class="p-3 border-b">Table</th>
-                <th class="p-3 border-b">Order ID</th>
                 <th class="p-3 border-b w-1/2">Items Sold</th>
-                <th class="p-3 border-b text-right">Amount</th>
+                <th class="p-3 border-b text-right rounded-tr-lg">Amount</th>
               </tr>
             </thead>
             <tbody id="dailyLogsTable" class="divide-y divide-slate-100">
@@ -116,10 +131,8 @@
             </tbody>
           </table>
         </div>
-
       </div>
     </section>
-
   </main>
 
   <script>
@@ -133,29 +146,53 @@
       appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe"
     };
     
-    // YOUR GOOGLE SCRIPT URL
     const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyOnYFQbcJ8Vi78SnMuu85GKU0UmJbQFQDmJG7EQ92VHZ0oKkIcgRYiOcEmY5x-qXF7/exec";
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const fallbackImg = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
 
+    // --- NEW: Audio Unlocker & Connection Tracker ---
+    let systemActive = false;
+    let alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    
+    function activateSystem() {
+      // Force browser to allow audio by playing/pausing on first tap
+      alertSound.play().then(() => { alertSound.pause(); alertSound.currentTime = 0; }).catch(()=>{});
+      systemActive = true;
+      document.getElementById('systemUnlocker').classList.add('hidden');
+    }
+
+    // Live red/green dot to prove Firebase hasn't disconnected
+    db.ref('.info/connected').on('value', function(snap) {
+      const dot = document.getElementById('connStatus');
+      if (snap.val() === true) {
+        dot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]";
+      } else {
+        dot.className = "w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] animate-pulse";
+      }
+    });
+
     function switchTab(tab) {
       document.getElementById('view-orders').classList.toggle('hidden', tab !== 'orders');
       document.getElementById('view-inventory').classList.toggle('hidden', tab !== 'inventory');
       document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
       
-      const activeCls = "px-4 py-2 rounded font-black bg-amber-600 text-white shadow";
-      const inactiveCls = "px-4 py-2 rounded font-black bg-slate-800 text-slate-300";
+      const activeCls = "px-4 py-2 rounded font-black bg-amber-600 text-white shadow whitespace-nowrap";
+      const inactiveCls = "px-4 py-2 rounded font-black bg-slate-800 text-slate-300 whitespace-nowrap hover:bg-slate-700 transition";
       
       document.getElementById('tab-orders').className = tab === 'orders' ? activeCls : inactiveCls;
       document.getElementById('tab-inventory').className = tab === 'inventory' ? activeCls : inactiveCls;
       document.getElementById('tab-dashboard').className = tab === 'dashboard' ? activeCls : inactiveCls;
     }
 
-    // --- KITCHEN LIVE ORDERS ---
-    db.ref('orders').on('child_added', () => {
-       try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+    // --- KITCHEN LIVE ORDERS (Now 100% reliable) ---
+    db.ref('orders').on('child_added', (snap) => {
+       const order = snap.val();
+       // Only play sound if order is pending and system is unlocked
+       if(systemActive && order.status === 'pending') {
+         alertSound.play().catch(e=>{});
+       }
     });
 
     db.ref('orders').on('value', snap => {
@@ -165,30 +202,38 @@
       
       Object.entries(orders).forEach(([id, order]) => {
         let borderColor = order.status === 'pending' ? 'border-amber-500' : (order.status === 'cooking' ? 'border-blue-500' : 'border-emerald-500');
-        let statusBadge = order.status === 'pending' ? 'bg-amber-100 text-amber-700' : (order.status === 'cooking' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
+        let statusBadge = order.status === 'pending' ? 'bg-amber-100 text-amber-700 animate-pulse' : (order.status === 'cooking' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
         
         let actionButton = '';
         if (order.status === 'pending') {
-          actionButton = `<button onclick="updateOrderStatus('${id}', 'cooking')" class="w-full bg-blue-600 text-white py-3 rounded-lg font-black active:scale-95">Accept & Cook</button>`;
+          actionButton = `<button onclick="updateOrderStatus('${id}', 'cooking')" class="w-full bg-blue-600 text-white py-4 rounded-lg font-black active:scale-95 shadow-lg text-lg tracking-wide transition hover:bg-blue-700">Accept & Cook</button>`;
         } else if (order.status === 'cooking') {
-          actionButton = `<button onclick="updateOrderStatus('${id}', 'served')" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-black active:scale-95">Serve Food</button>`;
+          actionButton = `<button onclick="updateOrderStatus('${id}', 'served')" class="w-full bg-emerald-600 text-white py-4 rounded-lg font-black active:scale-95 shadow-lg text-lg tracking-wide transition hover:bg-emerald-700">Serve Food</button>`;
         } else if (order.status === 'served') {
-          actionButton = `<button onclick="clearAndSaveBill('${id}')" class="w-full bg-slate-900 text-white py-3 rounded-lg font-black border-2 border-emerald-500 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.5)]">Payment Received - Clear Bill</button>`;
+          // Changed clear button to highlight WhatsApp Receipt function
+          actionButton = `<button onclick="clearAndSaveBill('${id}')" class="w-full bg-slate-900 text-white py-4 rounded-lg font-black border border-emerald-500 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-lg tracking-wide flex items-center justify-center gap-2 hover:bg-slate-800"><svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Clear & Send Receipt</button>`;
         }
 
+        let phoneBadge = order.phone && order.phone !== "Not Provided" ? `<span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded ml-2 font-mono">📱 ${order.phone}</span>` : '';
+
         grid.innerHTML += `
-          <div class="bg-white p-5 rounded-xl shadow border-t-4 ${borderColor} flex flex-col justify-between h-full">
+          <div class="bg-white p-6 rounded-2xl shadow-xl border-t-8 ${borderColor} flex flex-col justify-between h-full transition-all">
             <div>
-              <div class="flex justify-between items-center border-b pb-3 mb-3">
-                <span class="font-black text-2xl">Table ${order.table}</span>
-                <span class="text-xs font-black uppercase ${statusBadge} px-2 py-1 rounded">${order.status}</span>
+              <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                <span class="font-black text-3xl text-slate-800">Table ${order.table}</span>
+                <span class="text-xs font-black uppercase ${statusBadge} px-3 py-1.5 rounded-md tracking-wider">${order.status}</span>
               </div>
-              <p class="font-bold text-sm leading-loose">${order.items.replace(/,/g, '<br>')}</p>
+              <div class="mb-4">
+                <p class="font-bold text-slate-700 text-sm leading-loose">${order.items.replace(/,/g, '<br><span class="text-slate-300">•</span>')}</p>
+              </div>
             </div>
-            <div class="mt-4 pt-4 border-t">
-              <div class="flex justify-between items-center mb-4">
-                <span class="text-xs font-black text-slate-400 uppercase">Bill Amount</span>
-                <span class="font-black text-2xl text-amber-600">₹${order.total}</span>
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <div class="flex justify-between items-center mb-5">
+                <div>
+                  <span class="text-xs font-black text-slate-400 uppercase tracking-widest block">Bill Total</span>
+                  ${phoneBadge}
+                </div>
+                <span class="font-black text-3xl text-amber-600">₹${order.total}</span>
               </div>
               ${actionButton}
             </div>
@@ -201,7 +246,6 @@
       db.ref('orders/' + id).update({ status: status });
     }
 
-    // --- AUTO BILL, LOGS & CLEAR ---
     function getTallyKeys() {
       const d = new Date();
       const day = d.getDay();
@@ -220,15 +264,25 @@
       const order = snap.val();
       if (!order) return;
       
-      // 1. Download Kitchen Receipt Text File
-      let bill = `=== GANI CAFE ===\nTable: ${order.table}\nDate: ${new Date().toLocaleString()}\n------------------\n${order.items.split(', ').join('\n')}\n------------------\nTOTAL PAID: Rs. ${order.total}\n=================`;
-      const blob = new Blob([bill], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `Bill_Table${order.table}_${order.orderId}.txt`;
-      a.click();
+      // 1. WhatsApp Automated Digital Receipt (If number provided)
+      if (order.phone && order.phone !== "Not Provided" && order.phone.length >= 10) {
+        const cleanPhone = order.phone.replace(/\D/g, '');
+        // Automatically formats for India if no country code provided
+        const finalPhone = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
+        const msg = encodeURIComponent(`*=== GANI CAFE ===*\nThank you for dining with us today!\n\n*Table:* ${order.table}\n*Order ID:* ${order.orderId}\n\n*Items Ordered:*\n${order.items.split(', ').join('\n')}\n\n*TOTAL PAID: ₹${order.total}*\n\nWe hope to see you again!`);
+        // Opens WhatsApp Web in new tab with pre-filled receipt
+        window.open(`https://wa.me/${finalPhone}?text=${msg}`, '_blank');
+      } else {
+        // Fallback: Text file download if no WhatsApp number
+        let bill = `=== GANI CAFE ===\nTable: ${order.table}\nDate: ${new Date().toLocaleString()}\n------------------\n${order.items.split(', ').join('\n')}\n------------------\nTOTAL PAID: Rs. ${order.total}\n=================`;
+        const blob = new Blob([bill], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Bill_Table${order.table}_${order.orderId}.txt`;
+        a.click();
+      }
 
-      // 2. Update Tallies
+      // 2. Update Tallies Safely
       const keys = getTallyKeys();
       const amount = Number(order.total);
       db.ref(`tallies/daily/${keys.daily}`).transaction(val => (val || 0) + amount);
@@ -236,13 +290,10 @@
       db.ref(`tallies/monthly/${keys.monthly}`).transaction(val => (val || 0) + amount);
       db.ref(`tallies/yearly/${keys.yearly}`).transaction(val => (val || 0) + amount);
 
-      // 3. Save to Today's Dashboard List (Time of order completion)
+      // 3. Save to Today's Dashboard List
       const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
       db.ref(`daily_logs/${keys.daily}/${order.orderId}`).set({
-        time: timeNow,
-        table: order.table,
-        items: order.items,
-        total: order.total
+        time: timeNow, table: order.table, items: order.items, total: order.total
       });
 
       // 4. Send to Google Sheets Archive
@@ -252,34 +303,30 @@
       db.ref('orders/' + id).remove();
     }
 
-    // --- DASHBOARD LISTENERS (Totals & History) ---
+    // --- DASHBOARD LISTENERS (Real-time Totals) ---
     function listenToDashboard() {
       const keys = getTallyKeys();
       
-      // Listen for Totals
       db.ref(`tallies/daily/${keys.daily}`).on('value', s => document.getElementById('tallyDaily').innerText = `₹${s.val() || 0}`);
       db.ref(`tallies/weekly/${keys.weekly}`).on('value', s => document.getElementById('tallyWeekly').innerText = `₹${s.val() || 0}`);
       db.ref(`tallies/monthly/${keys.monthly}`).on('value', s => document.getElementById('tallyMonthly').innerText = `₹${s.val() || 0}`);
       db.ref(`tallies/yearly/${keys.yearly}`).on('value', s => document.getElementById('tallyYearly').innerText = `₹${s.val() || 0}`);
 
-      // Listen for Today's Logs (The morning to night history)
       db.ref(`daily_logs/${keys.daily}`).on('value', snap => {
         const table = document.getElementById('dailyLogsTable');
         table.innerHTML = '';
         const logs = snap.val() || {};
         
         if(Object.keys(logs).length === 0) {
-          table.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-bold uppercase tracking-widest border-b">No orders completed today yet.</td></tr>`;
+          table.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 font-bold uppercase tracking-widest border-b">No orders completed today yet.</td></tr>`;
           return;
         }
 
-        // Render logs (newest at the top)
         Object.entries(logs).reverse().forEach(([orderId, log]) => {
           table.innerHTML += `
             <tr class="hover:bg-slate-50 transition-colors">
-              <td class="p-3 border-b text-slate-500 font-bold">${log.time}</td>
+              <td class="p-3 border-b text-slate-500 font-bold whitespace-nowrap">${log.time}</td>
               <td class="p-3 border-b font-black text-slate-800">T-${log.table}</td>
-              <td class="p-3 border-b text-xs font-mono text-slate-400">${orderId}</td>
               <td class="p-3 border-b text-slate-700 font-semibold">${log.items}</td>
               <td class="p-3 border-b font-black text-emerald-600 text-right">₹${log.total}</td>
             </tr>
@@ -295,18 +342,21 @@
       list.innerHTML = '';
       const menuData = snap.val() || {};
 
+      // Adding classes so it flows in a grid on large screens instead of a massive long column
+      list.className = "grid grid-cols-1 md:grid-cols-2 gap-3 space-y-0";
+
       Object.entries(menuData).forEach(([id, item]) => {
         list.innerHTML += `
-          <div class="bg-white p-3 rounded-xl shadow-sm border-l-4 ${item.in_stock ? 'border-emerald-500' : 'border-red-500'} flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-              <img src="${item.image}" onerror="this.src='${fallbackImg}'" class="w-16 h-16 rounded-lg object-cover bg-slate-200">
+          <div class="bg-white p-3 rounded-xl shadow border-l-4 ${item.in_stock ? 'border-emerald-500' : 'border-red-500'} flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <img src="${item.image}" onerror="this.src='${fallbackImg}'" class="w-14 h-14 rounded-lg object-cover bg-slate-200">
               <div>
-                <h4 class="font-black text-slate-800">${item.name}</h4>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${item.category}</p>
-                <p class="text-amber-600 font-black">₹${item.price}</p>
+                <h4 class="font-black text-slate-800 leading-tight">${item.name}</h4>
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">${item.category}</p>
+                <p class="text-amber-600 font-black text-sm mt-1">₹${item.price}</p>
               </div>
             </div>
-            <button onclick="toggleStock('${id}', ${item.in_stock})" class="px-4 py-2 rounded-lg font-black text-xs uppercase ${item.in_stock ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+            <button onclick="toggleStock('${id}', ${item.in_stock})" class="px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider ${item.in_stock ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-red-100 text-red-700 hover:bg-red-200'} transition">
               ${item.in_stock ? 'In Stock' : 'Sold Out'}
             </button>
           </div>
