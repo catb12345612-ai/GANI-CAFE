@@ -128,7 +128,7 @@
           </div>
         </div>
 
-        <div>
+        <div class="mb-10">
           <h3 class="text-lg font-black uppercase text-slate-800 border-b-2 border-slate-200 pb-2 mb-4 tracking-wider">Today's Completed Orders</h3>
           <table class="w-full text-left text-sm border-collapse">
             <thead class="bg-slate-100 text-slate-500 uppercase font-black text-[10px] tracking-widest">
@@ -143,6 +143,14 @@
             <tbody id="dailyLogsTable" class="divide-y divide-slate-100">
             </tbody>
           </table>
+        </div>
+
+        <!-- NEW: System Reset Button -->
+        <div class="mt-12 pt-6 border-t border-slate-200 text-center no-print">
+          <button onclick="factoryResetSystem()" class="bg-red-100 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-red-600 hover:text-white transition">
+            ⚠️ Clear All Data & Load Taj Darbar Menu
+          </button>
+          <p class="text-xs text-slate-400 mt-2">Clicking this will delete old test sales and install the new menu database.</p>
         </div>
       </div>
     </section>
@@ -209,7 +217,7 @@
       setTimeout(() => body.classList.remove('alarm-active'), 3000); 
     }
 
-    // --- NEW: Live Feedback Listener ---
+    // --- Live Feedback Listener ---
     let customerFeedback = {};
     db.ref('feedback').on('value', snap => {
       let data = snap.val() || {};
@@ -217,7 +225,6 @@
       Object.values(data).forEach(fb => {
         if(fb.orderId) customerFeedback[fb.orderId] = fb.rating;
       });
-      // Re-render grid so new emojis pop up instantly on live orders
       forceSyncOrders();
     });
 
@@ -268,7 +275,7 @@
           if (timeAgo < 0) timeAgo = 0; 
           let timeString = timeAgo === 0 ? "Just now" : `${timeAgo}m ago`;
 
-          // Check if customer submitted an emoji rating for this exact order
+          // Feedback badge
           let ratingBadge = '';
           if (customerFeedback[order.orderId]) {
             let rating = customerFeedback[order.orderId];
@@ -447,6 +454,45 @@
 
     function toggleStock(id, status) {
       db.ref('menu/' + id).update({ in_stock: !status });
+    }
+
+    // --- SYSTEM FACTORY RESET & MENU LOAD ---
+    function factoryResetSystem() {
+      if(confirm("⚠️ WARNING: This will permanently delete ALL old sales data, clear pending orders, and load the new Taj Darbar Menu into the database. Are you sure you want to launch the new system?")) {
+        
+        // 1. Wipe Old Data
+        db.ref('orders').remove();
+        db.ref('tallies').remove();
+        db.ref('daily_logs').remove();
+        db.ref('feedback').remove();
+
+        // 2. Load Taj Darbar Database
+        const tajDarbarMenuData = {
+          "m1": { name: "Chicken Alfaham Mandi", category: "Mandi", price: 350, in_stock: true, image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80" },
+          "m2": { name: "Mutton Juicy Mandi", category: "Mandi", price: 450, in_stock: true, image: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?w=400&q=80" },
+          "m3": { name: "Chicken Roast Mandi", category: "Mandi", price: 340, in_stock: true, image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80" },
+          "m4": { name: "Mutton Roast Mandi", category: "Mandi", price: 460, in_stock: true, image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80" },
+          "m5": { name: "Fish Mandi", category: "Mandi", price: 400, in_stock: true, image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&q=80" },
+          "m6": { name: "Prawns Mandi", category: "Mandi", price: 420, in_stock: true, image: "https://images.unsplash.com/photo-1565557613262-b8d11634b07c?w=400&q=80" },
+          "m7": { name: "Chicken Fry Piece Mandi", category: "Mandi", price: 320, in_stock: true, image: "https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=400&q=80" },
+          "m8": { name: "Mutton Fry Mandi", category: "Mandi", price: 430, in_stock: true, image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80" },
+          "m9": { name: "Mixed Non-Veg Mandi", category: "Mandi", price: 550, in_stock: true, image: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=400&q=80" },
+          "m10": { name: "Paneer Tikka Mandi", category: "Mandi", price: 280, in_stock: true, image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&q=80" },
+          "m11": { name: "Special Taj Darbar Mandi", category: "Mandi", price: 600, in_stock: true, image: "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&q=80" },
+          "s1": { name: "Chicken Shawarma Roll", category: "Shawarma", price: 120, in_stock: true, image: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400&q=80" },
+          "s2": { name: "Special Plate Shawarma", category: "Shawarma", price: 180, in_stock: true, image: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=400&q=80" },
+          "d1": { name: "Qubani Ka Meetha", category: "Desserts", price: 150, in_stock: true, image: "https://images.unsplash.com/photo-1517244683847-7456b63c5969?w=400&q=80" },
+          "d2": { name: "Kaddu Ki Kheer", category: "Desserts", price: 120, in_stock: true, image: "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&q=80" },
+          "d3": { name: "Double Ka Meetha", category: "Desserts", price: 100, in_stock: true, image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=80" },
+          "d4": { name: "Chocolate Truffle Cake", category: "Desserts", price: 200, in_stock: true, image: "https://images.unsplash.com/photo-1578985545062-69928b1eaab3?w=400&q=80" },
+          "d5": { name: "Vanilla Ice Cream", category: "Desserts", price: 80, in_stock: true, image: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400&q=80" }
+        };
+
+        db.ref('menu').set(tajDarbarMenuData).then(() => {
+          alert("✅ System Reset Complete! Taj Darbar Menu Loaded successfully.");
+          window.location.reload();
+        });
+      }
     }
   </script>
 </body>
