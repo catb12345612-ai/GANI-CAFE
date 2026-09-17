@@ -15,16 +15,23 @@
       .no-print { display: none !important; }
       .print-shadow-none { box-shadow: none !important; border: 1px solid #ddd; }
     }
+    /* Visual Strobe Animation for loud kitchens */
+    @keyframes strobe {
+      0% { box-shadow: inset 0 0 0 10px rgba(239, 68, 68, 0); }
+      50% { box-shadow: inset 0 0 0 10px rgba(239, 68, 68, 1); }
+      100% { box-shadow: inset 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+    .alarm-active { animation: strobe 1s infinite; }
   </style>
 </head>
-<body class="bg-slate-100 font-sans antialiased text-slate-800">
+<body id="mainBody" class="bg-slate-100 font-sans antialiased text-slate-800 transition-colors duration-300">
 
-  <!-- NEW: Audio & System Unlocker Screen (Fixes missing orders) -->
+  <!-- Audio & System Unlocker Screen (Fixes sleep mode & missing orders) -->
   <div id="systemUnlocker" class="fixed inset-0 bg-slate-900/95 z-[100] flex flex-col items-center justify-center text-white cursor-pointer no-print backdrop-blur-sm" onclick="activateSystem()">
     <div class="bg-slate-800 p-8 rounded-2xl text-center border border-slate-700 shadow-2xl">
       <h1 class="text-3xl font-black mb-2 text-amber-500 uppercase tracking-widest">Gani Cafe POS</h1>
-      <p class="text-slate-300 font-bold mb-6">Tap anywhere to activate real-time sync & audio alerts.</p>
-      <button class="bg-amber-600 text-white px-8 py-3 rounded-lg font-black text-lg animate-pulse">ACTIVATE SYSTEM</button>
+      <p class="text-slate-300 font-bold mb-6">Tap to activate Wake-Lock, Live Sync & Audio.</p>
+      <button class="bg-amber-600 text-white px-8 py-3 rounded-lg font-black text-lg animate-pulse shadow-[0_0_20px_rgba(217,119,6,0.5)]">ACTIVATE POS SYSTEM</button>
     </div>
   </div>
 
@@ -35,8 +42,11 @@
           <h1 class="text-2xl font-black uppercase text-amber-500">Gani Cafe</h1>
           <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Command Center</p>
         </div>
-        <!-- NEW: Live Firebase Connection Indicator -->
-        <div id="connStatus" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)]" title="System Connection Status"></div>
+        <!-- Live Firebase Connection Indicator -->
+        <div class="flex items-center gap-2 ml-4 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+          <div id="connStatus" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] animate-pulse" title="System Connection Status"></div>
+          <span id="connText" class="text-[10px] font-bold text-red-400 tracking-widest">OFFLINE</span>
+        </div>
       </div>
       <div class="flex space-x-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scroll">
         <button onclick="switchTab('orders')" id="tab-orders" class="px-4 py-2 rounded font-black bg-amber-600 text-white shadow whitespace-nowrap">Live Orders</button>
@@ -52,7 +62,11 @@
     <section id="view-orders">
       <div class="flex justify-between items-end mb-6">
         <h2 class="text-xl font-black uppercase text-slate-800 tracking-wider">Live Tables</h2>
-        <span class="text-xs font-bold text-slate-500 bg-slate-200 px-3 py-1 rounded-full"><span class="animate-pulse text-red-500 mr-1">●</span>LIVE SYNC</span>
+        <!-- EMERGENCY SYNC BUTTON -->
+        <button onclick="forceSyncOrders()" class="flex items-center gap-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 shadow-sm px-4 py-2 rounded-lg hover:bg-slate-50 active:scale-95 transition">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          FORCE SYNC
+        </button>
       </div>
       <div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </section>
@@ -152,24 +166,37 @@
     const db = firebase.database();
     const fallbackImg = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
 
-    // --- NEW: Audio Unlocker & Connection Tracker ---
+    // --- NEW: Audio Unlocker, Strobe Alarm, & Screen Wake-Lock ---
     let systemActive = false;
+    let wakeLock = null;
     let alertSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     
-    function activateSystem() {
-      // Force browser to allow audio by playing/pausing on first tap
+    async function activateSystem() {
+      // 1. Unlock Audio
       alertSound.play().then(() => { alertSound.pause(); alertSound.currentTime = 0; }).catch(()=>{});
+      
+      // 2. Request Screen Wake Lock (Stops tablet from sleeping)
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) { console.log("Wake Lock unsupported, keeping screen on natively."); }
+
       systemActive = true;
       document.getElementById('systemUnlocker').classList.add('hidden');
     }
 
-    // Live red/green dot to prove Firebase hasn't disconnected
+    // Live red/green connection tracker
     db.ref('.info/connected').on('value', function(snap) {
       const dot = document.getElementById('connStatus');
+      const text = document.getElementById('connText');
       if (snap.val() === true) {
         dot.className = "w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]";
+        text.innerText = "ONLINE & SYNCED"; text.className = "text-[10px] font-bold text-emerald-400 tracking-widest";
+        if(systemActive) forceSyncOrders(); // Auto-fetch missed orders when reconnecting
       } else {
         dot.className = "w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] animate-pulse";
+        text.innerText = "OFFLINE - RECONNECTING..."; text.className = "text-[10px] font-bold text-red-400 tracking-widest";
       }
     });
 
@@ -186,16 +213,32 @@
       document.getElementById('tab-dashboard').className = tab === 'dashboard' ? activeCls : inactiveCls;
     }
 
-    // --- KITCHEN LIVE ORDERS (Now 100% reliable) ---
+    // --- KITCHEN LIVE ORDERS (Zero-Error Architecture) ---
+    
+    function triggerStrobeAlarm() {
+      const body = document.getElementById('mainBody');
+      body.classList.add('alarm-active');
+      setTimeout(() => body.classList.remove('alarm-active'), 3000); // Flashes for 3 seconds
+    }
+
+    // Listen for new orders dropping in
     db.ref('orders').on('child_added', (snap) => {
        const order = snap.val();
-       // Only play sound if order is pending and system is unlocked
        if(systemActive && order.status === 'pending') {
          alertSound.play().catch(e=>{});
+         triggerStrobeAlarm();
        }
     });
 
-    db.ref('orders').on('value', snap => {
+    // The Master Fetch Function (can be called manually)
+    function forceSyncOrders() {
+      db.ref('orders').once('value').then(renderGrid); // Force a hard manual fetch just in case
+    }
+
+    // Live continuous fetch
+    db.ref('orders').on('value', renderGrid);
+
+    function renderGrid(snap) {
       const grid = document.getElementById('kitchenGrid');
       grid.innerHTML = '';
       const orders = snap.val() || {};
@@ -210,11 +253,13 @@
         } else if (order.status === 'cooking') {
           actionButton = `<button onclick="updateOrderStatus('${id}', 'served')" class="w-full bg-emerald-600 text-white py-4 rounded-lg font-black active:scale-95 shadow-lg text-lg tracking-wide transition hover:bg-emerald-700">Serve Food</button>`;
         } else if (order.status === 'served') {
-          // Changed clear button to highlight WhatsApp Receipt function
           actionButton = `<button onclick="clearAndSaveBill('${id}')" class="w-full bg-slate-900 text-white py-4 rounded-lg font-black border border-emerald-500 active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-lg tracking-wide flex items-center justify-center gap-2 hover:bg-slate-800"><svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Clear & Send Receipt</button>`;
         }
 
         let phoneBadge = order.phone && order.phone !== "Not Provided" ? `<span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded ml-2 font-mono">📱 ${order.phone}</span>` : '';
+        // Calculate minutes ago
+        let timeAgo = order.timestamp ? Math.floor((Date.now() - order.timestamp) / 60000) : 0;
+        let timeString = timeAgo === 0 ? "Just now" : `${timeAgo}m ago`;
 
         grid.innerHTML += `
           <div class="bg-white p-6 rounded-2xl shadow-xl border-t-8 ${borderColor} flex flex-col justify-between h-full transition-all">
@@ -228,19 +273,22 @@
               </div>
             </div>
             <div class="mt-4 pt-4 border-t border-slate-100">
-              <div class="flex justify-between items-center mb-5">
+              <div class="flex justify-between items-end mb-5">
                 <div>
-                  <span class="text-xs font-black text-slate-400 uppercase tracking-widest block">Bill Total</span>
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Wait Time: ${timeString}</span>
                   ${phoneBadge}
                 </div>
-                <span class="font-black text-3xl text-amber-600">₹${order.total}</span>
+                <div class="text-right">
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total</span>
+                  <span class="font-black text-3xl text-amber-600 leading-none">₹${order.total}</span>
+                </div>
               </div>
               ${actionButton}
             </div>
           </div>
         `;
       });
-    });
+    }
 
     function updateOrderStatus(id, status) {
       db.ref('orders/' + id).update({ status: status });
@@ -264,16 +312,13 @@
       const order = snap.val();
       if (!order) return;
       
-      // 1. WhatsApp Automated Digital Receipt (If number provided)
+      // WhatsApp Digital Receipt
       if (order.phone && order.phone !== "Not Provided" && order.phone.length >= 10) {
         const cleanPhone = order.phone.replace(/\D/g, '');
-        // Automatically formats for India if no country code provided
         const finalPhone = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
         const msg = encodeURIComponent(`*=== GANI CAFE ===*\nThank you for dining with us today!\n\n*Table:* ${order.table}\n*Order ID:* ${order.orderId}\n\n*Items Ordered:*\n${order.items.split(', ').join('\n')}\n\n*TOTAL PAID: ₹${order.total}*\n\nWe hope to see you again!`);
-        // Opens WhatsApp Web in new tab with pre-filled receipt
         window.open(`https://wa.me/${finalPhone}?text=${msg}`, '_blank');
       } else {
-        // Fallback: Text file download if no WhatsApp number
         let bill = `=== GANI CAFE ===\nTable: ${order.table}\nDate: ${new Date().toLocaleString()}\n------------------\n${order.items.split(', ').join('\n')}\n------------------\nTOTAL PAID: Rs. ${order.total}\n=================`;
         const blob = new Blob([bill], { type: 'text/plain' });
         const a = document.createElement('a');
@@ -282,7 +327,7 @@
         a.click();
       }
 
-      // 2. Update Tallies Safely
+      // Update Tallies
       const keys = getTallyKeys();
       const amount = Number(order.total);
       db.ref(`tallies/daily/${keys.daily}`).transaction(val => (val || 0) + amount);
@@ -290,16 +335,12 @@
       db.ref(`tallies/monthly/${keys.monthly}`).transaction(val => (val || 0) + amount);
       db.ref(`tallies/yearly/${keys.yearly}`).transaction(val => (val || 0) + amount);
 
-      // 3. Save to Today's Dashboard List
       const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
       db.ref(`daily_logs/${keys.daily}/${order.orderId}`).set({
         time: timeNow, table: order.table, items: order.items, total: order.total
       });
 
-      // 4. Send to Google Sheets Archive
       fetch(GOOGLE_SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(order) });
-      
-      // 5. Delete from live Kitchen Screen
       db.ref('orders/' + id).remove();
     }
 
@@ -341,8 +382,6 @@
       const list = document.getElementById('inventoryList');
       list.innerHTML = '';
       const menuData = snap.val() || {};
-
-      // Adding classes so it flows in a grid on large screens instead of a massive long column
       list.className = "grid grid-cols-1 md:grid-cols-2 gap-3 space-y-0";
 
       Object.entries(menuData).forEach(([id, item]) => {
