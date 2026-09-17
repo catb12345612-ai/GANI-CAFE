@@ -145,7 +145,7 @@
           </table>
         </div>
 
-        <!-- NEW: System Reset Button -->
+        <!-- System Reset Button -->
         <div class="mt-12 pt-6 border-t border-slate-200 text-center no-print">
           <button onclick="factoryResetSystem()" class="bg-red-100 text-red-600 border border-red-200 px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-red-600 hover:text-white transition">
             ⚠️ Clear All Data & Load Taj Darbar Menu
@@ -249,7 +249,10 @@
       grid.innerHTML = '';
       const orders = snap.val() || {};
       
-      Object.entries(orders).forEach(([id, order]) => {
+      // Sequence orders by time (oldest pending at top)
+      const sortedOrders = Object.entries(orders).sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+      sortedOrders.forEach(([id, order]) => {
         if (!order) return;
 
         try {
@@ -363,15 +366,16 @@
       db.ref(`tallies/yearly/${keys.yearly}`).transaction(val => (val || 0) + amount);
 
       const timeNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      const preciseTimestamp = Date.now(); // Used for exact sequence sorting
       db.ref(`daily_logs/${keys.daily}/${safeOrderId}`).set({
-        time: timeNow, table: safeTable, items: safeItems, total: safeTotal
+        time: timeNow, table: safeTable, items: safeItems, total: safeTotal, timestamp: preciseTimestamp
       });
 
       fetch(GOOGLE_SHEET_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(order) });
       db.ref('orders/' + id).remove();
     }
 
-    // Dashboard Totals & Logs
+    // Dashboard Totals & Logs (Sequenced perfectly)
     function listenToDashboard() {
       const keys = getTallyKeys();
       
@@ -390,7 +394,10 @@
           return;
         }
 
-        Object.entries(logs).reverse().forEach(([orderId, log]) => {
+        // Sort logs sequentially so newest clears always appear precisely at the top
+        const sortedLogs = Object.entries(logs).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+
+        sortedLogs.forEach(([orderId, log]) => {
           let fbRating = customerFeedback[orderId];
           let fbEmoji = fbRating ? (fbRating === 'Excellent' ? '😍' : (fbRating === 'Good' ? '😋' : '😞')) : '--';
 
@@ -456,36 +463,36 @@
       db.ref('menu/' + id).update({ in_stock: !status });
     }
 
-    // --- SYSTEM FACTORY RESET & MENU LOAD ---
+    // --- SYSTEM FACTORY RESET & MENU LOAD (Images Fixed) ---
     function factoryResetSystem() {
       if(confirm("⚠️ WARNING: This will permanently delete ALL old sales data, clear pending orders, and load the new Taj Darbar Menu into the database. Are you sure you want to launch the new system?")) {
         
-        // 1. Wipe Old Data
+        // Wipe Old Data
         db.ref('orders').remove();
         db.ref('tallies').remove();
         db.ref('daily_logs').remove();
         db.ref('feedback').remove();
 
-        // 2. Load Taj Darbar Database
+        // Load Taj Darbar Database with highly reliable API imagery
         const tajDarbarMenuData = {
-          "m1": { name: "Chicken Alfaham Mandi", category: "Mandi", price: 350, in_stock: true, image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80" },
-          "m2": { name: "Mutton Juicy Mandi", category: "Mandi", price: 450, in_stock: true, image: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?w=400&q=80" },
-          "m3": { name: "Chicken Roast Mandi", category: "Mandi", price: 340, in_stock: true, image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80" },
-          "m4": { name: "Mutton Roast Mandi", category: "Mandi", price: 460, in_stock: true, image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80" },
-          "m5": { name: "Fish Mandi", category: "Mandi", price: 400, in_stock: true, image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&q=80" },
-          "m6": { name: "Prawns Mandi", category: "Mandi", price: 420, in_stock: true, image: "https://images.unsplash.com/photo-1565557613262-b8d11634b07c?w=400&q=80" },
-          "m7": { name: "Chicken Fry Piece Mandi", category: "Mandi", price: 320, in_stock: true, image: "https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=400&q=80" },
-          "m8": { name: "Mutton Fry Mandi", category: "Mandi", price: 430, in_stock: true, image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80" },
-          "m9": { name: "Mixed Non-Veg Mandi", category: "Mandi", price: 550, in_stock: true, image: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=400&q=80" },
-          "m10": { name: "Paneer Tikka Mandi", category: "Mandi", price: 280, in_stock: true, image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&q=80" },
-          "m11": { name: "Special Taj Darbar Mandi", category: "Mandi", price: 600, in_stock: true, image: "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&q=80" },
-          "s1": { name: "Chicken Shawarma Roll", category: "Shawarma", price: 120, in_stock: true, image: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400&q=80" },
-          "s2": { name: "Special Plate Shawarma", category: "Shawarma", price: 180, in_stock: true, image: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=400&q=80" },
-          "d1": { name: "Qubani Ka Meetha", category: "Desserts", price: 150, in_stock: true, image: "https://images.unsplash.com/photo-1517244683847-7456b63c5969?w=400&q=80" },
-          "d2": { name: "Kaddu Ki Kheer", category: "Desserts", price: 120, in_stock: true, image: "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&q=80" },
-          "d3": { name: "Double Ka Meetha", category: "Desserts", price: 100, in_stock: true, image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=80" },
-          "d4": { name: "Chocolate Truffle Cake", category: "Desserts", price: 200, in_stock: true, image: "https://images.unsplash.com/photo-1578985545062-69928b1eaab3?w=400&q=80" },
-          "d5": { name: "Vanilla Ice Cream", category: "Desserts", price: 80, in_stock: true, image: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400&q=80" }
+          "m1": { name: "Chicken Alfaham Mandi", category: "Mandi", price: 350, in_stock: true, image: "https://source.unsplash.com/400x400/?roast-chicken,spicy" },
+          "m2": { name: "Mutton Juicy Mandi", category: "Mandi", price: 450, in_stock: true, image: "https://source.unsplash.com/400x400/?meat,rice,mutton" },
+          "m3": { name: "Chicken Roast Mandi", category: "Mandi", price: 340, in_stock: true, image: "https://source.unsplash.com/400x400/?grilled-chicken,food" },
+          "m4": { name: "Mutton Roast Mandi", category: "Mandi", price: 460, in_stock: true, image: "https://source.unsplash.com/400x400/?roasted-meat,biryani" },
+          "m5": { name: "Fish Mandi", category: "Mandi", price: 400, in_stock: true, image: "https://source.unsplash.com/400x400/?fried-fish,seafood" },
+          "m6": { name: "Prawns Mandi", category: "Mandi", price: 420, in_stock: true, image: "https://source.unsplash.com/400x400/?prawns,shrimp,rice" },
+          "m7": { name: "Chicken Fry Piece Mandi", category: "Mandi", price: 320, in_stock: true, image: "https://source.unsplash.com/400x400/?fried-chicken,indian-food" },
+          "m8": { name: "Mutton Fry Mandi", category: "Mandi", price: 430, in_stock: true, image: "https://source.unsplash.com/400x400/?cooked-meat,spices" },
+          "m9": { name: "Mixed Non-Veg Mandi", category: "Mandi", price: 550, in_stock: true, image: "https://source.unsplash.com/400x400/?feast,meat-platter" },
+          "m10": { name: "Paneer Tikka Mandi", category: "Mandi", price: 280, in_stock: true, image: "https://source.unsplash.com/400x400/?paneer,grilled-cheese" },
+          "m11": { name: "Special Taj Darbar Mandi", category: "Mandi", price: 600, in_stock: true, image: "https://source.unsplash.com/400x400/?luxury-food,meat-feast" },
+          "s1": { name: "Chicken Shawarma Roll", category: "Shawarma", price: 120, in_stock: true, image: "https://source.unsplash.com/400x400/?shawarma,wrap" },
+          "s2": { name: "Special Plate Shawarma", category: "Shawarma", price: 180, in_stock: true, image: "https://source.unsplash.com/400x400/?kebab-plate,meat" },
+          "d1": { name: "Qubani Ka Meetha", category: "Desserts", price: 150, in_stock: true, image: "https://source.unsplash.com/400x400/?indian-dessert,apricot" },
+          "d2": { name: "Kaddu Ki Kheer", category: "Desserts", price: 120, in_stock: true, image: "https://source.unsplash.com/400x400/?pudding,kheer" },
+          "d3": { name: "Double Ka Meetha", category: "Desserts", price: 100, in_stock: true, image: "https://source.unsplash.com/400x400/?sweet-bread,dessert" },
+          "d4": { name: "Chocolate Truffle Cake", category: "Desserts", price: 200, in_stock: true, image: "https://source.unsplash.com/400x400/?chocolate-cake,truffle" },
+          "d5": { name: "Vanilla Ice Cream", category: "Desserts", price: 80, in_stock: true, image: "https://source.unsplash.com/400x400/?vanilla-ice-cream" }
         };
 
         db.ref('menu').set(tajDarbarMenuData).then(() => {
