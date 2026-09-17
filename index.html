@@ -38,14 +38,14 @@
   </div>
 
   <!-- Active Order Tracker with UPI -->
-  <div id="activeTracker" class="hidden mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-amber-500">
-    <h3 class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Order Status</h3>
-    <p id="orderStatusText" class="text-xl font-black text-amber-400 uppercase tracking-wide">Pending</p>
+  <div id="activeTracker" class="hidden mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-amber-500 transition-all">
+    <h3 class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Live Order Status</h3>
+    <p id="orderStatusText" class="text-xl font-black text-amber-400 uppercase tracking-wide">Transmitting to Kitchen...</p>
     
     <div id="paymentSection" class="hidden mt-4 pt-4 border-t border-slate-700 text-center">
-      <p class="text-emerald-400 font-bold mb-3">Food Served! Please scan to pay via PhonePe/GPay</p>
+      <p class="text-emerald-400 font-bold mb-3">Food Served! Scan to pay via PhonePe/GPay</p>
       <img id="upiQRCode" src="" class="mx-auto rounded-lg mb-3 w-40 h-40 bg-white p-2">
-      <button onclick="downloadCustomerBill()" class="bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm w-full hover:bg-slate-600">Download My Bill</button>
+      <button onclick="downloadCustomerBill()" class="bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm w-full hover:bg-slate-600">Download Offline Bill</button>
     </div>
   </div>
 
@@ -54,12 +54,15 @@
 
   <!-- Cart -->
   <div id="cartFooter" class="hidden fixed bottom-6 left-5 right-5 md:left-auto md:right-5 md:w-96 glass rounded-2xl shadow-2xl border border-slate-200 p-4 z-50">
+    <!-- NEW: WhatsApp Capture for Digital Receipt & Marketing -->
+    <input type="tel" id="custPhone" placeholder="WhatsApp No. (For Digital Receipt)" class="w-full mb-3 px-4 py-3 rounded-xl border border-slate-300 font-bold text-slate-800 outline-none focus:border-amber-500 bg-slate-50 placeholder-slate-400 text-center tracking-widest">
+    
     <div class="flex justify-between items-center mb-3">
       <span class="font-bold text-slate-500 text-sm">Total Bill</span>
       <span id="cartTotal" class="text-2xl font-black text-slate-900">₹0</span>
     </div>
-    <button onclick="placeOrder()" class="w-full bg-amber-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-transform">
-      Confirm & Place Order
+    <button onclick="placeOrder()" id="placeOrderBtn" class="w-full bg-amber-600 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+      Confirm & Send to Kitchen <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
     </button>
   </div>
 
@@ -74,7 +77,6 @@
       appId: "1:292009300507:web:cf524330c2ff4ef4e39ebe"
     };
 
-    // CHANGE THIS TO YOUR ACTUAL UPI ID
     const RESTAURANT_UPI_ID = "Q227869939@ybl"; 
 
     firebase.initializeApp(firebaseConfig);
@@ -84,9 +86,8 @@
     let cart = {};
     let currentFilter = 'All';
     let myOrderId = localStorage.getItem('gani_cafe_order_id');
-    let myOrderDetails = null; // Stored for bill download
+    let myOrderDetails = null;
 
-    // Bulletproof Fallback Image
     const fallbackImg = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
 
     db.ref('menu').on('value', snap => {
@@ -115,7 +116,7 @@
         const qty = cart[id] || 0;
         grid.innerHTML += `
           <div class="bg-white rounded-2xl p-3 flex shadow-sm border border-slate-100 gap-4 relative overflow-hidden">
-            ${!item.in_stock ? `<div class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center"><span class="bg-red-500 text-white font-black px-3 py-1 rounded">SOLD OUT</span></div>` : ''}
+            ${!item.in_stock ? `<div class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center"><span class="bg-red-500 text-white font-black px-3 py-1 rounded shadow-lg">SOLD OUT</span></div>` : ''}
             <div class="w-28 h-28 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0 shadow-inner">
               <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.src='${fallbackImg}'">
             </div>
@@ -126,10 +127,10 @@
               </div>
               <div class="flex justify-between items-center mt-2">
                 <span class="font-black text-lg text-slate-900">₹${item.price}</span>
-                <div class="flex items-center bg-slate-100 rounded-full p-1 shadow-inner">
+                <div class="flex items-center bg-slate-100 rounded-full p-1 shadow-inner border border-slate-200">
                   <button onclick="updateCart('${id}', -1)" class="w-8 h-8 rounded-full bg-white text-slate-800 font-black shadow-sm">-</button>
                   <span class="w-6 text-center font-bold text-sm">${qty}</span>
-                  <button onclick="updateCart('${id}', 1)" class="w-8 h-8 rounded-full bg-amber-500 text-white font-black shadow-sm">+</button>
+                  <button onclick="updateCart('${id}', 1)" class="w-8 h-8 rounded-full bg-amber-500 text-white font-black shadow-sm hover:bg-amber-600">+</button>
                 </div>
               </div>
             </div>
@@ -152,13 +153,20 @@
     }
 
     function placeOrder() {
+      const btn = document.getElementById('placeOrderBtn');
+      btn.innerHTML = "Sending..."; btn.disabled = true;
+
       const orderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
       const items = Object.entries(cart).map(([id, q]) => `${menuData[id].name} (x${q})`).join(', ');
       const total = Object.entries(cart).reduce((sum, [id, q]) => sum + (menuData[id].price * q), 0);
       
+      // Capture phone number for Digital Receipt
+      let phone = document.getElementById('custPhone').value || "Not Provided";
+      
       const payload = {
         orderId: orderId,
         table: document.getElementById('tableNum').value,
+        phone: phone, // Saved for kitchen dashboard
         items: items,
         total: total,
         status: 'pending',
@@ -167,10 +175,13 @@
 
       db.ref('orders/' + orderId).set(payload).then(() => {
         cart = {};
+        document.getElementById('custPhone').value = '';
         renderMenu();
         localStorage.setItem('gani_cafe_order_id', orderId);
         myOrderId = orderId;
         listenToMyOrder();
+        btn.innerHTML = 'Confirm & Send to Kitchen <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>'; 
+        btn.disabled = false;
       });
     }
 
@@ -197,34 +208,33 @@
           tracker.classList.remove('hidden');
           
           if (order.status === 'pending') {
-            tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-amber-500";
-            statusText.innerText = "Order Received...";
+            tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-amber-500 transition-all";
+            statusText.innerText = "Sent to Kitchen - Awaiting Chef...";
             paySection.classList.add('hidden');
           } 
           else if (order.status === 'cooking') {
-            tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-blue-500";
-            statusText.innerText = "Chef is Cooking...";
+            tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-blue-500 transition-all";
+            statusText.innerText = "Chef is Cooking Your Order!";
             paySection.classList.add('hidden');
           } 
           else if (order.status === 'served') {
-            tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-emerald-500";
-            statusText.innerText = "Food Served!";
-            // Generate exact UPI QR Code
+            tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-emerald-500 transition-all";
+            statusText.innerText = "Food Served - Enjoy!";
             const upiString = `upi://pay?pa=${RESTAURANT_UPI_ID}&pn=GaniCafe&am=${order.total}`;
             document.getElementById('upiQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
             paySection.classList.remove('hidden');
           }
         } else {
-          // Bill cleared by kitchen
           tracker.classList.add('hidden');
           localStorage.removeItem('gani_cafe_order_id');
           myOrderId = null;
           myOrderDetails = null;
-          alert("Payment Confirmed! Thank you for visiting Gani Cafe.");
+          alert("Payment Received! Thank you for dining with Gani Cafe. Your digital receipt has been saved.");
         }
       });
     }
 
+    // Auto-select table based on QR Code link (e.g. index.html?table=3)
     const params = new URLSearchParams(window.location.search);
     if (params.get('table') && params.get('table') <= 10) document.getElementById('tableNum').value = params.get('table');
     listenToMyOrder();
