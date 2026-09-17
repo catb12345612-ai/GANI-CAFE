@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gani Cafe - Premium Dining</title>
+  <title>Taj Darbar - Premium Dining</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
@@ -17,7 +17,7 @@
   <!-- Header -->
   <header class="glass sticky top-0 z-50 px-5 py-4 shadow-sm flex justify-between items-center">
     <div>
-      <h1 class="text-2xl font-black tracking-tight text-slate-900">Gani Cafe</h1>
+      <h1 class="text-2xl font-black tracking-tight text-slate-900">Taj Darbar</h1>
       <p class="text-xs font-bold text-amber-600 tracking-widest uppercase">Smart Dine-In</p>
     </div>
     <div class="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-2">
@@ -32,9 +32,10 @@
 
   <!-- Categories -->
   <div class="px-5 py-4 flex space-x-3 overflow-x-auto hide-scroll sticky top-[72px] z-40 bg-slate-50/95 backdrop-blur-md">
-    <button onclick="filterMenu('All')" class="category-btn active px-6 py-2 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition">All Items</button>
-    <button onclick="filterMenu('Chai')" class="category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition">Chai</button>
-    <button onclick="filterMenu('Biryani')" class="category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition">Biryani</button>
+    <button onclick="filterMenu('All')" class="category-btn active px-6 py-2 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition whitespace-nowrap">All Items</button>
+    <button onclick="filterMenu('Mandi')" class="category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition whitespace-nowrap">Mandi</button>
+    <button onclick="filterMenu('Shawarma')" class="category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition whitespace-nowrap">Shawarma</button>
+    <button onclick="filterMenu('Desserts')" class="category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition whitespace-nowrap">Desserts</button>
   </div>
 
   <!-- Active Order Tracker with UPI -->
@@ -43,7 +44,7 @@
     <p id="orderStatusText" class="text-xl font-black text-amber-400 uppercase tracking-wide">Transmitting to Kitchen...</p>
     
     <div id="paymentSection" class="hidden mt-4 pt-4 border-t border-slate-700 text-center">
-      <!-- NEW: Instant Food Feedback System -->
+      <!-- Instant Food Feedback System -->
       <div id="feedbackBox" class="mb-5 pb-5 border-b border-slate-700">
         <p class="text-xs font-bold uppercase tracking-widest text-slate-300 mb-3">How is the food?</p>
         <div class="flex justify-center gap-6 text-3xl">
@@ -65,7 +66,7 @@
 
   <!-- Cart -->
   <div id="cartFooter" class="hidden fixed bottom-6 left-5 right-5 md:left-auto md:right-5 md:w-96 glass rounded-2xl shadow-2xl border border-slate-200 p-4 z-50">
-    <!-- NEW: Special Instructions / Customization -->
+    <!-- Special Instructions / Customization -->
     <input type="text" id="orderNotes" placeholder="Any special requests? (e.g. less spicy, extra onions)" class="w-full mb-2 px-4 py-3 rounded-xl border border-slate-200 font-bold text-slate-800 outline-none focus:border-amber-500 bg-white placeholder-slate-400 text-sm shadow-inner">
 
     <!-- WhatsApp Capture -->
@@ -96,7 +97,28 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
-    let menuData = {};
+    // Hardcoded Taj Darbar Menu to ensure immediate display without requiring Firebase database changes
+    let menuData = {
+      "m1": { name: "Chicken Alfaham Mandi", category: "Mandi", price: 350, in_stock: true, image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80" },
+      "m2": { name: "Mutton Juicy Mandi", category: "Mandi", price: 450, in_stock: true, image: "https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?w=400&q=80" },
+      "m3": { name: "Chicken Roast Mandi", category: "Mandi", price: 340, in_stock: true, image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=400&q=80" },
+      "m4": { name: "Mutton Roast Mandi", category: "Mandi", price: 460, in_stock: true, image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80" },
+      "m5": { name: "Fish Mandi", category: "Mandi", price: 400, in_stock: true, image: "https://images.unsplash.com/photo-1559847844-5315695dadae?w=400&q=80" },
+      "m6": { name: "Prawns Mandi", category: "Mandi", price: 420, in_stock: true, image: "https://images.unsplash.com/photo-1565557613262-b8d11634b07c?w=400&q=80" },
+      "m7": { name: "Chicken Fry Piece Mandi", category: "Mandi", price: 320, in_stock: true, image: "https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=400&q=80" },
+      "m8": { name: "Mutton Fry Mandi", category: "Mandi", price: 430, in_stock: true, image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400&q=80" },
+      "m9": { name: "Mixed Non-Veg Mandi", category: "Mandi", price: 550, in_stock: true, image: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=400&q=80" },
+      "m10": { name: "Paneer Tikka Mandi", category: "Mandi", price: 280, in_stock: true, image: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=400&q=80" },
+      "m11": { name: "Special Taj Darbar Mandi", category: "Mandi", price: 600, in_stock: true, image: "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=400&q=80" },
+      "s1": { name: "Chicken Shawarma Roll", category: "Shawarma", price: 120, in_stock: true, image: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=400&q=80" },
+      "s2": { name: "Special Plate Shawarma", category: "Shawarma", price: 180, in_stock: true, image: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=400&q=80" },
+      "d1": { name: "Qubani Ka Meetha", category: "Desserts", price: 150, in_stock: true, image: "https://images.unsplash.com/photo-1517244683847-7456b63c5969?w=400&q=80" },
+      "d2": { name: "Kaddu Ki Kheer", category: "Desserts", price: 120, in_stock: true, image: "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&q=80" },
+      "d3": { name: "Double Ka Meetha", category: "Desserts", price: 100, in_stock: true, image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&q=80" },
+      "d4": { name: "Chocolate Truffle Cake", category: "Desserts", price: 200, in_stock: true, image: "https://images.unsplash.com/photo-1578985545062-69928b1eaab3?w=400&q=80" },
+      "d5": { name: "Vanilla Ice Cream", category: "Desserts", price: 80, in_stock: true, image: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=400&q=80" }
+    };
+
     let cart = {};
     let currentFilter = 'All';
     let myOrderId = localStorage.getItem('gani_cafe_order_id');
@@ -104,17 +126,15 @@
 
     const fallbackImg = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
 
-    db.ref('menu').on('value', snap => {
-      menuData = snap.val() || {};
-      renderMenu();
-    });
+    // Call renderMenu immediately with the new Hardcoded menu data
+    renderMenu();
 
     function filterMenu(category) {
       currentFilter = category;
       document.querySelectorAll('.category-btn').forEach(btn => {
         btn.className = btn.innerText === category 
-          ? "category-btn active px-6 py-2 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition"
-          : "category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition";
+          ? "category-btn active px-6 py-2 rounded-full font-bold text-sm bg-slate-900 text-white shadow-md transition whitespace-nowrap"
+          : "category-btn px-6 py-2 rounded-full font-bold text-sm bg-white text-slate-600 border shadow-sm transition whitespace-nowrap";
       });
       renderMenu();
     }
@@ -172,10 +192,8 @@
 
       const orderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
       
-      // Capture base items
       let baseItems = Object.entries(cart).map(([id, q]) => `${menuData[id].name} (x${q})`).join(', ');
       
-      // Inject Special Instructions into the items string so the kitchen sees it instantly
       let notes = document.getElementById('orderNotes').value.trim();
       let finalItems = notes ? `${baseItems}, 📝 NOTE: ${notes}` : baseItems;
 
@@ -218,12 +236,12 @@
 
     function downloadCustomerBill() {
       if(!myOrderDetails) return;
-      let cleanItems = myOrderDetails.items.replace(', 📝 NOTE:', '\nNOTE:'); // Clean up formatting for receipt
-      let bill = `=== GANI CAFE ===\nOrder: ${myOrderDetails.orderId}\nTable: ${myOrderDetails.table}\n------------------\n${cleanItems.split(', ').join('\n')}\n------------------\nTOTAL: Rs. ${myOrderDetails.total}\n=================`;
+      let cleanItems = myOrderDetails.items.replace(', 📝 NOTE:', '\nNOTE:');
+      let bill = `=== TAJ DARBAR ===\nOrder: ${myOrderDetails.orderId}\nTable: ${myOrderDetails.table}\n------------------\n${cleanItems.split(', ').join('\n')}\n------------------\nTOTAL: Rs. ${myOrderDetails.total}\n=================`;
       const blob = new Blob([bill], { type: 'text/plain' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `GaniCafe_Bill_${myOrderDetails.orderId}.txt`;
+      a.download = `TajDarbar_Bill_${myOrderDetails.orderId}.txt`;
       a.click();
     }
 
@@ -252,17 +270,17 @@
           else if (order.status === 'served') {
             tracker.className = "mx-5 mb-4 bg-slate-900 text-white p-5 rounded-2xl shadow-xl border-l-4 border-emerald-500 transition-all";
             statusText.innerText = "Food Served - Enjoy!";
-            const upiString = `upi://pay?pa=${RESTAURANT_UPI_ID}&pn=GaniCafe&am=${order.total}`;
+            const upiString = `upi://pay?pa=${RESTAURANT_UPI_ID}&pn=TajDarbar&am=${order.total}`;
             document.getElementById('upiQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiString)}`;
             paySection.classList.remove('hidden');
-            document.getElementById('feedbackThanks').classList.add('hidden'); // Reset feedback text for new orders
+            document.getElementById('feedbackThanks').classList.add('hidden'); 
           }
         } else {
           tracker.classList.add('hidden');
           localStorage.removeItem('gani_cafe_order_id');
           myOrderId = null;
           myOrderDetails = null;
-          alert("Payment Received! Thank you for dining with Gani Cafe. Your digital receipt has been saved.");
+          alert("Payment Received! Thank you for dining with Taj Darbar. Your digital receipt has been saved.");
         }
       });
     }
